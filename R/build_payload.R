@@ -7,7 +7,7 @@
     stratify_by = NULL
 ) {
 
-#Initial paylod
+#Initial payload
 id<-NULL
 
 #Add each disease to payload
@@ -24,9 +24,9 @@ if ("estimate" %in% disease) {id <- c(id, 285:287)}
 id<- switch (geography,
 "national" =  c(id,5000),  #500 is national
 "region"="",
-"state"=c(id,.state_lookup$geo_id),
-"county"= c(id, .counties_lookup$geo_id),
-"msa"=c(id,.msa_lookup$geo_id)
+"state"=c(id,lookup[["state"]]$geo_id),
+"county"= c(id, lookup[["counties"]]$geo_id),
+"msa"=c(id,lookup[["msa"]]$geo_id)
 )
 
 #Add year to payload.  The year id is the current year, subtracting 1478

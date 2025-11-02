@@ -22,7 +22,7 @@ get_atlas <- function(
 
   #.validate_options()
 
-
+  url_data <- "https://gis.cdc.gov/grasp/AtlasPlus/qtOutputData"
   payload <- .build_payload(
     disease=disease,
     geography=geography,
@@ -32,21 +32,21 @@ get_atlas <- function(
 
   print(glue::glue("Payload: {payload}"))
 
-  res <- POST(
+  res <- httr::POST(
     url_data,
     body = payload,
     encode = "json",
-    add_headers(
+    httr::add_headers(
       "Accept" = "application/json, text/javascript, */*; q=0.01",
       "Content-Type" = "application/json; charset=utf-8",
       "X-Requested-With" = "XMLHttpRequest"
     )
   )
 
-  if (status_code(res) != 200)
-  stop(paste("❌ Request failed:", status_code(res)))
+  if (httr::status_code(res) != 200)
+  stop(paste("❌ Request failed:", httr::status_code(res)))
 
-  dat <- fromJSON(content(res, "text", encoding = "UTF-8"))
+  dat <- jsonlite::fromJSON(httr::content(res, "text", encoding = "UTF-8"))
 
   if (is.null(dat$sourcedata))
     stop("❌ No data returned. Check payload IDs.")

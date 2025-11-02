@@ -1,5 +1,5 @@
 #' Internal: fetch AtlasPlus metadata from getInitData/00
-#'
+#' @importFrom rlang `%||%`
 #' @keywords internal
 .fetch_metadata <- function(ttl = NULL) {
 
