@@ -2,23 +2,11 @@
 % Please edit documentation in R/internal-request.R
 \name{.request_atlas}
 \alias{.request_atlas}
-\title{Internal AtlasPlus request helper}
+\title{Internal AtlasPlus request helper with caching}
 \usage{
-.request_atlas(payload, ttl = NULL)
-}
-\arguments{
-\item{payload}{A named list representing the JSON POST body.}
-
-\item{ttl}{Optional override for caching time-to-live (seconds). Defaults to
-package options. Usually \code{0} (no caching) for raw data requests.}
-}
-\value{
-A tibble. If no data present, returns an empty tibble.
+.request_atlas(payload)
 }
 \description{
-\code{.request_atlas()} is a low-level helper that sends a POST JSON payload to the
-AtlasPlus \code{qtOutputData} endpoint. It is not user-facing.  All politeness
-(user-agent, rate limiting, retries, caching) is handled upstream by
-\code{.request_json()}.
+Cached wrapper around \code{.request_atlas_uncached()}.
 }
 \keyword{internal}

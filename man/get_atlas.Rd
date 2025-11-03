@@ -2,24 +2,119 @@
 % Please edit documentation in R/get_atlas.R
 \name{get_atlas}
 \alias{get_atlas}
-\title{Retrieve data from CDC AtlasPlus}
+\title{Retrieve STI surveillance data from CDC AtlasPlus}
 \usage{
 get_atlas(disease, geography, year, stratify_by = NULL)
 }
 \arguments{
-\item{disease}{Character scalar, e.g. "Gonorrhea"}
+\item{disease}{Character scalar. A single disease name (e.g. \code{"gonorrhea"}).
+Multiple diseases are not currently supported in a single request.}
 
-\item{geography}{"state", "county", "national"}
+\item{geography}{Character scalar. One of \code{"national"}, \code{"region"}, \code{"state"},
+\code{"county"}, or \code{"msa"}.}
 
-\item{year}{Numeric vector of years, e.g. 2018:2022.  Valid values are 2000-2023.}
+\item{year}{Integer vector of years. Valid values are from 2000 to 2023.
+Can be a single year (e.g., \code{2022}) or a sequence (e.g., \code{2018:2022}).}
 
-\item{stratify_by}{Optional vector of variables to stratify by.  Options are "age", "race", "sex"}
+\item{stratify_by}{Optional character vector. Zero, one, or two of
+\code{"age"}, \code{"race"}, \code{"sex"}. If \code{NULL}, totals (unstratified) are returned.}
 
-\item{restrict_to}{Optional vector of states to limit geography}
+\item{restrict_to}{Optional character vector restricting results to specific
+states or counties (case-insensitive). If omitted, all units at that
+geographic level are returned.}
 }
 \value{
-A tibble
+A tibble with the following columns:
+\describe{
+\item{indicator}{Disease/condition name (factor)}
+\item{year}{Calendar year (numeric)}
+\item{geography}{Geographic unit name (factor)}
+\item{data_status}{Data quality flags (factor)}
+\item{race_ethnicity}{Race/ethnicity category (factor, if stratified)}
+\item{sex}{Sex category (factor, if stratified)}
+\item{age}{Age group (factor, if stratified)}
+\item{transmission}{Transmission category (factor)}
+\item{rate100000}{Incidence rate per 100,000 (numeric)}
+\item{cases}{Case count (numeric)}
+\item{population}{Population denominator (numeric)}
+\item{lowerci_rate, upperci_rate}{95\% CI bounds for rate (numeric)}
+\item{rse}{Relative standard error (numeric)}
+\item{lowerci_cases, upperci_cases}{95\% CI bounds for cases (numeric)}
+}
+
+Columns and naming conventions may differ depending on CDC schema changes.
+The function attempts to standardize but does not guarantee historical
+compatibility for all years.
 }
 \description{
-Retrieve data from CDC AtlasPlus
+\code{get_atlas()} provides a programmatic interface to the CDC AtlasPlus platform,
+returning case counts, population denominators, and rate estimates for
+sexually transmitted infection (STI) surveillance. The function submits a
+payload to the AtlasPlus data endpoint and parses the response into a tidy
+tibble.
+}
+\details{
+The function supports multiple diseases, geographic levels, year ranges,
+and optional stratification. Stratified queries expand results into all
+requested combinations (e.g., age by race). When possible, numeric fields
+are returned as \code{double} and identifiers as character.
+
+\strong{Supported diseases}
+\itemize{
+\item \code{"chlamydia"}
+\item \code{"gonorrhea"}
+\item \code{"syphilis"}
+}
+
+\strong{Geography}
+\itemize{
+\item \code{"national"}
+\item \code{"region"}
+\item \code{"state"}
+\item \code{"county"}
+\item \code{"msa"} (metropolitan statistical area)
+}
+
+\strong{Stratification}
+The CDC AtlasPlus API supports stratification by one or two dimensions:
+\itemize{
+\item \code{"age"}
+\item \code{"race"}
+\item \code{"sex"}
+}
+
+Stratification increases the number of returned rows. For example,
+\code{stratify_by = c("race", "sex")} returns all race × sex combinations
+for each geography-year pair.
+
+This function is a reverse-engineered wrapper around the AtlasPlus
+public query system. The CDC does not publish an official API specification,
+and internal identifiers may change without notice. If the CDC modifies the
+backend schema, requests may fail. Please report issues via GitHub.
+}
+\examples{
+\dontrun{
+# National gonorrhea rates for 2018–2022
+get_atlas(disease = "gonorrhea", geography = "national", year = 2018:2022)
+
+# State-level chlamydia, stratified by race
+get_atlas(
+  disease = "chlamydia",
+  geography = "state",
+  year = 2022,
+  stratify_by = "race"
+)
+
+# Limit to specific states
+get_atlas(
+  disease = "gonorrhea",
+  geography = "state",
+  year = 2022,
+  restrict_to = c("NY", "CA", "TX")
+)
+}
+
+}
+\seealso{
+\code{\link[=cdc_atlas_meta]{cdc_atlas_meta()}} for metadata lookup and variable dictionaries.
 }
