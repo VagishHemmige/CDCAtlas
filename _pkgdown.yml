@@ -1,8 +1,29 @@
-pkgdown:
-  title: "A package for working with the UNOS SRTR database in R"
-  logo: man/figures/logo.png
-  favicon: man/figures/logo.png
 url: https://vagishhemmige.github.io/CDCAtlas
+
+pkgdown:
+  as_is: true
+
 template:
   bootstrap: 5
+  bootswatch: flatly
 
+home:
+  title: "CDCAtlas"
+  description: "An R package for accessing and analyzing CDC AtlasPlus public health data."
+
+navbar:
+  structure:
+    left: [reference, articles]
+    right: [github]
+  components:
+    github:
+      icon: fab fa-github
+      href: https://github.com/VagishHemmige/CDCAtlas
+
+logo: man/figures/logo.png
+favicon: man/figures/favicon.png
+
+reference:
+  - title: "Data Access"
+    contents:
+      - get_atlas
