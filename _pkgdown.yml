@@ -1,0 +1,8 @@
+pkgdown:
+  title: "A package for working with the UNOS SRTR database in R"
+  logo: man/figures/logo.png
+  favicon: man/figures/logo.png
+url: https://vagishhemmige.github.io/CDCAtlas
+template:
+  bootstrap: 5
+
