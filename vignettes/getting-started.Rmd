@@ -1,0 +1,64 @@
+---
+title: "Getting started with CDCAtlas"
+output:
+  rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with CDCAtlas}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+
+**CDCAtlas** provides R functions for retrieving public health surveillance data
+from CDC AtlasPlus. This vignette introduces installation, basic queries, and data handling.
+
+## Installation
+
+
+```{r, eval=FALSE}
+# install.packages("remotes")
+remotes::install_github("VagishHemmige/CDCAtlas")
+```
+
+
+## Example: State-level chlamydia data
+
+```{r}
+
+library(CDCAtlas)
+df <- get_atlas(
+  disease   = "chlamydia",
+  geography = "state",
+  year      = 2022
+)
+
+head(df)
+```
+
+## Simple visualization
+
+```{r}
+library(ggplot2)
+
+ggplot(df, aes(x = geography, y = rate100000)) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Chlamydia Rate by State (2022)",
+    x = "State",
+    y = "Rate per 100,000"
+  )
+```
+
+## Next steps
+
+- Try different diseases or geographies
+- See `?get_atlas` for full argument documentation
+- More vignettes coming soon!
