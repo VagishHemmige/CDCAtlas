@@ -15,15 +15,16 @@ if ("chlamydia" %in% disease) {id <- c(id, 206)}
 if ("gonorrhea" %in% disease) {id <- c(id, 207)}
 if ("adult syphilis" %in% disease) {id <- c(id, 208, 213, 290)}
 if ("congenital syphilis" %in% disease) {id <- c(id, 214)}
-if ("tuberculosis" %in% disease) {id <- c(id, 214)}
+if ("tuberculosis" %in% disease) {id <- c(id, 209)}
 if ("hiv" %in% disease) {id <- c(id, 203, 205)}
 if ("estimate" %in% disease) {id <- c(id, 285:287)}
+if ("hepatitis" %in% disease) {id<-c(id, 210:212)}
 
 #Add geography to payload.  Only allows one geography
 #Of note, there is a specific marker () to group by region; otherwise,
 id<- switch (geography,
 "national" =  c(id,5000),  #500 is national
-"region"="",
+"region"=id, #Placeholder code
 "state"=c(id,lookup[["state"]]$geo_id),
 "county"= c(id, lookup[["counties"]]$geo_id),
 "msa"=c(id,lookup[["msa"]]$geo_id)
@@ -43,7 +44,6 @@ if (!("age" %in% stratify_by) & ("hiv" %in% disease | "estimate" %in% disease)){
 if ("race" %in% stratify_by) {id<-c(id,552,553,554,555,562,556,559,557)}
 if (!("race" %in% stratify_by)){id<-c(id, 551)}
 
-
 #Add sex stratification variables
 if ("sex" %in% stratify_by) {id<-c(id,602, 603)}
 if (!("sex" %in% stratify_by)){id<-c(id, 601)}
@@ -51,6 +51,7 @@ if (!("sex" %in% stratify_by)){id<-c(id, 601)}
 #Transmission category--defaults to all for now
 id<-c(id,801)
 
+#Create payload
   list(
     VariableIDs = paste(id,
       collapse = ","

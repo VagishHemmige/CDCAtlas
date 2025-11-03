@@ -18,6 +18,9 @@ Imports:
     rlang,
     ratelimitr,
     rappdirs,
-    httr
+    httr,
+    labelled,
+    memoise,
+    digest
 Depends: 
     R (>= 2.10)

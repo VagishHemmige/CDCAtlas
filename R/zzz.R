@@ -13,6 +13,9 @@
 # Make sure cache directory exists when package loads
 .onLoad <- function(libname, pkgname) {
   dir.create(._cdcAtlas_env$opts$cache_dir, recursive = TRUE, showWarnings = FALSE)
+  if (!exists("varvals")) {
+    warning("Internal data 'varvals' not found. Package may not function correctly.")
+  }
 }
 
 
