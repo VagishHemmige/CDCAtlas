@@ -63,6 +63,7 @@
 #'   \item{lowerci_rate, upperci_rate}{95% CI bounds for rate (numeric)}
 #'   \item{rse}{Relative standard error (numeric)}
 #'   \item{lowerci_cases, upperci_cases}{95% CI bounds for cases (numeric)}
+#'   \item{FIPS code (character)}
 #' }
 #'
 #' Columns and naming conventions may differ depending on CDC schema changes.

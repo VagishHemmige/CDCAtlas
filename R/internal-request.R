@@ -43,6 +43,10 @@ if (is.null(dat$sourcedata))
 # --- Convert to a data frame and label columns --
 #Uses internal package data varvals
 df <- as.data.frame(dat$sourcedata)%>%
+  #Add fips
+  dplyr::left_join(select(varvals, id, fips), by=(c("V3"="id")))%>%
+
+  #Decode data
   dplyr::mutate(
     across(
       c(V1, V3:V8),    # <- put your coded columns here
@@ -86,6 +90,7 @@ labelled::var_label(df$upperci_rate)    <- "Upper 95% confidence interval of inc
 labelled::var_label(df$rse)             <- "Relative standard error of rate"
 labelled::var_label(df$lowerci_cases)   <- "Lower 95% confidence interval of case count"
 labelled::var_label(df$upperci_cases)   <- "Upper 95% confidence interval of case count"
+labelled::var_label(df$fips)   <- "Census FIPS code for geographical merging with Census data"
 return(df)
 }
 
