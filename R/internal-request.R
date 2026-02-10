@@ -44,7 +44,7 @@ if (is.null(dat$sourcedata))
 #Uses internal package data varvals
 df <- as.data.frame(dat$sourcedata)%>%
   #Add fips
-  dplyr::left_join(select(varvals, id, fips), by=(c("V3"="id")))%>%
+  dplyr::left_join(dplyr::select(varvals, id, fips), by=(c("V3"="id")))%>%
 
   #Decode data
   dplyr::mutate(
