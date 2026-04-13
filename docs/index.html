@@ -72,8 +72,21 @@
 <img src="logo.png" class="logo" alt=""><h1 id="cdcatlas">CDCAtlas<a class="anchor" aria-label="anchor" href="#cdcatlas"></a>
 </h1>
 </div>
+<p><code>CDCAtlas</code> is an R package for retrieving selected public health surveillance data from the CDC’s <strong>AtlasPlus</strong> platform.</p>
 <!-- badges: start -->
-<!-- badges: end -->
+<p><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"><!-- badges: end --></p>
+<div class="section level2">
+<h2 id="what-is-the-cdc-atlas-database">What is the CDC Atlas database?<a class="anchor" aria-label="anchor" href="#what-is-the-cdc-atlas-database"></a>
+</h2>
+<p><strong>AtlasPlus</strong> is an interactive CDC data tool that provides access to reported data on HIV, sexually transmitted infections, tuberculosis, viral hepatitis, and selected social determinants of health. It allows users to explore these data through maps, charts, tables, and downloadable reports.</p>
+<p>This package provides a programmatic interface to selected AtlasPlus data so that researchers can query, cache, and analyze results directly in R rather than working only through the web interface, which requires downloading individual files which require manual cleanup before importing into R.</p>
+<p><br><br></p>
+<p><a href="https://www.cdc.gov/nchhstp/about/atlasplus.html?s_cid=bb-od-atlasplus_005" title="NCHHSTP AtlasPlus gives you the power to access data reported to CDC’s National Center for HIV, Viral Hepatitis, STD, and TB Prevention (NCHHSTP). Use HIV, viral hepatitis, STD, TB and Social Determinants of Health Data to create maps, charts, and detailed reports, and analyze trends and patterns." class="external-link"><img src="https://www.cdc.gov/nchhstp/about/images/atlasplus-buttons/AtlasPlus-728x90.jpg" style="width:728px; height:90px; border:0px;" alt="NCHHSTP AtlasPlus is an interactive tool that provides CDC an effective way to disseminate HIV, Viral Hepatitis, STD, TB and Social Determinants of Health Data, while allowing users to observe trends and patterns by creating detailed reports, maps, and other graphics. Find out more! https://www.cdc.govnchhstp/about/atlasplus.html"></a></p>
+<p><br><br></p>
+</div>
+<div class="section level2">
+<h2 id="what-the-package-does">What the package does<a class="anchor" aria-label="anchor" href="#what-the-package-does"></a>
+</h2>
 <p><code>CDCAtlas</code> provides a <strong>polite, cache-aware R client</strong> for selected CDC <strong>AtlasPlus</strong> endpoints.</p>
 <p>AtlasPlus is not a stable, public API.<br>
 This package aims for safe and respectful usage:</p>
@@ -86,19 +99,29 @@ This package aims for safe and respectful usage:</p>
 <strong>caches responses</strong> to reduce server traffic</li>
 <li>handles schema changes gracefully when possible</li>
 </ul>
+</div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <p>You can install the development version of CDCAtlas from <a href="https://github.com/" class="external-link">GitHub</a> with:</p>
-<p>install.packages(“devtools”) devtools::install_github(“VagishHemmige/CDCAtlas”)</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"VagishHemmige/CDCAtlas"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
 </h2>
 <p>This is a basic example which shows you how to solve a common problem:</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co">#library(CDCAtlas)</span></span>
-<span><span class="co">## basic example code</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/VagishHemmige/CDCAtlas" class="external-link">CDCAtlas</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">gonorrhea_us</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/get_atlas.html">get_atlas</a></span><span class="op">(</span></span>
+<span>  disease <span class="op">=</span> <span class="st">"gonorrhea"</span>,</span>
+<span>  geography <span class="op">=</span> <span class="st">"state"</span>,</span>
+<span>  year <span class="op">=</span> <span class="fl">2022</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">

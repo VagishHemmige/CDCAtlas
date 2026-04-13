@@ -13,7 +13,7 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 <!-- badges: end -->
 
-# What is the CDC Atlas database?
+## What is the CDC Atlas database?
 
 **AtlasPlus** is an interactive CDC data tool that provides access to
 reported data on HIV, sexually transmitted infections, tuberculosis,
@@ -23,9 +23,17 @@ downloadable reports.
 
 This package provides a programmatic interface to selected AtlasPlus
 data so that researchers can query, cache, and analyze results directly
-in R rather than working only through the web interface.
+in R rather than working only through the web interface, which requires
+downloading individual files which require manual cleanup before
+importing into R.
+
+<br><br>
 
 <a href="https://www.cdc.gov/nchhstp/about/atlasplus.html?s_cid=bb-od-atlasplus_005" title="NCHHSTP AtlasPlus gives you the power to access data reported to CDC’s National Center for HIV, Viral Hepatitis, STD, and TB Prevention (NCHHSTP). Use HIV, viral hepatitis, STD, TB and Social Determinants of Health Data to create maps, charts, and detailed reports, and analyze trends and patterns."><img src="https://www.cdc.gov/nchhstp/about/images/atlasplus-buttons/AtlasPlus-728x90.jpg" style="width:728px; height:90px; border:0px;" alt="NCHHSTP AtlasPlus is an interactive tool that provides CDC an effective way to disseminate HIV, Viral Hepatitis, STD, TB and Social Determinants of Health Data, while allowing users to observe trends and patterns by creating detailed reports, maps, and other graphics. Find out more! https://www.cdc.govnchhstp/about/atlasplus.html" /></a>
+
+<br><br>
+
+## What the package does
 
 `CDCAtlas` provides a **polite, cache-aware R client** for selected CDC
 **AtlasPlus** endpoints.
