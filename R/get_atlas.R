@@ -16,7 +16,12 @@
 #' **Supported diseases**
 #' - `"chlamydia"`
 #' - `"gonorrhea"`
-#' - `"syphilis"`
+#' - `"adult syphilis"`
+#' - `"congenital syphilis"`
+#' - `"tuberculosis"`
+#' - `"hiv"`
+#' - `"estimate"`
+#' - `"hepatitis"`
 #'
 #' **Geography**
 #' - `"national"`

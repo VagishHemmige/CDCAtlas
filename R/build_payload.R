@@ -23,7 +23,7 @@ if ("hepatitis" %in% disease) {id<-c(id, 210:212)}
 #Add geography to payload.  Only allows one geography
 #Of note, there is a specific marker () to group by region; otherwise,
 id<- switch (geography,
-"national" =  c(id,5000),  #500 is national
+"national" =  c(id,500),  #500 is national
 "region"=id, #Placeholder code
 "state"=c(id,lookup[["state"]]$geo_id),
 "county"= c(id, lookup[["counties"]]$geo_id),
