@@ -40,7 +40,7 @@
 #' `stratify_by = c("race", "sex")` returns all race × sex combinations
 #' for each geography-year pair.
 #'
-#' @param disease Character scalar. A single disease name (e.g. `"gonorrhea"`).
+#' @param disease A single disease name (e.g. `"gonorrhea"`).
 #' Multiple diseases are not currently supported in a single request.
 #' @param geography Character scalar. One of `"national"`, `"region"`, `"state"`,
 #' `"county"`, or `"msa"`.
@@ -127,7 +127,7 @@ payload <- .build_payload(
     stratify_by=stratify_by
   )
 
-#Use in debugging; currently commented oout
+#Use in debugging; currently commented out
 #print(glue::glue("Payload: {payload}"))
 
 df<-.request_atlas(payload)
