@@ -111,7 +111,8 @@ get_atlas <- function(
     disease, #valid options are any of: "chlaymydia", "gonorrhea"
     geography, #valid options are one of: "national", "region", "state", "county", "msa"
     year, #Valid years are 2000-2023
-    stratify_by=NULL)
+    stratify_by=NULL,
+    extrapolate_to_tract=FALSE)
 {
 
 #In future, should validate input
@@ -131,5 +132,18 @@ payload <- .build_payload(
 #print(glue::glue("Payload: {payload}"))
 
 df<-.request_atlas(payload)
+
+if (extrapolate_to_tract==TRUE){
+
+  payload_state <- .build_payload(
+    disease=disease,
+    geography="state",
+    year=year,
+    stratify_by=stratify_by
+  )
+  df<-.extrapolate_to_tract(df, payload_state, stratify_by)
+
+}
+
 df
 }
