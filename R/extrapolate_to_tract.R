@@ -49,12 +49,19 @@
 
   if (is.null(stratify_by)) {
     return_value_filter <- return_value_filter %>%
-      dplyr::filter(sex == "Both sexes")
+      dplyr::filter(sex == "Both sexes")%>%
+      dplyr::filter(race_ethnicity == "All races/ethnicities")
+
   }
 
   if (!is.null(stratify_by) && "sex" %in% stratify_by) {
     return_value_filter <- return_value_filter %>%
       dplyr::filter(sex != "Both sexes")
+  }
+
+  if (!is.null(stratify_by) && "race" %in% stratify_by) {
+    return_value_filter <- return_value_filter %>%
+      dplyr::filter(race_ethnicity != "All races/ethnicities")
   }
 
   variables_available %>%
@@ -137,8 +144,16 @@
       Merged_counties[[year_loop]],
       by = dplyr::join_by(county_fips, race_ethnicity, sex, age)
     ) %>%
+
       # Estimate census tract HIV population
-      dplyr::mutate(tract_cases = county_cases * tract_population_acs / county_population_acs) %>%
+      dplyr::mutate(
+        tract_cases = dplyr::case_when(
+          is.na(county_cases) | is.na(tract_population_acs) | is.na(county_population_acs) ~ NA_real_,
+          county_population_acs == 0 & county_cases == 0 ~ 0,
+          county_population_acs == 0 & county_cases > 0 ~ NA_real_,
+          TRUE ~ county_cases * tract_population_acs / county_population_acs
+        ))%>%
+
       # Estimate HIV-negative population in census tracts
       dplyr::mutate(tract_noncases = tract_population_acs - tract_cases)
   }
