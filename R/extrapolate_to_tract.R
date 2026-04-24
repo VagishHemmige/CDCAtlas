@@ -50,8 +50,8 @@
   if (is.null(stratify_by)) {
     return_value_filter <- return_value_filter %>%
       dplyr::filter(sex == "Both sexes")%>%
-      dplyr::filter(race_ethnicity == "All races/ethnicities")
-
+      dplyr::filter(race_ethnicity == "All races/ethnicities")%>%
+      dplyr::filter(age == "Ages 13 years and older")
   }
 
   if (!is.null(stratify_by) && "sex" %in% stratify_by) {
@@ -62,6 +62,11 @@
   if (!is.null(stratify_by) && "race" %in% stratify_by) {
     return_value_filter <- return_value_filter %>%
       dplyr::filter(race_ethnicity != "All races/ethnicities")
+  }
+
+  if (!is.null(stratify_by) && "age" %in% stratify_by) {
+    return_value_filter <- return_value_filter %>%
+      dplyr::filter(age != "Ages 13 years and older")
   }
 
   variables_available %>%
@@ -113,10 +118,12 @@
       dplyr::inner_join(variables_list[[year_loop]]) %>%
       dplyr::select(-variable, -moe, -geography, -label, -concept) %>%
       dplyr::rename(
-        tract_population_acs = estimate,
         tract_fips = GEOID,
         tract_name = NAME
-      )
+      )%>%
+      group_by(tract_fips, tract_name,county_fips,race_ethnicity,sex,age )%>%
+      summarize(tract_population_acs=sum(estimate, na.rm = TRUE))%>%
+      ungroup()
 
     us_counties_population[[year_loop]] <- tidycensus::get_acs(
       geography = "county",
@@ -128,10 +135,12 @@
       dplyr::inner_join(variables_list[[year_loop]]) %>%
       dplyr::select(-variable, -moe, -geography, -label, -concept) %>%
       dplyr::rename(
-        county_population_acs = estimate,
         county_fips = GEOID
       ) %>%
-      dplyr::select(-NAME)
+      dplyr::select(-NAME)%>%
+      group_by(county_fips, race_ethnicity,sex,age )%>%
+      summarize(county_population_acs=sum(estimate, na.rm = TRUE))%>%
+      ungroup()
 
     Merged_counties[[year_loop]] <- dplyr::left_join(
       us_counties_population[[year_loop]],
