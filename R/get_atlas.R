@@ -11,7 +11,11 @@
 #' requested combinations (e.g., age by race). When possible, numeric fields
 #' are returned as `double` and identifiers as character.
 #'
-#'
+#' By default, the function returns data directly from the requested AtlasPlus
+#' geography. If `extrapolate_to_tract = TRUE`, county-level results are
+#' post-processed into census tract-level estimates using helper functions in
+#' this package. These tract estimates are derived estimates and are not
+#' directly returned by CDC AtlasPlus.
 #'
 #' **Supported diseases**
 #' - `"chlamydia"`
@@ -19,8 +23,8 @@
 #' - `"adult syphilis"`
 #' - `"congenital syphilis"`
 #' - `"tuberculosis"`
-#' - `"hiv"`
-#' - `"estimate"`
+#' - `"hiv"` (will provide confirmed diagnoses)
+#' - `"estimate"` (estimated HIV counts)
 #' - `"hepatitis"`
 #'
 #' **Geography**
@@ -44,9 +48,9 @@
 #' Multiple diseases are not currently supported in a single request.
 #' @param geography Character scalar. One of `"national"`, `"region"`, `"state"`,
 #' `"county"`, or `"msa"`.
-#' @param restrict_to Optional character vector restricting results to specific
-#' states or counties (case-insensitive). If omitted, all units at that
-#' geographic level are returned.
+#' @param extrapolate_to_tract Logical scalar. If `FALSE`, return the AtlasPlus
+#'   results for the requested geography. If `TRUE`, pass the returned data to
+#'   the package's tract extrapolation workflow. Extrapolation requires that the geography be set to county.
 #' @param year Integer vector of years. Valid values are from 2000 to 2023.
 #' Can be a single year (e.g., `2022`) or a sequence (e.g., `2018:2022`).
 #' @param stratify_by Optional character vector. Zero, one, or two of
@@ -96,12 +100,11 @@
 #'   stratify_by = "race"
 #' )
 #'
-#' # Limit to specific states
 #' get_atlas(
 #'   disease = "gonorrhea",
-#'   geography = "state",
+#'   geography = "county",
 #'   year = 2022,
-#'   restrict_to = c("NY", "CA", "TX")
+#'   extrapolate_to_tract = TRUE
 #' )
 #' }
 #'

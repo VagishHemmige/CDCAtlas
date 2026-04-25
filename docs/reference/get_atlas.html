@@ -63,13 +63,19 @@ tibble.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_atlas</span><span class="op">(</span><span class="va">disease</span>, <span class="va">geography</span>, <span class="va">year</span>, stratify_by <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_atlas</span><span class="op">(</span></span>
+<span>  <span class="va">disease</span>,</span>
+<span>  <span class="va">geography</span>,</span>
+<span>  <span class="va">year</span>,</span>
+<span>  stratify_by <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  extrapolate_to_tract <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
     <dl><dt>disease</dt>
-<dd><p>Character scalar. A single disease name (e.g. <code>"gonorrhea"</code>).
+<dd><p>A single disease name (e.g. <code>"gonorrhea"</code>).
 Multiple diseases are not currently supported in a single request.</p></dd>
 
 
@@ -88,10 +94,10 @@ Can be a single year (e.g., <code>2022</code>) or a sequence (e.g., <code>2018:2
 <code>"age"</code>, <code>"race"</code>, <code>"sex"</code>. If <code>NULL</code>, totals (unstratified) are returned.</p></dd>
 
 
-<dt>restrict_to</dt>
-<dd><p>Optional character vector restricting results to specific
-states or counties (case-insensitive). If omitted, all units at that
-geographic level are returned.</p></dd>
+<dt>extrapolate_to_tract</dt>
+<dd><p>Logical scalar. If <code>FALSE</code>, return the AtlasPlus
+results for the requested geography. If <code>TRUE</code>, pass the returned data to
+the package's tract extrapolation workflow. Extrapolation requires that the geography be set to county.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -153,9 +159,19 @@ compatibility for all years.</p>
 and optional stratification. Stratified queries expand results into all
 requested combinations (e.g., age by race). When possible, numeric fields
 are returned as <code>double</code> and identifiers as character.</p>
+<p>By default, the function returns data directly from the requested AtlasPlus
+geography. If <code>extrapolate_to_tract = TRUE</code>, county-level results are
+post-processed into census tract-level estimates using helper functions in
+this package. These tract estimates are derived estimates and are not
+directly returned by CDC AtlasPlus.</p>
 <p><strong>Supported diseases</strong></p><ul><li><p><code>"chlamydia"</code></p></li>
 <li><p><code>"gonorrhea"</code></p></li>
-<li><p><code>"syphilis"</code></p></li>
+<li><p><code>"adult syphilis"</code></p></li>
+<li><p><code>"congenital syphilis"</code></p></li>
+<li><p><code>"tuberculosis"</code></p></li>
+<li><p><code>"hiv"</code> (will provide confirmed diagnoses)</p></li>
+<li><p><code>"estimate"</code> (estimated HIV counts)</p></li>
+<li><p><code>"hepatitis"</code></p></li>
 </ul><p><strong>Geography</strong></p><ul><li><p><code>"national"</code></p></li>
 <li><p><code>"region"</code></p></li>
 <li><p><code>"state"</code></p></li>
@@ -192,12 +208,11 @@ backend schema, requests may fail. Please report issues via GitHub.</p>
 <span class="r-in"><span>  stratify_by <span class="op">=</span> <span class="st">"race"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Limit to specific states</span></span></span>
 <span class="r-in"><span><span class="fu">get_atlas</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  disease <span class="op">=</span> <span class="st">"gonorrhea"</span>,</span></span>
-<span class="r-in"><span>  geography <span class="op">=</span> <span class="st">"state"</span>,</span></span>
+<span class="r-in"><span>  geography <span class="op">=</span> <span class="st">"county"</span>,</span></span>
 <span class="r-in"><span>  year <span class="op">=</span> <span class="fl">2022</span>,</span></span>
-<span class="r-in"><span>  restrict_to <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NY"</span>, <span class="st">"CA"</span>, <span class="st">"TX"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  extrapolate_to_tract <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
 <span class="r-in"><span></span></span>

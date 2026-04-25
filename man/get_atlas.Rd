@@ -4,10 +4,16 @@
 \alias{get_atlas}
 \title{Retrieve STI surveillance data from CDC AtlasPlus}
 \usage{
-get_atlas(disease, geography, year, stratify_by = NULL)
+get_atlas(
+  disease,
+  geography,
+  year,
+  stratify_by = NULL,
+  extrapolate_to_tract = FALSE
+)
 }
 \arguments{
-\item{disease}{Character scalar. A single disease name (e.g. \code{"gonorrhea"}).
+\item{disease}{A single disease name (e.g. \code{"gonorrhea"}).
 Multiple diseases are not currently supported in a single request.}
 
 \item{geography}{Character scalar. One of \code{"national"}, \code{"region"}, \code{"state"},
@@ -19,9 +25,9 @@ Can be a single year (e.g., \code{2022}) or a sequence (e.g., \code{2018:2022}).
 \item{stratify_by}{Optional character vector. Zero, one, or two of
 \code{"age"}, \code{"race"}, \code{"sex"}. If \code{NULL}, totals (unstratified) are returned.}
 
-\item{restrict_to}{Optional character vector restricting results to specific
-states or counties (case-insensitive). If omitted, all units at that
-geographic level are returned.}
+\item{extrapolate_to_tract}{Logical scalar. If \code{FALSE}, return the AtlasPlus
+results for the requested geography. If \code{TRUE}, pass the returned data to
+the package's tract extrapolation workflow. Extrapolation requires that the geography be set to county.}
 }
 \value{
 A tibble with the following columns:
@@ -60,11 +66,22 @@ and optional stratification. Stratified queries expand results into all
 requested combinations (e.g., age by race). When possible, numeric fields
 are returned as \code{double} and identifiers as character.
 
+By default, the function returns data directly from the requested AtlasPlus
+geography. If \code{extrapolate_to_tract = TRUE}, county-level results are
+post-processed into census tract-level estimates using helper functions in
+this package. These tract estimates are derived estimates and are not
+directly returned by CDC AtlasPlus.
+
 \strong{Supported diseases}
 \itemize{
 \item \code{"chlamydia"}
 \item \code{"gonorrhea"}
-\item \code{"syphilis"}
+\item \code{"adult syphilis"}
+\item \code{"congenital syphilis"}
+\item \code{"tuberculosis"}
+\item \code{"hiv"} (will provide confirmed diagnoses)
+\item \code{"estimate"} (estimated HIV counts)
+\item \code{"hepatitis"}
 }
 
 \strong{Geography}
@@ -106,12 +123,11 @@ get_atlas(
   stratify_by = "race"
 )
 
-# Limit to specific states
 get_atlas(
   disease = "gonorrhea",
-  geography = "state",
+  geography = "county",
   year = 2022,
-  restrict_to = c("NY", "CA", "TX")
+  extrapolate_to_tract = TRUE
 )
 }
 
