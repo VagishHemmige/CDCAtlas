@@ -69,9 +69,9 @@
 #'   \item{rate100000}{Incidence rate per 100,000 (numeric)}
 #'   \item{cases}{Case count (numeric)}
 #'   \item{population}{Population denominator (numeric)}
-#'   \item{lowerci_rate, upperci_rate}{95% CI bounds for rate (numeric)}
+#'   \item{lowerci_rate, upperci_rate}{95\\% CI bounds for rate (numeric)}
 #'   \item{rse}{Relative standard error (numeric)}
-#'   \item{lowerci_cases, upperci_cases}{95% CI bounds for cases (numeric)}
+#'   \item{lowerci_cases, upperci_cases}{95\\% CI bounds for cases (numeric)}
 #'   \item{FIPS code (character)}
 #' }
 #'

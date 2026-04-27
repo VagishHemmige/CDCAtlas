@@ -42,11 +42,17 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
+<li class="active nav-item">
+  <a class="nav-link" href="../articles/getting-started.html">Get started</a>
+</li>
 <li class="nav-item">
   <a class="nav-link" href="../reference/index.html">Reference</a>
 </li>
-<li class="active nav-item">
-  <a class="nav-link" href="../articles/index.html">Articles</a>
+<li class="nav-item dropdown">
+  <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
+  <div class="dropdown-menu" aria-labelledby="dropdown-articles">
+    <a class="dropdown-item" href="../articles/getting-started.html">Getting started with CDCAtlas</a>
+  </div>
 </li>
       </ul>
 <form class="form-inline my-2 my-lg-0" role="search">
@@ -55,7 +61,7 @@
 
       <ul class="navbar-nav">
 <li class="nav-item">
-  <a class="external-link nav-link" href="https://github.com/VagishHemmige/CDCAtlas">
+  <a class="external-link nav-link" href="https://github.com/VagishHemmige/CDCAtlas" aria-label="GitHub">
     <span class="fab fa fab fa-github"></span>
      
   </a>
@@ -82,8 +88,17 @@
     
     
 <p><strong>CDCAtlas</strong> provides R functions for retrieving public
-health surveillance data from CDC AtlasPlus. This vignette introduces
-installation, basic queries, and data handling.</p>
+health surveillance data from CDC AtlasPlus.</p>
+<p>This vignette introduces common use patterns:</p>
+<ul>
+<li>retrieving state- and county-level data</li>
+<li>querying different diseases</li>
+<li>using sex, age, and race/ethnicity stratification</li>
+<li>comparing rates across groups</li>
+<li>preparing AtlasPlus data for plotting and analysis</li>
+</ul>
+<p>This vignette does <strong>not</strong> cover tract-level
+extrapolation. That is an advanced use case covered separately.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -92,18 +107,26 @@ installation, basic queries, and data handling.</p>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"VagishHemmige/CDCAtlas"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="example-state-level-chlamydia-data">Example: State-level chlamydia data<a class="anchor" aria-label="anchor" href="#example-state-level-chlamydia-data"></a>
+<h2 id="setup">Setup<a class="anchor" aria-label="anchor" href="#setup"></a>
 </h2>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/VagishHemmige/CDCAtlas" class="external-link">CDCAtlas</a></span><span class="op">)</span></span>
-<span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_atlas.html">get_atlas</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/VagishHemmige/CDCAtlas" class="external-link">CDCAtlas</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="basic-query-state-level-chlamydia-data">Basic query: state-level chlamydia data<a class="anchor" aria-label="anchor" href="#basic-query-state-level-chlamydia-data"></a>
+</h2>
+<p>A simple query retrieves one disease, one geography level, and one
+year.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">chlamydia_state</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_atlas.html">get_atlas</a></span><span class="op">(</span></span>
 <span>  disease   <span class="op">=</span> <span class="st">"chlamydia"</span>,</span>
 <span>  geography <span class="op">=</span> <span class="st">"state"</span>,</span>
 <span>  year      <span class="op">=</span> <span class="fl">2022</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">chlamydia_state</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   indicator year  geography    data_status        race_ethnicity        sex</span></span>
 <span><span class="co">#&gt; 1 Chlamydia 2022    Alabama Not Suppressed All races/ethnicities Both sexes</span></span>
 <span><span class="co">#&gt; 2 Chlamydia 2022     Alaska Not Suppressed All races/ethnicities Both sexes</span></span>
@@ -125,33 +148,478 @@ installation, basic queries, and data handling.</p>
 <span><span class="co">#&gt; 4           NA           NA  NA            NA            NA   05</span></span>
 <span><span class="co">#&gt; 5           NA           NA  NA            NA            NA   06</span></span>
 <span><span class="co">#&gt; 6           NA           NA  NA            NA            NA   08</span></span></code></pre></div>
+<p>The returned object is a data frame that can be used directly with
+tidyverse tools.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://pillar.r-lib.org/reference/glimpse.html" class="external-link">glimpse</a></span><span class="op">(</span><span class="va">chlamydia_state</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Rows: 57</span></span>
+<span><span class="co">#&gt; Columns: 17</span></span>
+<span><span class="co">#&gt; $ indicator      <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> "Chlamydia"<span style="color: #949494;">, </span>"Chlamydia"<span style="color: #949494;">, </span>"Chlamydia"<span style="color: #949494;">, </span>"Chlamydia"<span style="color: #949494;">, </span>"Ch…</span></span>
+<span><span class="co">#&gt; $ year           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> 2022<span style="color: #949494;">, </span>2022<span style="color: #949494;">, </span>2022<span style="color: #949494;">, </span>2022<span style="color: #949494;">, </span>2022<span style="color: #949494;">, </span>2022<span style="color: #949494;">, </span>2022<span style="color: #949494;">, </span>2022<span style="color: #949494;">, </span>2022<span style="color: #949494;">, </span>2…</span></span>
+<span><span class="co">#&gt; $ geography      <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> "Alabama"<span style="color: #949494;">, </span>"Alaska"<span style="color: #949494;">, </span>"Arizona"<span style="color: #949494;">, </span>"Arkansas"<span style="color: #949494;">, </span>"California…</span></span>
+<span><span class="co">#&gt; $ data_status    <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> "Not Suppressed"<span style="color: #949494;">, </span>"Not Suppressed"<span style="color: #949494;">, </span>"Not Suppressed"<span style="color: #949494;">, </span>"…</span></span>
+<span><span class="co">#&gt; $ race_ethnicity <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> "All races/ethnicities"<span style="color: #949494;">, </span>"All races/ethnicities"<span style="color: #949494;">, </span>"All …</span></span>
+<span><span class="co">#&gt; $ sex            <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> "Both sexes"<span style="color: #949494;">, </span>"Both sexes"<span style="color: #949494;">, </span>"Both sexes"<span style="color: #949494;">, </span>"Both sexes"<span style="color: #949494;">,</span>…</span></span>
+<span><span class="co">#&gt; $ age            <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> "All age groups"<span style="color: #949494;">, </span>"All age groups"<span style="color: #949494;">, </span>"All age groups"<span style="color: #949494;">, </span>"…</span></span>
+<span><span class="co">#&gt; $ transmission   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> "All transmission categories"<span style="color: #949494;">, </span>"All transmission catego…</span></span>
+<span><span class="co">#&gt; $ rate100000     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> 612.1<span style="color: #949494;">, </span>727.7<span style="color: #949494;">, </span>554.4<span style="color: #949494;">, </span>588.3<span style="color: #949494;">, </span>493.6<span style="color: #949494;">, </span>456.3<span style="color: #949494;">, </span>143.8<span style="color: #949494;">, </span>593.9<span style="color: #949494;">,</span>…</span></span>
+<span><span class="co">#&gt; $ cases          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> 31060<span style="color: #949494;">, </span>5338<span style="color: #949494;">, </span>40796<span style="color: #949494;">, </span>17918<span style="color: #949494;">, </span>192647<span style="color: #949494;">, </span>26646<span style="color: #949494;">, </span>4633<span style="color: #949494;">, </span>626<span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span>…</span></span>
+<span><span class="co">#&gt; $ population     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> 5074296<span style="color: #949494;">, </span>733583<span style="color: #949494;">, </span>7359197<span style="color: #949494;">, </span>3045637<span style="color: #949494;">, </span>39029342<span style="color: #949494;">, </span>5839926<span style="color: #949494;">, </span>3…</span></span>
+<span><span class="co">#&gt; $ lowerci_rate   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">,</span>…</span></span>
+<span><span class="co">#&gt; $ upperci_rate   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">,</span>…</span></span>
+<span><span class="co">#&gt; $ rse            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">,</span>…</span></span>
+<span><span class="co">#&gt; $ lowerci_cases  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">,</span>…</span></span>
+<span><span class="co">#&gt; $ upperci_cases  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">,</span>…</span></span>
+<span><span class="co">#&gt; $ fips           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "01"<span style="color: #949494;">, </span>"02"<span style="color: #949494;">, </span>"04"<span style="color: #949494;">, </span>"05"<span style="color: #949494;">, </span>"06"<span style="color: #949494;">, </span>"08"<span style="color: #949494;">, </span>"72"<span style="color: #949494;">, </span>"78"<span style="color: #949494;">, </span>"70"<span style="color: #949494;">, </span>"…</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="simple-visualization">Simple visualization<a class="anchor" aria-label="anchor" href="#simple-visualization"></a>
+<h2 id="plot-state-level-rates">Plot state-level rates<a class="anchor" aria-label="anchor" href="#plot-state-level-rates"></a>
 </h2>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">df</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">geography</span>, y <span class="op">=</span> <span class="va">rate100000</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">chlamydia_state</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">rate100000</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/reorder.factor.html" class="external-link">reorder</a></span><span class="op">(</span><span class="va">geography</span>, <span class="va">rate100000</span><span class="op">)</span>, y <span class="op">=</span> <span class="va">rate100000</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_bar.html" class="external-link">geom_col</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/coord_flip.html" class="external-link">coord_flip</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
-<span>    title <span class="op">=</span> <span class="st">"Chlamydia Rate by State (2022)"</span>,</span>
-<span>    x <span class="op">=</span> <span class="st">"State"</span>,</span>
+<span>    title <span class="op">=</span> <span class="st">"Chlamydia rate by state, 2022"</span>,</span>
+<span>    x <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>    y <span class="op">=</span> <span class="st">"Rate per 100,000"</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
+<p><img src="getting-started_files/figure-html/unnamed-chunk-6-1.png" width="700"></p>
+</div>
+<div class="section level2">
+<h2 id="query-county-level-data">Query county-level data<a class="anchor" aria-label="anchor" href="#query-county-level-data"></a>
+</h2>
+<p>AtlasPlus can also return county-level data for supported
+diseases.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">chlamydia_county</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_atlas.html">get_atlas</a></span><span class="op">(</span></span>
+<span>  disease   <span class="op">=</span> <span class="st">"chlamydia"</span>,</span>
+<span>  geography <span class="op">=</span> <span class="st">"county"</span>,</span>
+<span>  year      <span class="op">=</span> <span class="fl">2022</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">chlamydia_county</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   indicator year            geography    data_status        race_ethnicity</span></span>
+<span><span class="co">#&gt; 1 Chlamydia 2022 Abbeville County, SC Not Suppressed All races/ethnicities</span></span>
+<span><span class="co">#&gt; 2 Chlamydia 2022       Ada County, ID Not Suppressed All races/ethnicities</span></span>
+<span><span class="co">#&gt; 3 Chlamydia 2022     Adair County, IA Not Suppressed All races/ethnicities</span></span>
+<span><span class="co">#&gt; 4 Chlamydia 2022    Acadia Parish, LA Not Suppressed All races/ethnicities</span></span>
+<span><span class="co">#&gt; 5 Chlamydia 2022  Accomack County, VA Not Suppressed All races/ethnicities</span></span>
+<span><span class="co">#&gt; 6 Chlamydia 2022     Adams County, CO Not Suppressed All races/ethnicities</span></span>
+<span><span class="co">#&gt;          sex            age                transmission rate100000 cases</span></span>
+<span><span class="co">#&gt; 1 Both sexes All age groups All transmission categories      496.8   121</span></span>
+<span><span class="co">#&gt; 2 Both sexes All age groups All transmission categories      403.3  2093</span></span>
+<span><span class="co">#&gt; 3 Both sexes All age groups All transmission categories      186.8    14</span></span>
+<span><span class="co">#&gt; 4 Both sexes All age groups All transmission categories      676.7   384</span></span>
+<span><span class="co">#&gt; 5 Both sexes All age groups All transmission categories      524.2   174</span></span>
+<span><span class="co">#&gt; 6 Both sexes All age groups All transmission categories      591.8  3122</span></span>
+<span><span class="co">#&gt;   population lowerci_rate upperci_rate rse lowerci_cases upperci_cases  fips</span></span>
+<span><span class="co">#&gt; 1      24356           NA           NA  NA            NA            NA 45001</span></span>
+<span><span class="co">#&gt; 2     518907           NA           NA  NA            NA            NA 16001</span></span>
+<span><span class="co">#&gt; 3       7494           NA           NA  NA            NA            NA 19001</span></span>
+<span><span class="co">#&gt; 4      56744           NA           NA  NA            NA            NA 22001</span></span>
+<span><span class="co">#&gt; 5      33191           NA           NA  NA            NA            NA 51001</span></span>
+<span><span class="co">#&gt; 6     527575           NA           NA  NA            NA            NA 08001</span></span></code></pre></div>
+<p>A common workflow is to identify counties with the highest reported
+rates.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">chlamydia_county</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">rate100000</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/desc.html" class="external-link">desc</a></span><span class="op">(</span><span class="va">rate100000</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">geography</span>, <span class="va">cases</span>, <span class="va">rate100000</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span></span>
+<span><span class="co">#&gt;                       geography cases rate100000</span></span>
+<span><span class="co">#&gt; 1             Reeves County, TX   552     4277.4</span></span>
+<span><span class="co">#&gt; 2               Todd County, SD   340     3687.6</span></span>
+<span><span class="co">#&gt; 3      Kusilvak Census Area, AK   287     3467.0</span></span>
+<span><span class="co">#&gt; 4              Dewey County, SD   174     3385.2</span></span>
+<span><span class="co">#&gt; 5        Bethel Census Area, AK   528     2892.0</span></span>
+<span><span class="co">#&gt; 6          Nome Census Area, AK   281     2857.1</span></span>
+<span><span class="co">#&gt; 7      Oglala Lakota County, SD   359     2655.5</span></span>
+<span><span class="co">#&gt; 8           Mellette County, SD    40     2114.2</span></span>
+<span><span class="co">#&gt; 9  Northwest Arctic Borough, AK   150     2020.7</span></span>
+<span><span class="co">#&gt; 10            Tunica County, MS   186     1966.6</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="stratification-by-sex">Stratification by sex<a class="anchor" aria-label="anchor" href="#stratification-by-sex"></a>
+</h2>
+<p>Many AtlasPlus endpoints support stratification. For example, we can
+retrieve state-level gonorrhea data by sex.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">gonorrhea_sex</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_atlas.html">get_atlas</a></span><span class="op">(</span></span>
+<span>  disease   <span class="op">=</span> <span class="st">"gonorrhea"</span>,</span>
+<span>  geography <span class="op">=</span> <span class="st">"state"</span>,</span>
+<span>  year      <span class="op">=</span> <span class="fl">2022</span>,</span>
+<span>  stratify_by <span class="op">=</span> <span class="st">"sex"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">gonorrhea_sex</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   indicator year geography    data_status        race_ethnicity    sex</span></span>
+<span><span class="co">#&gt; 1 Gonorrhea 2022   Alabama Not Suppressed All races/ethnicities   Male</span></span>
+<span><span class="co">#&gt; 2 Gonorrhea 2022   Alabama Not Suppressed All races/ethnicities Female</span></span>
+<span><span class="co">#&gt; 3 Gonorrhea 2022    Alaska Not Suppressed All races/ethnicities   Male</span></span>
+<span><span class="co">#&gt; 4 Gonorrhea 2022    Alaska Not Suppressed All races/ethnicities Female</span></span>
+<span><span class="co">#&gt; 5 Gonorrhea 2022   Arizona Not Suppressed All races/ethnicities   Male</span></span>
+<span><span class="co">#&gt; 6 Gonorrhea 2022   Arizona Not Suppressed All races/ethnicities Female</span></span>
+<span><span class="co">#&gt;              age                transmission rate100000 cases population</span></span>
+<span><span class="co">#&gt; 1 All age groups All transmission categories      279.7  6901    2467360</span></span>
+<span><span class="co">#&gt; 2 All age groups All transmission categories      238.3  6213    2606936</span></span>
+<span><span class="co">#&gt; 3 All age groups All transmission categories      296.7  1145     385947</span></span>
+<span><span class="co">#&gt; 4 All age groups All transmission categories      333.4  1159     347636</span></span>
+<span><span class="co">#&gt; 5 All age groups All transmission categories      270.1  9936    3679034</span></span>
+<span><span class="co">#&gt; 6 All age groups All transmission categories      177.2  6522    3680163</span></span>
+<span><span class="co">#&gt;   lowerci_rate upperci_rate rse lowerci_cases upperci_cases fips</span></span>
+<span><span class="co">#&gt; 1           NA           NA  NA            NA            NA   01</span></span>
+<span><span class="co">#&gt; 2           NA           NA  NA            NA            NA   01</span></span>
+<span><span class="co">#&gt; 3           NA           NA  NA            NA            NA   02</span></span>
+<span><span class="co">#&gt; 4           NA           NA  NA            NA            NA   02</span></span>
+<span><span class="co">#&gt; 5           NA           NA  NA            NA            NA   04</span></span>
+<span><span class="co">#&gt; 6           NA           NA  NA            NA            NA   04</span></span></code></pre></div>
+<p>Now we can compare rates by sex within each state.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">gonorrhea_sex</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">rate100000</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">sex</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/slice.html" class="external-link">slice_max</a></span><span class="op">(</span><span class="va">rate100000</span>, n <span class="op">=</span> <span class="fl">10</span>, with_ties <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">ungroup</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/reorder.factor.html" class="external-link">reorder</a></span><span class="op">(</span><span class="va">geography</span>, <span class="va">rate100000</span><span class="op">)</span>, y <span class="op">=</span> <span class="va">rate100000</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_bar.html" class="external-link">geom_col</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/coord_flip.html" class="external-link">coord_flip</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="op">~</span> <span class="va">sex</span>, scales <span class="op">=</span> <span class="st">"free_y"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
+<span>    title <span class="op">=</span> <span class="st">"States with highest gonorrhea rates by sex, 2022"</span>,</span>
+<span>    x <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>    y <span class="op">=</span> <span class="st">"Rate per 100,000"</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
+<p><img src="getting-started_files/figure-html/unnamed-chunk-10-1.png" width="700"></p>
+</div>
+<div class="section level2">
+<h2 id="stratification-by-age">Stratification by age<a class="anchor" aria-label="anchor" href="#stratification-by-age"></a>
+</h2>
+<p>AtlasPlus also supports age-stratified queries for many
+disease/geography combinations.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">hiv_age</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_atlas.html">get_atlas</a></span><span class="op">(</span></span>
+<span>  disease   <span class="op">=</span> <span class="st">"hiv"</span>,</span>
+<span>  geography <span class="op">=</span> <span class="st">"state"</span>,</span>
+<span>  year      <span class="op">=</span> <span class="fl">2022</span>,</span>
+<span>  stratify_by <span class="op">=</span> <span class="st">"age"</span></span>
+<span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">hiv_age</span><span class="op">)</span></span>
+<span><span class="co">#&gt;       indicator year geography    data_status        race_ethnicity        sex</span></span>
+<span><span class="co">#&gt; 1 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Both sexes</span></span>
+<span><span class="co">#&gt; 2 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Both sexes</span></span>
+<span><span class="co">#&gt; 3 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Both sexes</span></span>
+<span><span class="co">#&gt; 4 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Both sexes</span></span>
+<span><span class="co">#&gt; 5 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Both sexes</span></span>
+<span><span class="co">#&gt; 6 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Both sexes</span></span>
+<span><span class="co">#&gt;     age                transmission rate100000 cases population lowerci_rate</span></span>
+<span><span class="co">#&gt; 1 13-24 All transmission categories       19.9   162     812982           NA</span></span>
+<span><span class="co">#&gt; 2 25-34 All transmission categories       34.5   227     657946           NA</span></span>
+<span><span class="co">#&gt; 3 35-44 All transmission categories       24.0   150     625076           NA</span></span>
+<span><span class="co">#&gt; 4 45-54 All transmission categories       13.6    84     618962           NA</span></span>
+<span><span class="co">#&gt; 5 55-64 All transmission categories        8.2    54     660461           NA</span></span>
+<span><span class="co">#&gt; 6   65+ All transmission categories        1.3    12     905888           NA</span></span>
+<span><span class="co">#&gt;   upperci_rate rse lowerci_cases upperci_cases fips</span></span>
+<span><span class="co">#&gt; 1           NA  NA            NA            NA   01</span></span>
+<span><span class="co">#&gt; 2           NA  NA            NA            NA   01</span></span>
+<span><span class="co">#&gt; 3           NA  NA            NA            NA   01</span></span>
+<span><span class="co">#&gt; 4           NA  NA            NA            NA   01</span></span>
+<span><span class="co">#&gt; 5           NA  NA            NA            NA   01</span></span>
+<span><span class="co">#&gt; 6           NA  NA            NA            NA   01</span></span></code></pre></div>
+<p>We can summarize national patterns by aggregating across states.</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">hiv_age_summary</span> <span class="op">&lt;-</span> <span class="va">hiv_age</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">age</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarize</a></span><span class="op">(</span></span>
+<span>    cases <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">cases</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>    .groups <span class="op">=</span> <span class="st">"drop"</span></span>
 <span>  <span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Removed 1 row containing missing values or values outside the scale range</span></span>
-<span><span class="co">#&gt; (`geom_col()`).</span></span></code></pre></div>
-<p><img src="getting-started_files/figure-html/unnamed-chunk-4-1.png" width="700"></p>
+<span></span>
+<span><span class="va">hiv_age_summary</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 2</span></span></span>
+<span><span class="co">#&gt;   age    cases</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 13-24  <span style="text-decoration: underline;">35</span>384</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 25-34 <span style="text-decoration: underline;">180</span>838</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 35-44 <span style="text-decoration: underline;">220</span>487</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 45-54 <span style="text-decoration: underline;">242</span>846</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 55-64 <span style="text-decoration: underline;">299</span>331</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> 65+   <span style="text-decoration: underline;">163</span>336</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">hiv_age_summary</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">age</span>, y <span class="op">=</span> <span class="va">cases</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_bar.html" class="external-link">geom_col</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
+<span>    title <span class="op">=</span> <span class="st">"HIV cases by age group, 2022"</span>,</span>
+<span>    x <span class="op">=</span> <span class="st">"Age group"</span>,</span>
+<span>    y <span class="op">=</span> <span class="st">"Cases"</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
+<p><img src="getting-started_files/figure-html/unnamed-chunk-13-1.png" width="700"></p>
+</div>
+<div class="section level2">
+<h2 id="stratification-by-raceethnicity">Stratification by race/ethnicity<a class="anchor" aria-label="anchor" href="#stratification-by-raceethnicity"></a>
+</h2>
+<p>CDC AtlasPlus commonly uses a combined race/ethnicity variable rather
+than separate race and Hispanic ethnicity fields.</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">hiv_race</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_atlas.html">get_atlas</a></span><span class="op">(</span></span>
+<span>  disease        <span class="op">=</span> <span class="st">"hiv"</span>,</span>
+<span>  geography      <span class="op">=</span> <span class="st">"state"</span>,</span>
+<span>  year           <span class="op">=</span> <span class="fl">2022</span>,</span>
+<span>  stratify_by <span class="op">=</span> <span class="st">"race"</span></span>
+<span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">hiv_race</span><span class="op">)</span></span>
+<span><span class="co">#&gt;       indicator year geography    data_status</span></span>
+<span><span class="co">#&gt; 1 HIV diagnoses 2022   Alabama Not Suppressed</span></span>
+<span><span class="co">#&gt; 2 HIV diagnoses 2022   Alabama Not Suppressed</span></span>
+<span><span class="co">#&gt; 3 HIV diagnoses 2022   Alabama Not Suppressed</span></span>
+<span><span class="co">#&gt; 4 HIV diagnoses 2022   Alabama Not Suppressed</span></span>
+<span><span class="co">#&gt; 5 HIV diagnoses 2022   Alabama Not Suppressed</span></span>
+<span><span class="co">#&gt; 6 HIV diagnoses 2022   Alabama Not Suppressed</span></span>
+<span><span class="co">#&gt;                           race_ethnicity        sex                     age</span></span>
+<span><span class="co">#&gt; 1          American Indian/Alaska Native Both sexes Ages 13 years and older</span></span>
+<span><span class="co">#&gt; 2                                  Asian Both sexes Ages 13 years and older</span></span>
+<span><span class="co">#&gt; 3                 Black/African American Both sexes Ages 13 years and older</span></span>
+<span><span class="co">#&gt; 4                        Hispanic/Latino Both sexes Ages 13 years and older</span></span>
+<span><span class="co">#&gt; 5 Native Hawaiian/Other Pacific Islander Both sexes Ages 13 years and older</span></span>
+<span><span class="co">#&gt; 6                                  White Both sexes Ages 13 years and older</span></span>
+<span><span class="co">#&gt;                  transmission rate100000 cases population lowerci_rate</span></span>
+<span><span class="co">#&gt; 1 All transmission categories        7.9     2      25389           NA</span></span>
+<span><span class="co">#&gt; 2 All transmission categories        3.0     2      66122           NA</span></span>
+<span><span class="co">#&gt; 3 All transmission categories       39.1   434    1109054           NA</span></span>
+<span><span class="co">#&gt; 4 All transmission categories       20.8    42     202304           NA</span></span>
+<span><span class="co">#&gt; 5 All transmission categories       45.8     1       2184           NA</span></span>
+<span><span class="co">#&gt; 6 All transmission categories        5.9   167    2819309           NA</span></span>
+<span><span class="co">#&gt;   upperci_rate rse lowerci_cases upperci_cases fips</span></span>
+<span><span class="co">#&gt; 1           NA  NA            NA            NA   01</span></span>
+<span><span class="co">#&gt; 2           NA  NA            NA            NA   01</span></span>
+<span><span class="co">#&gt; 3           NA  NA            NA            NA   01</span></span>
+<span><span class="co">#&gt; 4           NA  NA            NA            NA   01</span></span>
+<span><span class="co">#&gt; 5           NA  NA            NA            NA   01</span></span>
+<span><span class="co">#&gt; 6           NA  NA            NA            NA   01</span></span></code></pre></div>
+<p>A useful first look is to compare total reported cases by
+race/ethnicity.</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">hiv_race_summary</span> <span class="op">&lt;-</span> <span class="va">hiv_race</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">race_ethnicity</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarize</a></span><span class="op">(</span></span>
+<span>    cases <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">cases</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>    .groups <span class="op">=</span> <span class="st">"drop"</span></span>
+<span>  <span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/desc.html" class="external-link">desc</a></span><span class="op">(</span><span class="va">cases</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">hiv_race_summary</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 7 × 2</span></span></span>
+<span><span class="co">#&gt;   race_ethnicity                          cases</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>                                   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Black/African American                 <span style="text-decoration: underline;">443</span>738</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> White                                  <span style="text-decoration: underline;">312</span>384</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Hispanic/Latino                        <span style="text-decoration: underline;">300</span>103</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> Multiracial                             <span style="text-decoration: underline;">63</span>204</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> Asian                                   <span style="text-decoration: underline;">17</span>804</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> American Indian/Alaska Native            <span style="text-decoration: underline;">3</span>364</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> Native Hawaiian/Other Pacific Islander    997</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">hiv_race_summary</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/reorder.factor.html" class="external-link">reorder</a></span><span class="op">(</span><span class="va">race_ethnicity</span>, <span class="va">cases</span><span class="op">)</span>, y <span class="op">=</span> <span class="va">cases</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_bar.html" class="external-link">geom_col</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/coord_flip.html" class="external-link">coord_flip</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
+<span>    title <span class="op">=</span> <span class="st">"HIV cases by race/ethnicity, 2022"</span>,</span>
+<span>    x <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>    y <span class="op">=</span> <span class="st">"Cases"</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
+<p><img src="getting-started_files/figure-html/unnamed-chunk-16-1.png" width="700"></p>
+</div>
+<div class="section level2">
+<h2 id="multiple-stratification-variables">Multiple stratification variables<a class="anchor" aria-label="anchor" href="#multiple-stratification-variables"></a>
+</h2>
+<p>You can request combinations of stratification variables when
+supported by the underlying AtlasPlus endpoint. For example, HIV data
+can be queried by both sex and age.</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">hiv_age_sex</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_atlas.html">get_atlas</a></span><span class="op">(</span></span>
+<span>  disease   <span class="op">=</span> <span class="st">"hiv"</span>,</span>
+<span>  geography <span class="op">=</span> <span class="st">"state"</span>,</span>
+<span>  year      <span class="op">=</span> <span class="fl">2022</span>,</span>
+<span>  stratify_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sex"</span>, <span class="st">"age"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">hiv_age_sex</span><span class="op">)</span></span>
+<span><span class="co">#&gt;       indicator year geography    data_status        race_ethnicity  sex   age</span></span>
+<span><span class="co">#&gt; 1 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Male 13-24</span></span>
+<span><span class="co">#&gt; 2 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Male 25-34</span></span>
+<span><span class="co">#&gt; 3 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Male 35-44</span></span>
+<span><span class="co">#&gt; 4 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Male 45-54</span></span>
+<span><span class="co">#&gt; 5 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Male 55-64</span></span>
+<span><span class="co">#&gt; 6 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Male   65+</span></span>
+<span><span class="co">#&gt;                  transmission rate100000 cases population lowerci_rate</span></span>
+<span><span class="co">#&gt; 1 All transmission categories       34.9   143     410156           NA</span></span>
+<span><span class="co">#&gt; 2 All transmission categories       57.8   188     325041           NA</span></span>
+<span><span class="co">#&gt; 3 All transmission categories       33.6   102     303880           NA</span></span>
+<span><span class="co">#&gt; 4 All transmission categories       19.2    58     301809           NA</span></span>
+<span><span class="co">#&gt; 5 All transmission categories       11.3    36     318548           NA</span></span>
+<span><span class="co">#&gt; 6 All transmission categories        1.3     5     399964           NA</span></span>
+<span><span class="co">#&gt;   upperci_rate rse lowerci_cases upperci_cases fips</span></span>
+<span><span class="co">#&gt; 1           NA  NA            NA            NA   01</span></span>
+<span><span class="co">#&gt; 2           NA  NA            NA            NA   01</span></span>
+<span><span class="co">#&gt; 3           NA  NA            NA            NA   01</span></span>
+<span><span class="co">#&gt; 4           NA  NA            NA            NA   01</span></span>
+<span><span class="co">#&gt; 5           NA  NA            NA            NA   01</span></span>
+<span><span class="co">#&gt; 6           NA  NA            NA            NA   01</span></span></code></pre></div>
+<p>This allows direct comparison of age distributions by sex.</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">hiv_age_sex_summary</span> <span class="op">&lt;-</span> <span class="va">hiv_age_sex</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">sex</span>, <span class="va">age</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarize</a></span><span class="op">(</span></span>
+<span>    cases <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">cases</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>    .groups <span class="op">=</span> <span class="st">"drop"</span></span>
+<span>  <span class="op">)</span></span>
+<span></span>
+<span><span class="va">hiv_age_sex_summary</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 12 × 3</span></span></span>
+<span><span class="co">#&gt;    sex    age    cases</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> Male   13-24  <span style="text-decoration: underline;">29</span>114</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> Male   25-34 <span style="text-decoration: underline;">153</span>452</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> Male   35-44 <span style="text-decoration: underline;">171</span>084</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> Male   45-54 <span style="text-decoration: underline;">175</span>608</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> Male   55-64 <span style="text-decoration: underline;">228</span>524</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> Male   65+   <span style="text-decoration: underline;">124</span>363</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> Female 13-24   <span style="text-decoration: underline;">6</span>246</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> Female 25-34  <span style="text-decoration: underline;">27</span>232</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> Female 35-44  <span style="text-decoration: underline;">49</span>197</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> Female 45-54  <span style="text-decoration: underline;">66</span>927</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> Female 55-64  <span style="text-decoration: underline;">70</span>349</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> Female 65+    <span style="text-decoration: underline;">38</span>723</span></span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">hiv_age_sex_summary</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">age</span>, y <span class="op">=</span> <span class="va">cases</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_bar.html" class="external-link">geom_col</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="op">~</span> <span class="va">sex</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
+<span>    title <span class="op">=</span> <span class="st">"HIV cases by age and sex, 2022"</span>,</span>
+<span>    x <span class="op">=</span> <span class="st">"Age group"</span>,</span>
+<span>    y <span class="op">=</span> <span class="st">"Cases"</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
+<p><img src="getting-started_files/figure-html/unnamed-chunk-19-1.png" width="700"></p>
+</div>
+<div class="section level2">
+<h2 id="comparing-years">Comparing years<a class="anchor" aria-label="anchor" href="#comparing-years"></a>
+</h2>
+<p>You can also query multiple years and compare trends over time.</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">syphilis_years</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_atlas.html">get_atlas</a></span><span class="op">(</span></span>
+<span>  disease   <span class="op">=</span> <span class="st">"adult syphilis"</span>,</span>
+<span>  geography <span class="op">=</span> <span class="st">"state"</span>,</span>
+<span>  year      <span class="op">=</span> <span class="fl">2018</span><span class="op">:</span><span class="fl">2022</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">syphilis_years</span><span class="op">)</span></span>
+<span><span class="co">#&gt;                        indicator year geography    data_status</span></span>
+<span><span class="co">#&gt; 1 Primary and Secondary Syphilis 2018   Alabama Not Suppressed</span></span>
+<span><span class="co">#&gt; 2 Primary and Secondary Syphilis 2019   Alabama Not Suppressed</span></span>
+<span><span class="co">#&gt; 3 Primary and Secondary Syphilis 2020   Alabama Not Suppressed</span></span>
+<span><span class="co">#&gt; 4 Primary and Secondary Syphilis 2021   Alabama Not Suppressed</span></span>
+<span><span class="co">#&gt; 5 Primary and Secondary Syphilis 2022   Alabama Not Suppressed</span></span>
+<span><span class="co">#&gt; 6 Primary and Secondary Syphilis 2018    Alaska Not Suppressed</span></span>
+<span><span class="co">#&gt;          race_ethnicity        sex            age                transmission</span></span>
+<span><span class="co">#&gt; 1 All races/ethnicities Both sexes All age groups All transmission categories</span></span>
+<span><span class="co">#&gt; 2 All races/ethnicities Both sexes All age groups All transmission categories</span></span>
+<span><span class="co">#&gt; 3 All races/ethnicities Both sexes All age groups All transmission categories</span></span>
+<span><span class="co">#&gt; 4 All races/ethnicities Both sexes All age groups All transmission categories</span></span>
+<span><span class="co">#&gt; 5 All races/ethnicities Both sexes All age groups All transmission categories</span></span>
+<span><span class="co">#&gt; 6 All races/ethnicities Both sexes All age groups All transmission categories</span></span>
+<span><span class="co">#&gt;   rate100000 cases population lowerci_rate upperci_rate rse lowerci_cases</span></span>
+<span><span class="co">#&gt; 1        9.8   477    4887681           NA           NA  NA            NA</span></span>
+<span><span class="co">#&gt; 2       12.6   618    4903185           NA           NA  NA            NA</span></span>
+<span><span class="co">#&gt; 3       10.5   529    5024279           NA           NA  NA            NA</span></span>
+<span><span class="co">#&gt; 4       15.1   761    5039877           NA           NA  NA            NA</span></span>
+<span><span class="co">#&gt; 5       23.5  1190    5074296           NA           NA  NA            NA</span></span>
+<span><span class="co">#&gt; 6        7.5    55     735139           NA           NA  NA            NA</span></span>
+<span><span class="co">#&gt;   upperci_cases fips</span></span>
+<span><span class="co">#&gt; 1            NA   01</span></span>
+<span><span class="co">#&gt; 2            NA   01</span></span>
+<span><span class="co">#&gt; 3            NA   01</span></span>
+<span><span class="co">#&gt; 4            NA   01</span></span>
+<span><span class="co">#&gt; 5            NA   01</span></span>
+<span><span class="co">#&gt; 6            NA   02</span></span></code></pre></div>
+<p>For example, compare national totals by year.</p>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">syphilis_trend</span> <span class="op">&lt;-</span> <span class="va">syphilis_years</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">year</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarize</a></span><span class="op">(</span></span>
+<span>    cases <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">cases</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>    .groups <span class="op">=</span> <span class="st">"drop"</span></span>
+<span>  <span class="op">)</span></span>
+<span></span>
+<span><span class="va">syphilis_trend</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 2</span></span></span>
+<span><span class="co">#&gt;    year  cases</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  <span style="text-decoration: underline;">2</span>018 <span style="text-decoration: underline;">114</span>851</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>  <span style="text-decoration: underline;">2</span>019 <span style="text-decoration: underline;">128</span>918</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>  <span style="text-decoration: underline;">2</span>020 <span style="text-decoration: underline;">132</span>684</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>  <span style="text-decoration: underline;">2</span>021 <span style="text-decoration: underline;">175</span>046</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>  <span style="text-decoration: underline;">2</span>022 <span style="text-decoration: underline;">204</span>975</span></span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">syphilis_trend</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">year</span>, y <span class="op">=</span> <span class="va">cases</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
+<span>    title <span class="op">=</span> <span class="st">"Adult syphilis cases over time"</span>,</span>
+<span>    x <span class="op">=</span> <span class="st">"Year"</span>,</span>
+<span>    y <span class="op">=</span> <span class="st">"Cases"</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
+<p><img src="getting-started_files/figure-html/unnamed-chunk-22-1.png" width="700"></p>
+</div>
+<div class="section level2">
+<h2 id="working-with-censored-or-missing-values">Working with censored or missing values<a class="anchor" aria-label="anchor" href="#working-with-censored-or-missing-values"></a>
+</h2>
+<p>CDC AtlasPlus may suppress or censor some values, especially for
+small counts. Depending on the disease and geography, <code>cases</code>
+or <code>rate100000</code> may be missing.</p>
+<p>A common first step is to inspect missingness.</p>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">chlamydia_county</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarize</a></span><span class="op">(</span></span>
+<span>    n_rows <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/context.html" class="external-link">n</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>    missing_cases <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">cases</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    missing_rates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">rate100000</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="co">#&gt;   n_rows missing_cases missing_rates</span></span>
+<span><span class="co">#&gt; 1   3231            19            19</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="choosing-diseases-and-stratification-variables">Choosing diseases and stratification variables<a class="anchor" aria-label="anchor" href="#choosing-diseases-and-stratification-variables"></a>
+</h2>
+<p>The available diseases and stratification variables depend on CDC
+AtlasPlus. Common disease values include:</p>
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/get_atlas.html">get_atlas</a></span><span class="op">(</span>disease <span class="op">=</span> <span class="st">"hiv"</span>, geography <span class="op">=</span> <span class="st">"state"</span>, year <span class="op">=</span> <span class="fl">2022</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/get_atlas.html">get_atlas</a></span><span class="op">(</span>disease <span class="op">=</span> <span class="st">"chlamydia"</span>, geography <span class="op">=</span> <span class="st">"state"</span>, year <span class="op">=</span> <span class="fl">2022</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/get_atlas.html">get_atlas</a></span><span class="op">(</span>disease <span class="op">=</span> <span class="st">"gonorrhea"</span>, geography <span class="op">=</span> <span class="st">"state"</span>, year <span class="op">=</span> <span class="fl">2022</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/get_atlas.html">get_atlas</a></span><span class="op">(</span>disease <span class="op">=</span> <span class="st">"adult syphilis"</span>, geography <span class="op">=</span> <span class="st">"state"</span>, year <span class="op">=</span> <span class="fl">2022</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/get_atlas.html">get_atlas</a></span><span class="op">(</span>disease <span class="op">=</span> <span class="st">"tuberculosis"</span>, geography <span class="op">=</span> <span class="st">"state"</span>, year <span class="op">=</span> <span class="fl">2022</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="next-steps">Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
 </h2>
+<p>After getting comfortable with basic queries, consider:</p>
 <ul>
-<li>Try different diseases or geographies</li>
-<li>See <code><a href="../reference/get_atlas.html">?get_atlas</a></code> for full argument documentation</li>
-<li>More vignettes coming soon!</li>
+<li>querying multiple diseases</li>
+<li>comparing state and county results</li>
+<li>using sex, age, and race/ethnicity stratification</li>
+<li>joining AtlasPlus data to Census or spatial data</li>
+<li>using advanced vignettes for tract-level extrapolation and
+geographic access analyses</li>
 </ul>
+<p>See <code><a href="../reference/get_atlas.html">?get_atlas</a></code> for full argument documentation.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
     </nav></aside>

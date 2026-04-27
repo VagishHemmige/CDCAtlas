@@ -1,16 +1,13 @@
 url: https://vagishhemmige.github.io/CDCAtlas
 
-pkgdown:
-  as_is: true
-  logo: man/figures/logo.png
-  favicon: man/figures/favicon.png
-
 template:
   bootstrap: 5
+  bootswatch: flatly
+  logo: man/figures/logo.png
+  favicon: man/figures/favicon.png
   includes:
     in_header: |
       <meta name="google-site-verification" content="TBumihuxSFxK8muRvdo69ca7bmvzWmy-3OMfCZ2692A" />
-  bootswatch: flatly
 
 home:
   title: "CDCAtlas"
@@ -18,17 +15,24 @@ home:
 
 navbar:
   structure:
-    left: [reference, articles]
+    left: [intro, reference, articles]
     right: [github]
   components:
+    intro:
+      text: Get started
+      href: articles/getting-started.html
     github:
       icon: fab fa-github
       href: https://github.com/VagishHemmige/CDCAtlas
+      aria-label: GitHub
+
 reference:
   - title: "Data Access"
     contents:
       - get_atlas
+
 articles:
   - title: "Getting started"
+    navbar: ~
     contents:
       - getting-started

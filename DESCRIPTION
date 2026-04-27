@@ -2,7 +2,7 @@ Package: CDCAtlas
 Title: A package for downloading CDC Atlas data into R
 Version: 0.0.0.9000
 Authors@R: 
-    person("Vagish", "Hemmige", , "vahemmig@montefiore.org", role = c("aut", "cre"),
+    person("Vagish", "Hemmige", , "vagish.hemmige@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "YOUR-ORCID-ID"))
 Description: Automated data extraction from the CDC Atlas database of HIV and STI data
 License: MIT + file LICENSE
@@ -23,7 +23,8 @@ Imports:
     digest
 Suggests:
     knitr,
-    rmarkdown
+    rmarkdown,
+    tidycensus
 VignetteBuilder: knitr
 Depends: 
     R (>= 2.10)
