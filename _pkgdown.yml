@@ -36,3 +36,7 @@ articles:
     navbar: ~
     contents:
       - getting-started
+  - title: "Extrapolation of county data to tracts"
+    navbar: ~
+    contents:
+      - extrapolation
