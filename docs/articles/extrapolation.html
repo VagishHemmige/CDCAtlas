@@ -230,7 +230,7 @@ original county-level counts, allowing for small floating-point
 differences.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hiv_tract</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">county_fips</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">county_fips</span>, <span class="va">indicator</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarize</a></span><span class="op">(</span></span>
 <span>    county_cases <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/nth.html" class="external-link">first</a></span><span class="op">(</span><span class="va">county_cases</span><span class="op">)</span>,</span>
 <span>    tract_cases_sum <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">tract_cases</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
@@ -239,15 +239,15 @@ differences.</p>
 <span>  <span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/desc.html" class="external-link">desc</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">difference</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 4</span></span></span>
-<span><span class="co">#&gt;   county_fips county_cases tract_cases_sum difference</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>              <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 06037               <span style="text-decoration: underline;">1</span>625           <span style="text-decoration: underline;">52</span>698      <span style="text-decoration: underline;">51</span>073</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 48201               <span style="text-decoration: underline;">1</span>255           <span style="text-decoration: underline;">30</span>207      <span style="text-decoration: underline;">28</span>952</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 12086               <span style="text-decoration: underline;">1</span>013           <span style="text-decoration: underline;">28</span>943      <span style="text-decoration: underline;">27</span>930</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 36005                409           <span style="text-decoration: underline;">27</span>391      <span style="text-decoration: underline;">26</span>982</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 17031                858           <span style="text-decoration: underline;">26</span>828      <span style="text-decoration: underline;">25</span>970</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> 36047                480           <span style="text-decoration: underline;">26</span>414      <span style="text-decoration: underline;">25</span>934</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 5</span></span></span>
+<span><span class="co">#&gt;   county_fips indicator      county_cases tract_cases_sum difference</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>                 <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 51678       HIV prevalence        559.            559.    1.14<span style="color: #949494;">e</span><span style="color: #BB0000;">-13</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 51530       HIV prevalence        462.            462.   -<span style="color: #BB0000;">5.68</span><span style="color: #949494;">e</span><span style="color: #BB0000;">-14</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 17187       HIV prevalence        126.            126.   -<span style="color: #BB0000;">1.42</span><span style="color: #949494;">e</span><span style="color: #BB0000;">-14</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 22107       HIV prevalence        113.            113.    1.42<span style="color: #949494;">e</span><span style="color: #BB0000;">-14</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 16021       HIV prevalence         44.4            44.4   7.11<span style="color: #949494;">e</span><span style="color: #BB0000;">-15</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> 17047       HIV prevalence         46.7            46.7   7.11<span style="color: #949494;">e</span><span style="color: #BB0000;">-15</span></span></span></code></pre></div>
 <p>In a clean allocation, the <code>difference</code> column should be
 very close to zero.</p>
 </div>
@@ -283,16 +283,18 @@ using the female population in each tract.</p>
 stratum.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hiv_tract_sex</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">sex</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 2</span></span></span>
-<span><span class="co">#&gt;   sex         n</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Female <span style="text-decoration: underline;">170</span>792</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Male   <span style="text-decoration: underline;">170</span>792</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">sex</span>, <span class="va">indicator</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 3</span></span></span>
+<span><span class="co">#&gt;   sex    indicator          n</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Female HIV diagnoses  <span style="text-decoration: underline;">85</span>396</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Female HIV prevalence <span style="text-decoration: underline;">85</span>396</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Male   HIV diagnoses  <span style="text-decoration: underline;">85</span>396</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> Male   HIV prevalence <span style="text-decoration: underline;">85</span>396</span></span></code></pre></div>
 <p>You can verify the allocation within each county and sex stratum.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hiv_tract_sex</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">county_fips</span>, <span class="va">sex</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">county_fips</span>, <span class="va">sex</span>, <span class="va">indicator</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarize</a></span><span class="op">(</span></span>
 <span>    county_cases <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/nth.html" class="external-link">first</a></span><span class="op">(</span><span class="va">county_cases</span><span class="op">)</span>,</span>
 <span>    tract_cases_sum <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">tract_cases</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
@@ -301,15 +303,15 @@ stratum.</p>
 <span>  <span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/desc.html" class="external-link">desc</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">difference</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 5</span></span></span>
-<span><span class="co">#&gt;   county_fips sex   county_cases tract_cases_sum difference</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 06037       Male          <span style="text-decoration: underline;">1</span>418           <span style="text-decoration: underline;">46</span>711      <span style="text-decoration: underline;">45</span>293</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 48201       Male          <span style="text-decoration: underline;">1</span>020           <span style="text-decoration: underline;">23</span>240      <span style="text-decoration: underline;">22</span>220</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 36061       Male           290           <span style="text-decoration: underline;">22</span>063      <span style="text-decoration: underline;">21</span>773</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 12086       Male           857           <span style="text-decoration: underline;">22</span>323      <span style="text-decoration: underline;">21</span>466</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 17031       Male           709           <span style="text-decoration: underline;">21</span>934      <span style="text-decoration: underline;">21</span>225</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> 36047       Male           379           <span style="text-decoration: underline;">18</span>041      <span style="text-decoration: underline;">17</span>662</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 6</span></span></span>
+<span><span class="co">#&gt;   county_fips sex    indicator      county_cases tract_cases_sum difference</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>                 <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 37199       Male   HIV prevalence         95.2            95.2   1.42<span style="color: #949494;">e</span><span style="color: #BB0000;">-14</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 51007       Male   HIV prevalence         50.7            50.7   7.11<span style="color: #949494;">e</span><span style="color: #BB0000;">-15</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 51735       Male   HIV prevalence         48.0            48.0   7.11<span style="color: #949494;">e</span><span style="color: #BB0000;">-15</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 72049       Male   HIV prevalence         63.0            63.0   7.11<span style="color: #949494;">e</span><span style="color: #BB0000;">-15</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 13043       Female HIV prevalence         27.1            27.1  -<span style="color: #BB0000;">3.55</span><span style="color: #949494;">e</span><span style="color: #BB0000;">-15</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> 32021       Male   HIV prevalence         22.8            22.8   3.55<span style="color: #949494;">e</span><span style="color: #BB0000;">-15</span></span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="age-stratified-extrapolation">Age-stratified extrapolation<a class="anchor" aria-label="anchor" href="#age-stratified-extrapolation"></a>
@@ -328,21 +330,27 @@ AtlasPlus age group.</p>
 <p>The output contains one row per tract per age stratum.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hiv_tract_age</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">age</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 2</span></span></span>
-<span><span class="co">#&gt;   age        n</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 13-24 <span style="text-decoration: underline;">170</span>792</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 25-34 <span style="text-decoration: underline;">170</span>792</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 35-44 <span style="text-decoration: underline;">170</span>792</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 45-54 <span style="text-decoration: underline;">170</span>792</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 55-64 <span style="text-decoration: underline;">170</span>792</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> 65+   <span style="text-decoration: underline;">170</span>792</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">age</span>, <span class="va">indicator</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 12 × 3</span></span></span>
+<span><span class="co">#&gt;    age   indicator          n</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 13-24 HIV diagnoses  <span style="text-decoration: underline;">85</span>396</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 13-24 HIV prevalence <span style="text-decoration: underline;">85</span>396</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 25-34 HIV diagnoses  <span style="text-decoration: underline;">85</span>396</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 25-34 HIV prevalence <span style="text-decoration: underline;">85</span>396</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 35-44 HIV diagnoses  <span style="text-decoration: underline;">85</span>396</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 35-44 HIV prevalence <span style="text-decoration: underline;">85</span>396</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 45-54 HIV diagnoses  <span style="text-decoration: underline;">85</span>396</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 45-54 HIV prevalence <span style="text-decoration: underline;">85</span>396</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 55-64 HIV diagnoses  <span style="text-decoration: underline;">85</span>396</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 55-64 HIV prevalence <span style="text-decoration: underline;">85</span>396</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> 65+   HIV diagnoses  <span style="text-decoration: underline;">85</span>396</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> 65+   HIV prevalence <span style="text-decoration: underline;">85</span>396</span></span></code></pre></div>
 <p>Again, the diagnostic check is whether tract estimates sum back to
 the original county count within each county-age stratum.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hiv_tract_age</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">county_fips</span>, <span class="va">age</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">county_fips</span>, <span class="va">age</span>, <span class="va">indicator</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarize</a></span><span class="op">(</span></span>
 <span>    county_cases <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/nth.html" class="external-link">first</a></span><span class="op">(</span><span class="va">county_cases</span><span class="op">)</span>,</span>
 <span>    tract_cases_sum <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">tract_cases</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
@@ -351,15 +359,15 @@ the original county count within each county-age stratum.</p>
 <span>  <span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/desc.html" class="external-link">desc</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">difference</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 5</span></span></span>
-<span><span class="co">#&gt;   county_fips age   county_cases tract_cases_sum difference</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 06037       55-64          119           <span style="text-decoration: underline;">13</span>550      <span style="text-decoration: underline;">13</span>431</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 06037       45-54          197           <span style="text-decoration: underline;">11</span>846      <span style="text-decoration: underline;">11</span>649</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 06037       35-44          387           <span style="text-decoration: underline;">11</span>168      <span style="text-decoration: underline;">10</span>781</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 36005       55-64           29            <span style="text-decoration: underline;">8</span>157       <span style="text-decoration: underline;">8</span>128</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 12086       55-64           87            <span style="text-decoration: underline;">8</span>009       <span style="text-decoration: underline;">7</span>922</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> 36061       55-64           34            <span style="text-decoration: underline;">7</span>772       <span style="text-decoration: underline;">7</span>738</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 6</span></span></span>
+<span><span class="co">#&gt;   county_fips age   indicator      county_cases tract_cases_sum difference</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>                 <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 48301       35-44 HIV prevalence     0.035<span style="text-decoration: underline;">2</span>                 0  -<span style="color: #BB0000;">0.035</span><span style="color: #BB0000; text-decoration: underline;">2</span>  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 48301       45-54 HIV prevalence     0.027<span style="text-decoration: underline;">7</span>                 0  -<span style="color: #BB0000;">0.027</span><span style="color: #BB0000; text-decoration: underline;">7</span>  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 48301       35-44 HIV diagnoses      0.001<span style="text-decoration: underline;">49</span>                0  -<span style="color: #BB0000;">0.001</span><span style="color: #BB0000; text-decoration: underline;">49</span> </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 48301       45-54 HIV diagnoses      0.000<span style="text-decoration: underline;">725</span>               0  -<span style="color: #BB0000;">0.000</span><span style="color: #BB0000; text-decoration: underline;">725</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 15005       13-24 HIV prevalence     0.000<span style="text-decoration: underline;">705</span>               0  -<span style="color: #BB0000;">0.000</span><span style="color: #BB0000; text-decoration: underline;">705</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> 15005       13-24 HIV diagnoses      0.000<span style="text-decoration: underline;">162</span>               0  -<span style="color: #BB0000;">0.000</span><span style="color: #BB0000; text-decoration: underline;">162</span></span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="raceethnicity-stratified-extrapolation">Race/ethnicity-stratified extrapolation<a class="anchor" aria-label="anchor" href="#raceethnicity-stratified-extrapolation"></a>
@@ -383,17 +391,24 @@ AtlasPlus combined race/ethnicity categories, but users should inspect
 the denominator mapping before interpreting results.</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hiv_tract_race</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">race_ethnicity</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 7 × 2</span></span></span>
-<span><span class="co">#&gt;   race_ethnicity                              n</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> American Indian/Alaska Native          <span style="text-decoration: underline;">170</span>792</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Asian                                  <span style="text-decoration: underline;">170</span>792</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Black/African American                 <span style="text-decoration: underline;">170</span>792</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> Hispanic/Latino                        <span style="text-decoration: underline;">170</span>792</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> Multiracial                            <span style="text-decoration: underline;">170</span>792</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> Native Hawaiian/Other Pacific Islander <span style="text-decoration: underline;">170</span>792</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> White                                  <span style="text-decoration: underline;">170</span>792</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">race_ethnicity</span>, <span class="va">indicator</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 14 × 3</span></span></span>
+<span><span class="co">#&gt;    race_ethnicity                         indicator          n</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                  <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> American Indian/Alaska Native          HIV diagnoses  <span style="text-decoration: underline;">85</span>396</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> American Indian/Alaska Native          HIV prevalence <span style="text-decoration: underline;">85</span>396</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> Asian                                  HIV diagnoses  <span style="text-decoration: underline;">85</span>396</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> Asian                                  HIV prevalence <span style="text-decoration: underline;">85</span>396</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> Black/African American                 HIV diagnoses  <span style="text-decoration: underline;">85</span>396</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> Black/African American                 HIV prevalence <span style="text-decoration: underline;">85</span>396</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> Hispanic/Latino                        HIV diagnoses  <span style="text-decoration: underline;">85</span>396</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> Hispanic/Latino                        HIV prevalence <span style="text-decoration: underline;">85</span>396</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> Multiracial                            HIV diagnoses  <span style="text-decoration: underline;">85</span>396</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> Multiracial                            HIV prevalence <span style="text-decoration: underline;">85</span>396</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> Native Hawaiian/Other Pacific Islander HIV diagnoses  <span style="text-decoration: underline;">85</span>396</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> Native Hawaiian/Other Pacific Islander HIV prevalence <span style="text-decoration: underline;">85</span>396</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span> White                                  HIV diagnoses  <span style="text-decoration: underline;">85</span>396</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">14</span> White                                  HIV prevalence <span style="text-decoration: underline;">85</span>396</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="multiple-stratification-variables">Multiple stratification variables<a class="anchor" aria-label="anchor" href="#multiple-stratification-variables"></a>

@@ -143,7 +143,7 @@ county-level counts, allowing for small floating-point differences.
 
 ```{r}
 hiv_tract %>%
-  group_by(county_fips) %>%
+  group_by(county_fips, indicator) %>%
   summarize(
     county_cases = first(county_cases),
     tract_cases_sum = sum(tract_cases, na.rm = TRUE),
@@ -194,14 +194,14 @@ The resulting data should include one row per tract per sex stratum.
 
 ```{r}
 hiv_tract_sex %>%
-  count(sex)
+  count(sex, indicator)
 ```
 
 You can verify the allocation within each county and sex stratum.
 
 ```{r}
 hiv_tract_sex %>%
-  group_by(county_fips, sex) %>%
+  group_by(county_fips, sex, indicator) %>%
   summarize(
     county_cases = first(county_cases),
     tract_cases_sum = sum(tract_cases, na.rm = TRUE),
@@ -232,7 +232,7 @@ The output contains one row per tract per age stratum.
 
 ```{r}
 hiv_tract_age %>%
-  count(age)
+  count(age, indicator)
 ```
 
 Again, the diagnostic check is whether tract estimates sum back to the original
@@ -240,7 +240,7 @@ county count within each county-age stratum.
 
 ```{r}
 hiv_tract_age %>%
-  group_by(county_fips, age) %>%
+  group_by(county_fips, age, indicator) %>%
   summarize(
     county_cases = first(county_cases),
     tract_cases_sum = sum(tract_cases, na.rm = TRUE),
@@ -276,7 +276,7 @@ mapping before interpreting results.
 
 ```{r}
 hiv_tract_race %>%
-  count(race_ethnicity)
+  count(race_ethnicity, indicator)
 ```
 
 ## Multiple stratification variables
