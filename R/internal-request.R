@@ -91,6 +91,12 @@ labelled::var_label(df$rse)             <- "Relative standard error of rate"
 labelled::var_label(df$lowerci_cases)   <- "Lower 95% confidence interval of case count"
 labelled::var_label(df$upperci_cases)   <- "Upper 95% confidence interval of case count"
 labelled::var_label(df$fips)   <- "Census FIPS code for geographical merging with Census data"
+
+df <- df |>
+  dplyr::mutate(
+    dplyr::across(where(is.factor), ~ droplevels(.x))
+  )
+
 return(df)
 }
 
