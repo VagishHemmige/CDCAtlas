@@ -118,8 +118,15 @@ get_atlas <- function(
     extrapolate_to_tract=FALSE)
 {
 
-#In future, should validate input
-#.validate_options()
+#Validate input
+  .validate_get_atlas_inputs(
+    disease = disease,
+    geography = geography,
+    year = year,
+    stratify_by = stratify_by,
+    extrapolate_to_tract = extrapolate_to_tract,
+    call = rlang::current_call()
+  )
 
 
 
