@@ -121,9 +121,9 @@
         tract_fips = GEOID,
         tract_name = NAME
       )%>%
-      group_by(tract_fips, tract_name,county_fips,race_ethnicity,sex,age )%>%
-      summarize(tract_population_acs=sum(estimate, na.rm = TRUE))%>%
-      ungroup()
+      dplyr::group_by(tract_fips, tract_name,county_fips,race_ethnicity,sex,age )%>%
+      dplyr::summarize(tract_population_acs=sum(estimate, na.rm = TRUE))%>%
+      dplyr::ungroup()
 
     us_counties_population[[year_loop]] <- tidycensus::get_acs(
       geography = "county",
@@ -138,9 +138,9 @@
         county_fips = GEOID
       ) %>%
       dplyr::select(-NAME)%>%
-      group_by(county_fips, race_ethnicity,sex,age )%>%
-      summarize(county_population_acs=sum(estimate, na.rm = TRUE))%>%
-      ungroup()
+      dplyr::group_by(county_fips, race_ethnicity,sex,age )%>%
+      dplyr::summarize(county_population_acs=sum(estimate, na.rm = TRUE))%>%
+      dplyr::ungroup()
 
     Merged_counties[[year_loop]] <- dplyr::left_join(
       us_counties_population[[year_loop]],
