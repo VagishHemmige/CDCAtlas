@@ -24,7 +24,11 @@ Imports:
 Suggests:
     knitr,
     rmarkdown,
-    tidycensus
+    tidycensus (>= 1.8.0)
+    
+Additional_repositories:
+    https://walkerke.r-universe.dev
+
 VignetteBuilder: knitr
 Depends: 
     R (>= 2.10)
