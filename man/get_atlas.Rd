@@ -16,8 +16,8 @@ get_atlas(
 \item{disease}{A single disease name (e.g. \code{"gonorrhea"}).
 Multiple diseases are not currently supported in a single request.}
 
-\item{geography}{Character scalar. One of \code{"national"}, \code{"region"}, \code{"state"},
-\code{"county"}, or \code{"msa"}.}
+\item{geography}{Character scalar. One of \code{"national"}, \code{"state"},
+\code{"county"}, or \code{"msa"}. Region-level queries are not supported yet.}
 
 \item{year}{Integer vector of years. Valid values are from 2000 to 2023.
 Can be a single year (e.g., \code{2022}) or a sequence (e.g., \code{2018:2022}).}
@@ -27,7 +27,10 @@ Can be a single year (e.g., \code{2022}) or a sequence (e.g., \code{2018:2022}).
 
 \item{extrapolate_to_tract}{Logical scalar. If \code{FALSE}, return the AtlasPlus
 results for the requested geography. If \code{TRUE}, pass the returned data to
-the package's tract extrapolation workflow. Extrapolation requires that the geography be set to county.}
+the package's tract extrapolation workflow. Extrapolation requires
+\code{geography = "county"}, at most one \code{stratify_by} variable, and the
+tidycensus package. Age-stratified extrapolation supports only
+\code{disease = "hiv"}.}
 }
 \value{
 A tibble with the following columns:
@@ -87,7 +90,6 @@ directly returned by CDC AtlasPlus.
 \strong{Geography}
 \itemize{
 \item \code{"national"}
-\item \code{"region"}
 \item \code{"state"}
 \item \code{"county"}
 \item \code{"msa"} (metropolitan statistical area)
