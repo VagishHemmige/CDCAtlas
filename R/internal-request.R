@@ -12,7 +12,7 @@
 
 .request_atlas_internal<- function(payload) {
 #Url for CDC Atlas
-url_data <- "https://gis.cdc.gov/grasp/AtlasPlus/qtOutputData"
+url_data <- "https://gis.cdc.gov/api/AtlasPlus/qtOutputData"
 
 #Rate limiter
 client_rate()  # <-- Invoke the rate limiter
