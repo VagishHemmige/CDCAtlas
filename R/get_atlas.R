@@ -29,7 +29,6 @@
 #'
 #' **Geography**
 #' - `"national"`
-#' - `"region"`
 #' - `"state"`
 #' - `"county"`
 #' - `"msa"` (metropolitan statistical area)
@@ -46,11 +45,14 @@
 #'
 #' @param disease A single disease name (e.g. `"gonorrhea"`).
 #' Multiple diseases are not currently supported in a single request.
-#' @param geography Character scalar. One of `"national"`, `"region"`, `"state"`,
-#' `"county"`, or `"msa"`.
+#' @param geography Character scalar. One of `"national"`, `"state"`,
+#' `"county"`, or `"msa"`. Region-level queries are not supported yet.
 #' @param extrapolate_to_tract Logical scalar. If `FALSE`, return the AtlasPlus
 #'   results for the requested geography. If `TRUE`, pass the returned data to
-#'   the package's tract extrapolation workflow. Extrapolation requires that the geography be set to county.
+#'   the package's tract extrapolation workflow. Extrapolation requires
+#'   `geography = "county"`, at most one `stratify_by` variable, and the
+#'   tidycensus package. Age-stratified extrapolation supports only
+#'   `disease = "hiv"`.
 #' @param year Integer vector of years. Valid values are from 2000 to 2023.
 #' Can be a single year (e.g., `2022`) or a sequence (e.g., `2018:2022`).
 #' @param stratify_by Optional character vector. Zero, one, or two of
@@ -111,9 +113,9 @@
 #' @export
 
 get_atlas <- function(
-    disease, #valid options are any of: "chlaymydia", "gonorrhea"
-    geography, #valid options are one of: "national", "region", "state", "county", "msa"
-    year, #Valid years are 2000-2023
+    disease,
+    geography,
+    year,
     stratify_by=NULL,
     extrapolate_to_tract=FALSE)
 {
