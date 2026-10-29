@@ -11,11 +11,16 @@
 #' requested combinations (e.g., age by race). When possible, numeric fields
 #' are returned as `double` and identifiers as character.
 #'
-#' By default, the function returns data directly from the requested AtlasPlus
-#' geography. If `extrapolate_to_tract = TRUE`, county-level results are
-#' post-processed into census tract-level estimates using helper functions in
-#' this package. These tract estimates are derived estimates and are not
-#' directly returned by CDC AtlasPlus.
+#' `get_atlas()` only downloads. For census tract or block group estimates,
+#' pass county data to [impute_suppressed()] and then
+#' [extrapolate_from_county()]:
+#'
+#' ```r
+#' county <- get_atlas("hiv", "county", 2022, stratify_by = "sex")
+#' county <- impute_suppressed(county)
+#' no_county_cases(county)
+#' tracts <- extrapolate_from_county(county)
+#' ```
 #'
 #' **Supported diseases**
 #' - `"chlamydia"`
@@ -47,12 +52,8 @@
 #' Multiple diseases are not currently supported in a single request.
 #' @param geography Character scalar. One of `"national"`, `"state"`,
 #' `"county"`, or `"msa"`. Region-level queries are not supported yet.
-#' @param extrapolate_to_tract Logical scalar. If `FALSE`, return the AtlasPlus
-#'   results for the requested geography. If `TRUE`, pass the returned data to
-#'   the package's tract extrapolation workflow. Extrapolation requires
-#'   `geography = "county"`, at most one `stratify_by` variable, and the
-#'   tidycensus package. Age-stratified extrapolation supports only
-#'   `disease = "hiv"`.
+#' @param extrapolate_to_tract `r lifecycle::badge("deprecated")` No longer
+#'   supported. Use [impute_suppressed()] and then [extrapolate_from_county()].
 #' @param year Integer vector of years. Valid values are from 2000 to 2023.
 #' Can be a single year (e.g., `2022`) or a sequence (e.g., `2018:2022`).
 #' @param stratify_by Optional character vector. Zero, one, or two of
@@ -87,7 +88,8 @@
 #' and internal identifiers may change without notice. If the CDC modifies the
 #' backend schema, requests may fail. Please report issues via GitHub.
 #'
-#' @seealso [cdc_atlas_meta()] for metadata lookup and variable dictionaries.
+#' @seealso [impute_suppressed()] and [extrapolate_from_county()] for tract
+#'   and block group estimates from county data.
 #'
 #' @examples
 #' \dontrun{
@@ -102,12 +104,9 @@
 #'   stratify_by = "race"
 #' )
 #'
-#' get_atlas(
-#'   disease = "gonorrhea",
-#'   geography = "county",
-#'   year = 2022,
-#'   extrapolate_to_tract = TRUE
-#' )
+#' # County gonorrhea, shared across census tracts
+#' county <- get_atlas(disease = "gonorrhea", geography = "county", year = 2022)
+#' tracts <- extrapolate_from_county(impute_suppressed(county))
 #' }
 #'
 #' @export
@@ -117,8 +116,17 @@ get_atlas <- function(
     geography,
     year,
     stratify_by=NULL,
-    extrapolate_to_tract=FALSE)
+    extrapolate_to_tract=deprecated())
 {
+
+  if (lifecycle::is_present(extrapolate_to_tract)) {
+    lifecycle::deprecate_stop(
+      "0.0.0.9001",
+      "get_atlas(extrapolate_to_tract)",
+      "extrapolate_from_county()",
+      details = "Run `impute_suppressed()` on county data first."
+    )
+  }
 
 #Validate input
   .validate_get_atlas_inputs(
@@ -126,7 +134,6 @@ get_atlas <- function(
     geography = geography,
     year = year,
     stratify_by = stratify_by,
-    extrapolate_to_tract = extrapolate_to_tract,
     call = rlang::current_call()
   )
 
@@ -141,19 +148,5 @@ payloads <- .build_payloads(
     stratify_by=stratify_by
   )
 
-df <- .request_atlas_all(payloads)
-
-if (extrapolate_to_tract==TRUE){
-
-  payload_state <- .build_payload(
-    disease=disease,
-    geography="state",
-    year=year,
-    stratify_by=stratify_by
-  )
-  df<-.extrapolate_to_tract(df, payload_state, stratify_by)
-
-}
-
-df
+.request_atlas_all(payloads)
 }
