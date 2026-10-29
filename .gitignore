@@ -4,7 +4,9 @@
 .httr-oauth
 .DS_Store
 .quarto
-data-raw/
+data-raw/*
+!data-raw/age-schemes.R
+!data-raw/age-schemes.csv
 
 inst/doc
 /doc/
