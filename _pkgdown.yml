@@ -30,6 +30,11 @@ reference:
   - title: "Data Access"
     contents:
       - get_atlas
+  - title: "Estimates below county level"
+    contents:
+      - impute_suppressed
+      - no_county_cases
+      - extrapolate_from_county
 
 articles:
   - title: "Getting started"

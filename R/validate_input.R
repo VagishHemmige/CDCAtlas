@@ -3,7 +3,6 @@
     geography,
     year,
     stratify_by = NULL,
-    extrapolate_to_tract = FALSE,
     call = rlang::caller_call()
 ) {
 
@@ -187,55 +186,6 @@
         call = call
       )
     }
-  }
-
-  # extrapolate_to_tract --------------------------------------------------
-
-  if (!rlang::is_bool(extrapolate_to_tract)) {
-    cli::cli_abort(
-      "{.arg extrapolate_to_tract} must be TRUE or FALSE.",
-      call = call
-    )
-  }
-
-  if (isTRUE(extrapolate_to_tract)) {
-    if (geography != "county") {
-      cli::cli_abort(
-        c(
-          "{.arg extrapolate_to_tract} can only be used with county-level AtlasPlus data.",
-          "x" = "You supplied {.code geography = \"{geography}\"}.",
-          "i" = "Use {.code geography = \"county\"}."
-        ),
-        call = call
-      )
-    }
-
-    if (length(stratify_by) > 1) {
-      cli::cli_abort(
-        c(
-          "{.arg extrapolate_to_tract} supports at most one {.arg stratify_by} variable.",
-          "x" = "You supplied {.val {stratify_by}}."
-        ),
-        call = call
-      )
-    }
-
-    if ("age" %in% stratify_by && disease != "hiv") {
-      cli::cli_abort(
-        c(
-          "Age-stratified tract extrapolation currently supports only HIV data.",
-          "x" = "You supplied {.code disease = \"{disease}\"}.",
-          "i" = "CDC age groups for other diseases don't yet match the Census age groups used for allocation."
-        ),
-        call = call
-      )
-    }
-
-    rlang::check_installed(
-      "tidycensus (>= 1.8.0)",
-      reason = "to use `extrapolate_to_tract = TRUE`.",
-      call = call
-    )
   }
 
   invisible(TRUE)

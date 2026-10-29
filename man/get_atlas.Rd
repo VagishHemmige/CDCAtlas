@@ -9,7 +9,7 @@ get_atlas(
   geography,
   year,
   stratify_by = NULL,
-  extrapolate_to_tract = FALSE
+  extrapolate_to_tract = deprecated()
 )
 }
 \arguments{
@@ -25,12 +25,8 @@ Can be a single year (e.g., \code{2022}) or a sequence (e.g., \code{2018:2022}).
 \item{stratify_by}{Optional character vector. Zero, one, or two of
 \code{"age"}, \code{"race"}, \code{"sex"}. If \code{NULL}, totals (unstratified) are returned.}
 
-\item{extrapolate_to_tract}{Logical scalar. If \code{FALSE}, return the AtlasPlus
-results for the requested geography. If \code{TRUE}, pass the returned data to
-the package's tract extrapolation workflow. Extrapolation requires
-\code{geography = "county"}, at most one \code{stratify_by} variable, and the
-tidycensus package. Age-stratified extrapolation supports only
-\code{disease = "hiv"}.}
+\item{extrapolate_to_tract}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} No longer
+supported. Use \code{\link[=impute_suppressed]{impute_suppressed()}} and then \code{\link[=extrapolate_from_county]{extrapolate_from_county()}}.}
 }
 \value{
 A tibble with the following columns:
@@ -69,11 +65,15 @@ and optional stratification. Stratified queries expand results into all
 requested combinations (e.g., age by race). When possible, numeric fields
 are returned as \code{double} and identifiers as character.
 
-By default, the function returns data directly from the requested AtlasPlus
-geography. If \code{extrapolate_to_tract = TRUE}, county-level results are
-post-processed into census tract-level estimates using helper functions in
-this package. These tract estimates are derived estimates and are not
-directly returned by CDC AtlasPlus.
+\code{get_atlas()} only downloads. For census tract or block group estimates,
+pass county data to \code{\link[=impute_suppressed]{impute_suppressed()}} and then
+\code{\link[=extrapolate_from_county]{extrapolate_from_county()}}:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{county <- get_atlas("hiv", "county", 2022, stratify_by = "sex")
+county <- impute_suppressed(county)
+no_county_cases(county)
+tracts <- extrapolate_from_county(county)
+}\if{html}{\out{</div>}}
 
 \strong{Supported diseases}
 \itemize{
@@ -125,15 +125,13 @@ get_atlas(
   stratify_by = "race"
 )
 
-get_atlas(
-  disease = "gonorrhea",
-  geography = "county",
-  year = 2022,
-  extrapolate_to_tract = TRUE
-)
+# County gonorrhea, shared across census tracts
+county <- get_atlas(disease = "gonorrhea", geography = "county", year = 2022)
+tracts <- extrapolate_from_county(impute_suppressed(county))
 }
 
 }
 \seealso{
-\code{\link[=cdc_atlas_meta]{cdc_atlas_meta()}} for metadata lookup and variable dictionaries.
+\code{\link[=impute_suppressed]{impute_suppressed()}} and \code{\link[=extrapolate_from_county]{extrapolate_from_county()}} for tract
+and block group estimates from county data.
 }
