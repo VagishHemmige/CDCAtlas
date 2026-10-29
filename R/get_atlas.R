@@ -132,18 +132,16 @@ get_atlas <- function(
 
 
 
-#Construct the payload for the call to the CDC site based on what users request
-payload <- .build_payload(
+#Construct the payloads for the call to the CDC site based on what users request.
+#County requests are split into one payload per state.
+payloads <- .build_payloads(
     disease=disease,
     geography=geography,
     year=year,
     stratify_by=stratify_by
   )
 
-#Use in debugging; currently commented out
-#print(glue::glue("Payload: {payload}"))
-
-df<-.request_atlas(payload)
+df <- .request_atlas_all(payloads)
 
 if (extrapolate_to_tract==TRUE){
 

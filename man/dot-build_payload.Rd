@@ -4,7 +4,7 @@
 \alias{.build_payload}
 \title{Internal: temporary dummy payload builder}
 \usage{
-.build_payload(disease, geography, year, stratify_by = NULL)
+.build_payload(disease, geography, year, stratify_by = NULL, geo_ids = NULL)
 }
 \description{
 Internal: temporary dummy payload builder
