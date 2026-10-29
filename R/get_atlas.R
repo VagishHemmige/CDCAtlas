@@ -53,6 +53,11 @@
 #'   `geography = "county"`, at most one `stratify_by` variable, and the
 #'   tidycensus package. Age-stratified extrapolation supports only
 #'   `disease = "hiv"`.
+#' @param fill_suppressed How suppressed county counts are filled in before
+#'   tract extrapolation. `"state_rate"` (default) uses the state's rate in the
+#'   same stratum times the county's population, capped at 4 because CDC
+#'   suppresses counts of 1 to 4. `"zero"` sets them to 0. Ignored unless
+#'   `extrapolate_to_tract = TRUE`.
 #' @param year Integer vector of years. Valid values are from 2000 to 2023.
 #' Can be a single year (e.g., `2022`) or a sequence (e.g., `2018:2022`).
 #' @param stratify_by Optional character vector. Zero, one, or two of
@@ -87,6 +92,28 @@
 #' and internal identifiers may change without notice. If the CDC modifies the
 #' backend schema, requests may fail. Please report issues via GitHub.
 #'
+#' ## Tract extrapolation
+#'
+#' With `extrapolate_to_tract = TRUE`, each county's count is shared across its
+#' census tracts in proportion to the tract's population in the same stratum,
+#' from the ACS 5-year estimates ending in `year` (ages 13 and older for HIV
+#' indicators, all ages otherwise). The result has one row per tract, stratum
+#' and indicator. Tract estimates add up to the county count in every stratum.
+#'
+#' - Suppressed counties are filled in as set by `fill_suppressed`; the
+#'   `county_cases_source` column says which counts were published.
+#' - Counties CDC marks "Data not available" with no count are dropped.
+#' - Cases in a state's total that no county accounts for (records without a
+#'   valid county) are not allocated to tracts. They are reported per state in
+#'   `attr(x, "no_county_cases")`.
+#' - If no tract in a county has population in a stratum, that stratum is
+#'   shared by the tracts' total population; the `allocation` column says
+#'   which rule was used.
+#' - Race populations come from ACS table B03002, which has no age detail; for
+#'   HIV they are scaled by each tract's share of residents aged 13 and older.
+#' - Tract estimates are modelled, not observed: they assume the same
+#'   prevalence across tracts within a county and stratum.
+#'
 #' @seealso [cdc_atlas_meta()] for metadata lookup and variable dictionaries.
 #'
 #' @examples
@@ -117,7 +144,8 @@ get_atlas <- function(
     geography,
     year,
     stratify_by=NULL,
-    extrapolate_to_tract=FALSE)
+    extrapolate_to_tract=FALSE,
+    fill_suppressed=c("state_rate", "zero"))
 {
 
 #Validate input
@@ -129,6 +157,7 @@ get_atlas <- function(
     extrapolate_to_tract = extrapolate_to_tract,
     call = rlang::current_call()
   )
+  fill_suppressed <- rlang::arg_match(fill_suppressed)
 
 
 
@@ -151,7 +180,7 @@ if (extrapolate_to_tract==TRUE){
     year=year,
     stratify_by=stratify_by
   )
-  df<-.extrapolate_to_tract(df, payload_state, stratify_by)
+  df<-.extrapolate_to_tract(df, payload_state, stratify_by, suppressed = fill_suppressed)
 
 }
 

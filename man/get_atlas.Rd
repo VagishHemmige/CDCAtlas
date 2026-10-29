@@ -9,7 +9,8 @@ get_atlas(
   geography,
   year,
   stratify_by = NULL,
-  extrapolate_to_tract = FALSE
+  extrapolate_to_tract = FALSE,
+  fill_suppressed = c("state_rate", "zero")
 )
 }
 \arguments{
@@ -31,6 +32,12 @@ the package's tract extrapolation workflow. Extrapolation requires
 \code{geography = "county"}, at most one \code{stratify_by} variable, and the
 tidycensus package. Age-stratified extrapolation supports only
 \code{disease = "hiv"}.}
+
+\item{fill_suppressed}{How suppressed county counts are filled in before
+tract extrapolation. \code{"state_rate"} (default) uses the state's rate in the
+same stratum times the county's population, capped at 4 because CDC
+suppresses counts of 1 to 4. \code{"zero"} sets them to 0. Ignored unless
+\code{extrapolate_to_tract = TRUE}.}
 }
 \value{
 A tibble with the following columns:
@@ -111,6 +118,29 @@ This function is a reverse-engineered wrapper around the AtlasPlus
 public query system. The CDC does not publish an official API specification,
 and internal identifiers may change without notice. If the CDC modifies the
 backend schema, requests may fail. Please report issues via GitHub.
+\subsection{Tract extrapolation}{
+
+With \code{extrapolate_to_tract = TRUE}, each county's count is shared across its
+census tracts in proportion to the tract's population in the same stratum,
+from the ACS 5-year estimates ending in \code{year} (ages 13 and older for HIV
+indicators, all ages otherwise). The result has one row per tract, stratum
+and indicator. Tract estimates add up to the county count in every stratum.
+\itemize{
+\item Suppressed counties are filled in as set by \code{fill_suppressed}; the
+\code{county_cases_source} column says which counts were published.
+\item Counties CDC marks "Data not available" with no count are dropped.
+\item Cases in a state's total that no county accounts for (records without a
+valid county) are not allocated to tracts. They are reported per state in
+\code{attr(x, "no_county_cases")}.
+\item If no tract in a county has population in a stratum, that stratum is
+shared by the tracts' total population; the \code{allocation} column says
+which rule was used.
+\item Race populations come from ACS table B03002, which has no age detail; for
+HIV they are scaled by each tract's share of residents aged 13 and older.
+\item Tract estimates are modelled, not observed: they assume the same
+prevalence across tracts within a county and stratum.
+}
+}
 }
 \examples{
 \dontrun{

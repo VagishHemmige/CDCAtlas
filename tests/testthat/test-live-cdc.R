@@ -56,3 +56,40 @@ test_that("national HIV request returns both indicators, 2017", {
   expect_setequal(as.character(out$indicator), c("HIV diagnoses", "HIV prevalence"))
   expect_gt(out$cases[out$indicator == "HIV prevalence"], 900000)
 })
+
+# Tract extrapolation with real CDC and Census data. Needs tidycensus and a
+# Census API key (CENSUS_API_KEY); each test downloads tract populations for
+# every state, so expect several minutes.
+
+live_extrapolation <- function(year, stratify_by = NULL) {
+  skip_if_not_installed("tidycensus")
+  skip_if(Sys.getenv("CENSUS_API_KEY") == "", "No Census API key (CENSUS_API_KEY).")
+  suppressMessages(
+    get_atlas("hiv", "county", year, stratify_by = stratify_by, extrapolate_to_tract = TRUE)
+  )
+}
+
+check_adds_up <- function(tracts) {
+  check <- tracts |>
+    dplyr::summarize(
+      county_cases = dplyr::first(county_cases),
+      tract_cases_sum = sum(tract_cases),
+      .by = c(county_fips, indicator, race_ethnicity, sex, age)
+    )
+  expect_equal(check$tract_cases_sum, check$county_cases, tolerance = 1e-6)
+  expect_equal(sum(is.na(tracts$tract_cases)), 0)
+  expect_gte(min(tracts$tract_cases), 0)
+  expect_lte(max(tracts$county_cases[tracts$county_cases_source != "published"]), 4)
+}
+
+for (strat in list("sex", "age", "race")) {
+  test_that(paste("2022 tract estimates by", strat, "add up to county counts"), {
+    check_adds_up(live_extrapolation(2022, strat))
+  })
+}
+
+test_that("2017 tract estimates add up, except Connecticut (no crosswalk yet)", {
+  expect_warning(tracts <- live_extrapolation(2017), "Connecticut")
+  check_adds_up(tracts)
+  expect_equal(unique(substr(attr(tracts, "unmatched_county_cases")$county_fips, 1, 2)), "09")
+})
