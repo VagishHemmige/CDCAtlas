@@ -4,7 +4,8 @@
     disease,
     geography,
     year,
-    stratify_by = NULL
+    stratify_by = NULL,
+    geo_ids = NULL
 ) {
 
 #Initial payload
@@ -23,10 +24,10 @@ if ("hepatitis" %in% disease) {id<-c(id, 210:212)}
 #Add geography to payload.  Only allows one geography
 #Of note, there is a specific marker () to group by region; otherwise,
 id<- switch (geography,
-"national" =  c(id,500),  #500 is national
+"national" =  c(id,5000),  #5000 is the United States; state codes start at 5001
 "region"=id, #Placeholder code
 "state"=c(id,lookup[["state"]]$geo_id),
-"county"= c(id, lookup[["counties"]]$geo_id),
+"county"= c(id, geo_ids %||% lookup[["counties"]]$geo_id),
 "msa"=c(id,lookup[["msa"]]$geo_id)
 )
 
@@ -56,4 +57,26 @@ id<-c(id,801)
     VariableIDs = paste(id,
       collapse = ","
     ))
+}
+
+
+# County requests are split by state. A single request for every county can
+# exceed CDC's database timeout (seen for 2017 in October 2026), while one
+# state's counties returns in a few seconds.
+.build_payloads <- function(
+    disease,
+    geography,
+    year,
+    stratify_by = NULL
+) {
+  if (geography != "county") {
+    return(list(.build_payload(disease, geography, year, stratify_by)))
+  }
+
+  counties <- lookup[["counties"]]
+  by_state <- split(counties$geo_id, substr(counties$fips, 1, 2))
+
+  lapply(by_state, function(geo_ids) {
+    .build_payload(disease, geography, year, stratify_by, geo_ids = geo_ids)
+  })
 }
