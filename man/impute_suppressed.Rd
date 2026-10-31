@@ -50,9 +50,10 @@ population, and 2017 ACS tracts belong to the old counties (#30).}
 \item{unestimated}{What to do with a suppressed row \code{"state_rate"} can't
 estimate, because the state rate or county population is missing:
 \itemize{
-\item \code{"na"} (default): leave it \code{NA}, with a warning. \code{\link[=no_county_cases]{no_county_cases()}} and
-\code{\link[=extrapolate_from_county]{extrapolate_from_county()}} refuse data with such rows until they are
-removed.
+\item \code{"na"} (default): leave it \code{NA}, with a warning. \code{\link[=no_county_cases]{no_county_cases()}}
+counts its cases in the remainder with no county, and
+\code{\link[=extrapolate_from_county]{extrapolate_from_county()}} leaves it out (or stops, with
+\code{unestimated = "error"}).
 \item \code{"zero"}: set it to 0, with a warning.
 }}
 

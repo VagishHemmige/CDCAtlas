@@ -70,8 +70,8 @@ glimpse(chlamydia_state)
 ## Plot state-level rates
 
 ```{r}
-chlamydia_state %>%
-  filter(!is.na(rate100000)) %>%
+chlamydia_state |>
+  filter(!is.na(rate100000)) |>
   ggplot(aes(x = reorder(geography, rate100000), y = rate100000)) +
   geom_col() +
   coord_flip() +
@@ -99,10 +99,10 @@ head(chlamydia_county)
 A common workflow is to identify counties with the highest reported rates.
 
 ```{r}
-chlamydia_county %>%
-  filter(!is.na(rate100000)) %>%
-  arrange(desc(rate100000)) %>%
-  select(geography, cases, rate100000) %>%
+chlamydia_county |>
+  filter(!is.na(rate100000)) |>
+  arrange(desc(rate100000)) |>
+  select(geography, cases, rate100000) |>
   head(10)
 ```
 
@@ -125,11 +125,11 @@ head(gonorrhea_sex)
 Now we can compare rates by sex within each state.
 
 ```{r}
-gonorrhea_sex %>%
-  filter(!is.na(rate100000)) %>%
-  group_by(sex) %>%
-  slice_max(rate100000, n = 10, with_ties = FALSE) %>%
-  ungroup() %>%
+gonorrhea_sex |>
+  filter(!is.na(rate100000)) |>
+  group_by(sex) |>
+  slice_max(rate100000, n = 10, with_ties = FALSE) |>
+  ungroup() |>
   ggplot(aes(x = reorder(geography, rate100000), y = rate100000)) +
   geom_col() +
   coord_flip() +
@@ -161,8 +161,8 @@ head(hiv_age)
 We can summarize national patterns by aggregating across states.
 
 ```{r}
-hiv_age_summary <- hiv_age %>%
-  group_by(age, indicator) %>%
+hiv_age_summary <- hiv_age |>
+  group_by(age, indicator) |>
   summarize(
     cases = sum(cases, na.rm = TRUE),
     .groups = "drop"
@@ -172,8 +172,8 @@ hiv_age_summary
 ```
 
 ```{r}
-hiv_age_summary%>%
-  filter(indicator=="HIV diagnoses")%>%
+hiv_age_summary |>
+  filter(indicator=="HIV diagnoses")|>
   ggplot(mapping=aes(x = age, y = cases)) +
   geom_col() +
   labs(
@@ -203,12 +203,12 @@ head(hiv_race)
 A useful first look is to compare total reported cases by race/ethnicity.
 
 ```{r}
-hiv_race_summary <- hiv_race %>%
-  group_by(race_ethnicity, indicator) %>%
+hiv_race_summary <- hiv_race |>
+  group_by(race_ethnicity, indicator) |>
   summarize(
     cases = sum(cases, na.rm = TRUE),
     .groups = "drop"
-  ) %>%
+  ) |>
   arrange(desc(cases))
 
 hiv_race_summary
@@ -216,8 +216,8 @@ hiv_race_summary
 
 ```{r}
 
-hiv_race_summary%>%
-  filter(indicator=="HIV diagnoses")%>%
+hiv_race_summary |>
+  filter(indicator=="HIV diagnoses")|>
   ggplot(mapping =aes(x = reorder(race_ethnicity, cases), y = cases)) +
   geom_col() +
   coord_flip() +
@@ -249,8 +249,8 @@ head(hiv_age_sex)
 This allows direct comparison of age distributions by sex.
 
 ```{r}
-hiv_age_sex_summary <- hiv_age_sex %>%
-  group_by(sex, age, indicator) %>%
+hiv_age_sex_summary <- hiv_age_sex |>
+  group_by(sex, age, indicator) |>
   summarize(
     cases = sum(cases, na.rm = TRUE),
     .groups = "drop"
@@ -260,8 +260,8 @@ hiv_age_sex_summary
 ```
 
 ```{r}
-hiv_age_sex_summary%>%
-  filter(indicator=="HIV diagnoses")%>%
+hiv_age_sex_summary |>
+  filter(indicator=="HIV diagnoses")|>
   ggplot(aes(x = age, y = cases)) +
   geom_col() +
   facet_wrap(~ sex) +
@@ -289,8 +289,8 @@ head(syphilis_years)
 For example, compare national totals by year.
 
 ```{r}
-syphilis_trend <- syphilis_years %>%
-  group_by(year, indicator) %>%
+syphilis_trend <- syphilis_years |>
+  group_by(year, indicator) |>
   summarize(
     cases = sum(cases, na.rm = TRUE),
     .groups = "drop"
@@ -300,7 +300,7 @@ syphilis_trend
 ```
 
 ```{r}
-syphilis_trend%>%
+syphilis_trend |>
 ggplot(mapping= aes(x = year, y = cases, color=indicator, group=indicator)) +
   geom_line() +
   geom_point() +
@@ -319,7 +319,7 @@ Depending on the disease and geography, `cases` or `rate100000` may be missing.
 A common first step is to inspect missingness.
 
 ```{r}
-chlamydia_county %>%
+chlamydia_county |>
   summarize(
     n_rows = n(),
     missing_cases = sum(is.na(cases)),

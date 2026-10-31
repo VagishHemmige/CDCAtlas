@@ -13,6 +13,7 @@ extrapolate_from_county(
   ages = c("auto", "13+", "all"),
   race_table = c("B03002", "B01001"),
   unknown_race = c("report", "redistribute"),
+  unestimated = c("leave out", "error"),
   acs_year = NULL,
   weights = NULL
 )
@@ -99,6 +100,16 @@ across areas as usual. A county with no cases of known race keeps its
 unknown cases unallocated.
 }}
 
+\item{unestimated}{Suppressed rows \code{\link[=impute_suppressed]{impute_suppressed()}} couldn't estimate
+(\code{cases_source = "not estimated"}, with no count), such as a county CDC
+still lists after it was abolished:
+\itemize{
+\item \code{"leave out"} (default): left out, with a message naming the counties,
+and listed in \code{attr(result, "not_allocated")}. Their cases count towards
+the state's remainder with no county.
+\item \code{"error"}: stop with an error.
+}}
+
 \item{acs_year}{The last year of the ACS 5-year estimates. \code{NULL} (default)
 uses each data year. A single year can be given only if \code{x} has one year.}
 
@@ -156,7 +167,8 @@ counted, assuming ages are spread evenly within it.
 County rows with no Census denominator are left out and listed in
 \code{attr(result, "not_allocated")}: race "Other", race "Unknown" (unless
 redistributed), age groups
-other than CDC's HIV age groups, rows kept by
+other than CDC's HIV age groups, suppressed rows with no estimate (see
+\code{unestimated}), rows kept by
 \code{impute_suppressed(not_available = "keep")}, and counties with no ACS areas
 (such as Connecticut's planning regions with 2010 tracts, until #30 adds a
 crosswalk).

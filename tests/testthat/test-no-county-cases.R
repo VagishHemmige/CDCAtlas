@@ -67,13 +67,22 @@ test_that("before imputation, only the published gap is reported", {
   expect_equal(report$no_county_cases, c(NA_real_, NA_real_))
 })
 
-test_that("no_county_cases() refuses imputed rows left without a count", {
-
+test_that("rows impute_suppressed() couldn't estimate count towards the remainder", {
   county <- fake_county_atlas(suppressed = "01003")
   county$population <- NA
-  local_fake_sources()
+  local_fake_sources(state = fake_state_atlas(no_county = 500))
   not_estimated <- suppressWarnings(impute_suppressed(county))
-  expect_snapshot(error = TRUE, no_county_cases(not_estimated))
+
+  expect_snapshot(report <- no_county_cases(not_estimated))
+  expect_equal(report$imputed_cases, c(0, 0))
+  expect_equal(report$no_county_cases, c(32, 232) + 500 - c(11, 111))
+})
+
+test_that("no_county_cases() refuses published rows with no count and state data", {
+  local_fake_sources()
+  county <- impute_suppressed(fake_county_atlas())
+  county$cases[1] <- NA
+  expect_snapshot(error = TRUE, no_county_cases(county))
   expect_snapshot(error = TRUE, no_county_cases(fake_state_atlas()))
 })
 

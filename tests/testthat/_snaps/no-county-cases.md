@@ -1,12 +1,20 @@
-# no_county_cases() refuses imputed rows left without a count
+# rows impute_suppressed() couldn't estimate count towards the remainder
 
     Code
-      no_county_cases(not_estimated)
+      report <- no_county_cases(not_estimated)
+    Message
+      i 2 suppressed rows that `impute_suppressed()` couldn't estimate were counted in the remainder with no county.
+        County: "County 01003".
+
+# no_county_cases() refuses published rows with no count and state data
+
+    Code
+      no_county_cases(county)
     Condition
       Error in `no_county_cases()`:
-      ! `x` has 2 suppressed rows with no count.
-      i These are suppressed rows `impute_suppressed()` could not estimate (no state rate or county population).
-      i Remove them, or use `impute_suppressed(unestimated = "zero")`.
+      ! `x` has 1 row with no count.
+      i Rows with a cases_source of "published" should have counts.
+      i Check how the data were changed after `impute_suppressed()`.
 
 ---
 

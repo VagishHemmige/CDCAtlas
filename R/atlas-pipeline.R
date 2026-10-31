@@ -126,9 +126,10 @@
   invisible(x)
 }
 
-# Imputed data: impute_suppressed() has added `cases_source` and, if
-# `counts = TRUE`, every row has a count.
-.check_imputed <- function(x, arg, call, counts = TRUE) {
+# Imputed data: impute_suppressed() has added `cases_source`, and every row
+# has a count except "not available" rows and, with `unestimated = "leave out"`,
+# rows impute_suppressed() couldn't estimate.
+.check_imputed <- function(x, arg, call, unestimated = "error") {
   if (!"cases_source" %in% names(x)) {
     cli::cli_abort(
       c(
@@ -138,15 +139,29 @@
       call = call
     )
   }
-  no_count <- is.na(x$cases) & !x$cases_source %in% "not available"
-  if (counts && any(no_count)) {
+  no_count <- is.na(x$cases) &
+    !x$cases_source %in% c("not available", "not estimated")
+  if (any(no_count)) {
     cli::cli_abort(
       c(
-        "{.arg {arg}} has {sum(no_count)} suppressed row{?s} with no count.",
+        "{.arg {arg}} has {sum(no_count)} row{?s} with no count.",
+        "i" = "Rows with a {.field cases_source} of {.val
+               {unique(x$cases_source[no_count])}} should have counts.",
+        "i" = "Check how the data were changed after {.fn impute_suppressed}."
+      ),
+      call = call
+    )
+  }
+  not_estimated <- is.na(x$cases) & x$cases_source %in% "not estimated"
+  if (unestimated == "error" && any(not_estimated)) {
+    cli::cli_abort(
+      c(
+        "{.arg {arg}} has {sum(not_estimated)} suppressed row{?s} with no
+         count.",
         "i" = "These are suppressed rows {.fn impute_suppressed} could not
                estimate (no state rate or county population).",
-        "i" = "Remove them, or use {.code impute_suppressed(unestimated =
-               \"zero\")}."
+        "i" = "Remove them, use {.code impute_suppressed(unestimated =
+               \"zero\")}, or use {.code unestimated = \"leave out\"}."
       ),
       call = call
     )

@@ -41,9 +41,10 @@
 #'   population, and 2017 ACS tracts belong to the old counties (#30).
 #' @param unestimated What to do with a suppressed row `"state_rate"` can't
 #'   estimate, because the state rate or county population is missing:
-#'   * `"na"` (default): leave it `NA`, with a warning. [no_county_cases()] and
-#'     [extrapolate_from_county()] refuse data with such rows until they are
-#'     removed.
+#'   * `"na"` (default): leave it `NA`, with a warning. [no_county_cases()]
+#'     counts its cases in the remainder with no county, and
+#'     [extrapolate_from_county()] leaves it out (or stops, with
+#'     `unestimated = "error"`).
 #'   * `"zero"`: set it to 0, with a warning.
 #' @param not_available Rows marked "Data not available" with no count:
 #'   * `"drop"` (default): remove them, with a message.

@@ -34,14 +34,14 @@
 #'
 #'   Every column computed from `state_cases` is `NA` if CDC suppressed the
 #'   state total.
-#'   }
 #'
 #' @details
 #' Downloads the state data matching `x` (same diseases, years and
 #' stratification) from CDC AtlasPlus. The remainder also includes any county
 #' without a count in `x`: "Data not available" rows (whether
 #' [impute_suppressed()] dropped or kept them) and counties removed by
-#' filtering `x`.
+#' filtering `x`, and suppressed rows [impute_suppressed()] couldn't estimate
+#' (marked `cases_source = "not estimated"`), which count as 0 imputed cases.
 #'
 #' @seealso [impute_suppressed()], [extrapolate_from_county()].
 #'
@@ -57,7 +57,8 @@ no_county_cases <- function(x) {
   call <- rlang::current_env()
   .check_county_data(x, arg = "x", call = call)
   if ("cases_source" %in% names(x)) {
-    .check_imputed(x, arg = "x", call = call)
+    .check_imputed(x, arg = "x", call = call, unestimated = "leave out")
+    .announce_not_estimated(x, "counted in the remainder with no county")
   }
   .no_county_cases(x, .fetch_state_totals(x))
 }
@@ -76,7 +77,7 @@ no_county_cases <- function(x) {
     lapply(as.data.frame(x[.atlas_keys]), as.character),
     published = ifelse(source == "published", x$cases, 0),
     imputed = dplyr::case_when(
-      source %in% c("published", "not available") ~ 0,
+      source %in% c("published", "not available", "not estimated") ~ 0,
       source == "not imputed" ~ NA_real_,
       .default = x$cases
     )
@@ -106,4 +107,19 @@ no_county_cases <- function(x) {
     "state_cases", "published_cases", "unpublished_cases", "imputed_cases",
     "no_county_cases"
   )])
+}
+
+# Message naming the counties whose suppressed rows impute_suppressed() couldn't
+# estimate, and what happens to their cases.
+.announce_not_estimated <- function(x, what_happens) {
+  rows <- is.na(x$cases) & x$cases_source %in% "not estimated"
+  if (!any(rows)) {
+    return(invisible())
+  }
+  counties <- unique(as.character(x$geography[rows]))
+  cli::cli_inform(c(
+    "i" = "{sum(rows)} suppressed row{?s} that {.fn impute_suppressed} couldn't
+           estimate {?was/were} {what_happens}.",
+    " " = "{cli::qty(length(counties))}Count{?y/ies}: {.val {counties}}."
+  ))
 }

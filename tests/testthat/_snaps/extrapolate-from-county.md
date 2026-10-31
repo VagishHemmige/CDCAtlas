@@ -95,9 +95,9 @@
       extrapolate_from_county(with_na)
     Condition
       Error in `extrapolate_from_county()`:
-      ! `x` has 1 suppressed row with no count.
-      i These are suppressed rows `impute_suppressed()` could not estimate (no state rate or county population).
-      i Remove them, or use `impute_suppressed(unestimated = "zero")`.
+      ! `x` has 1 row with no count.
+      i Rows with a cases_source of "published" should have counts.
+      i Check how the data were changed after `impute_suppressed()`.
 
 ---
 
@@ -160,6 +160,28 @@
       ! Downloading Census populations needs a Census API key.
       x `CENSUS_API_KEY` is empty.
       i Get a key at <https://api.census.gov/data/key_signup.html> and set it with `tidycensus::census_api_key()`.
+
+# suppressed rows impute_suppressed() couldn't estimate are left out
+
+    Code
+      tracts <- extrapolate_from_county(county)
+    Message
+      i Cases in state totals with no county are not allocated to tracts:
+      * HIV diagnoses 2022: 21
+      * HIV prevalence 2022: 121
+        See `attr(x, "no_county_cases")` for each state.
+      i 2 suppressed rows that `impute_suppressed()` couldn't estimate were left out of the tract estimates and counted in the remainder with no county.
+        County: "County 01003".
+
+# unestimated = 'error' refuses rows impute_suppressed() couldn't estimate
+
+    Code
+      extrapolate_from_county(county, unestimated = "error")
+    Condition
+      Error in `extrapolate_from_county()`:
+      ! `x` has 2 suppressed rows with no count.
+      i These are suppressed rows `impute_suppressed()` could not estimate (no state rate or county population).
+      i Remove them, use `impute_suppressed(unestimated = "zero")`, or use `unestimated = "leave out"`.
 
 # ACS years before an area's first release are refused
 
