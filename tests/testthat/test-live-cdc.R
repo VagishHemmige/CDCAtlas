@@ -124,7 +124,8 @@ test_that("no-county remainders match #27 (Pennsylvania HIV prevalence)", {
 test_that("imputation respects the cap and keeps published counts, 2022", {
   local_mocked_bindings(.request_atlas = .request_atlas_internal)
   county <- suppressMessages(get_atlas("hiv", "county", 2022, stratify_by = "sex"))
-  imputed <- impute_suppressed(county, cap = 2)
+  # Valdez-Cordova (02261) has no CDC population in 2022 (see below).
+  expect_warning(imputed <- impute_suppressed(county, cap = 2), "Valdez-Cordova")
 
   estimated <- imputed$cases[imputed$cases_source == "state_rate"]
   expect_gt(length(estimated), 0)
@@ -169,12 +170,20 @@ live_pipeline <- function(year, stratify_by = NULL, to = "tract") {
 }
 
 # County rows the default pipeline is known to leave out. Anything else in
-# attr(, "not_allocated") is new and fails the test below.
+# attr(, "not_allocated") is new and fails the test below. Found by running
+# these tests on 30 October 2026.
 #   - Race "Unknown": no Census population for it.
-#   - 2017: Connecticut's planning regions have no 2010 tracts (#30), and no
-#     CDC population, so suppressed ones can't be estimated either.
-#   - 2022: Valdez-Cordova, AK (02261) is still listed by CDC after its 2019
-#     split; it has no CDC population and no 2020 tracts.
+#   - CDC reports every year on its current county map, so older years don't
+#     match their ACS tract vintage (#30):
+#     - 2017, Connecticut: planning regions have no 2010 tracts and no CDC
+#       population, so suppressed ones can't be estimated either.
+#     - 2017, Alaska: Chugach (02063) and Copper River (02066), created in
+#       2019, have counts but no 2010 tracts; Valdez-Cordova (02261), which
+#       the 2010 tracts belong to, has no CDC population.
+#   - 2022, Alaska: CDC still lists Valdez-Cordova (02261) beside its
+#     successors; it has no CDC population and no 2020 tracts.
+#   - Puerto Rico, by race: suppressed municipio rows can't be estimated
+#     (no state rate or municipio population by race from CDC).
 no_area_or_estimate <- c(
   "suppressed, not estimated", "no ACS tracts for this county"
 )
@@ -183,15 +192,20 @@ is_known_left_out <- function(left_out, year) {
     left_out$race_ethnicity == "Unknown"
   connecticut <- year == 2017 & left_out$reason %in% no_area_or_estimate &
     substr(left_out$county_fips, 1, 2) == "09"
-  valdez_cordova <- year == 2022 & left_out$county_fips == "02261" &
-    left_out$reason %in% no_area_or_estimate
-  unknown_race | connecticut | valdez_cordova
+  valdez_cordova_split <- left_out$reason %in% no_area_or_estimate & (
+    (year == 2017 & left_out$county_fips %in% c("02063", "02066", "02261")) |
+      (year == 2022 & left_out$county_fips == "02261")
+  )
+  puerto_rico_race <- left_out$reason == "suppressed, not estimated" &
+    substr(left_out$county_fips, 1, 2) == "72" &
+    left_out$race_ethnicity != "All races/ethnicities"
+  unknown_race | connecticut | valdez_cordova_split | puerto_rico_race
 }
 
 # Warnings the default pipeline is known to give, by year.
 known_warnings <- c(
-  "2017" = "no matching ACS tracts|Planning Region, CT",
-  "2022" = "Valdez-Cordova Census Area, AK|no matching ACS tracts"
+  "2017" = "no matching ACS tracts|Planning Region, CT|Valdez-Cordova|Municipio, PR",
+  "2022" = "Valdez-Cordova Census Area, AK|no matching ACS tracts|Municipio, PR"
 )
 
 county_groups <- c("county_fips", "indicator", "race_ethnicity", "sex", "age")
@@ -263,11 +277,14 @@ for (year in c(2017, 2022)) {
   }
 }
 
-test_that("2017 leaves out Connecticut's planning regions, and only them", {
+test_that("2017 leaves out Connecticut and the Valdez-Cordova split, and only them", {
   left_out <- attr(live_pipeline(2017)$areas, "not_allocated")
   no_tracts <- left_out[left_out$reason %in% no_area_or_estimate, ]
-  expect_gt(nrow(no_tracts), 0)
-  expect_equal(unique(substr(no_tracts$county_fips, 1, 2)), "09")
+  expect_setequal(unique(substr(no_tracts$county_fips, 1, 2)), c("02", "09"))
+  expect_setequal(
+    unique(no_tracts$county_fips[substr(no_tracts$county_fips, 1, 2) == "02"]),
+    c("02063", "02066", "02261")
+  )
 })
 
 test_that("2022 leaves out Valdez-Cordova (02261) and allocates its successors", {
