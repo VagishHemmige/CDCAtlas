@@ -19,7 +19,12 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Vagish Hemmige \email{vagish.hemmige@gmail.com} (\href{https://orcid.org/YOUR-ORCID-ID}{ORCID})
+\strong{Maintainer}: Vagish Hemmige \email{vagish.hemmige@gmail.com} (\href{https://orcid.org/0009-0006-6346-1826}{ORCID})
+
+Authors:
+\itemize{
+  \item Vagish Hemmige \email{vagish.hemmige@gmail.com} (\href{https://orcid.org/0009-0006-6346-1826}{ORCID})
+}
 
 }
 \keyword{internal}
