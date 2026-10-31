@@ -19,7 +19,6 @@ knitr::opts_chunk$set(
 ```{r setup}
 library(CDCAtlas)
 library(dplyr)
-library(ggplot2)
 ```
 
 ## Overview
@@ -91,7 +90,7 @@ as observed tract-level surveillance data.
 The simplest use case is extrapolating county-level data to tracts using total
 tract population.
 
-```{r}
+```{r, message = TRUE, warning = TRUE}
 hiv_tract <- get_atlas(
   disease = "hiv",
   year = 2022,
@@ -100,6 +99,10 @@ hiv_tract <- get_atlas(
   impute_suppressed() |>
   extrapolate_from_county()
 ```
+
+`impute_suppressed()` and `extrapolate_from_county()` report what they could
+not estimate or allocate. Those messages are shown here on purpose: they say
+which cases are missing from the tract estimates.
 
 The returned data contain one row per tract, with the county-level AtlasPlus
 count allocated to tracts.
@@ -119,7 +122,8 @@ You should expect columns identifying:
 - the tract
 - the parent county
 - the AtlasPlus disease and year
-- the county-level cases
+- the county-level cases, and the cases shared across the county's tracts
+  (`county_cases_allocated`)
 - the tract denominator
 - the county denominator
 - the tract share of the county denominator
@@ -128,41 +132,65 @@ You should expect columns identifying:
 The key calculation is:
 
 ```r
-area_cases = county_cases * area_population_acs / county_population_acs
+area_cases = county_cases_allocated * area_population_acs / county_population_acs
 ```
 
-or, more generally:
-
-```r
-area_cases = county_cases * area_denominator / county_denominator
-```
+With the default options, `county_cases_allocated` is the county's own count.
+It also includes any cases with no county that `no_county = "spread"` adds, and
+any cases of unknown race that `unknown_race = "redistribute"` adds.
 
 ## Checking county totals
 
-After extrapolation, tract-level estimates should sum back to the original
-county-level counts, allowing for small floating-point differences.
+After extrapolation, tract-level estimates should sum back to the county
+counts they share out (`county_cases_allocated`), allowing for small
+floating-point differences.
 
-```{r}
-hiv_tract %>%
-  group_by(county_fips, indicator) %>%
+```{r, message = TRUE, warning = TRUE}
+hiv_tract |>
+  group_by(county_fips, indicator) |>
   summarize(
-    county_cases = first(county_cases),
+    county_cases = first(county_cases_allocated),
     tract_cases_sum = sum(area_cases, na.rm = TRUE),
     difference = tract_cases_sum - county_cases,
     .groups = "drop"
-  ) %>%
-  arrange(desc(abs(difference))) %>%
+  ) |>
+  arrange(desc(abs(difference))) |>
   head()
 ```
 
 In a clean allocation, the `difference` column should be very close to zero.
+
+## County rows that were not allocated
+
+Some county rows can't be shared across tracts. They are listed, with a reason,
+in an attribute of the result:
+
+```{r}
+attr(hiv_tract, "not_allocated") |>
+  count(reason, indicator)
+```
+
+Reasons include counties with no Census tracts in the ACS year, strata with no
+Census population (race "Other", for example), and suppressed counties that
+`impute_suppressed()` could not estimate. In CDC's 2022 data, for example,
+Valdez-Cordova Census Area, Alaska, is still listed although it was split into
+two census areas in 2019; it is suppressed, has no CDC population and has no
+2022 tracts, so it is left out. Use `extrapolate_from_county(unestimated =
+"error")` to stop instead.
+
+Cases in state totals with no county are reported separately:
+
+```{r}
+attr(hiv_tract, "no_county_cases") |>
+  head()
+```
 
 ## Sex-stratified extrapolation
 
 For sex-stratified AtlasPlus data, the allocation denominator should also be
 sex-specific.
 
-```{r}
+```{r, message = TRUE, warning = TRUE}
 hiv_tract_sex <- get_atlas(
   disease = "hiv",
   year = 2022,
@@ -194,23 +222,23 @@ $$
 $$
 The resulting data should include one row per tract per sex stratum.
 
-```{r}
-hiv_tract_sex %>%
+```{r, message = TRUE, warning = TRUE}
+hiv_tract_sex |>
   count(sex, indicator)
 ```
 
 You can verify the allocation within each county and sex stratum.
 
-```{r}
-hiv_tract_sex %>%
-  group_by(county_fips, sex, indicator) %>%
+```{r, message = TRUE, warning = TRUE}
+hiv_tract_sex |>
+  group_by(county_fips, sex, indicator) |>
   summarize(
-    county_cases = first(county_cases),
+    county_cases = first(county_cases_allocated),
     tract_cases_sum = sum(area_cases, na.rm = TRUE),
     difference = tract_cases_sum - county_cases,
     .groups = "drop"
-  ) %>%
-  arrange(desc(abs(difference))) %>%
+  ) |>
+  arrange(desc(abs(difference))) |>
   head()
 ```
 
@@ -220,7 +248,7 @@ Age-stratified extrapolation works the same way, except that the Census
 denominator is based on tract population within the corresponding AtlasPlus age
 group.
 
-```{r}
+```{r, message = TRUE, warning = TRUE}
 hiv_tract_age <- get_atlas(
   disease = "hiv",
   year = 2022,
@@ -233,24 +261,24 @@ hiv_tract_age <- get_atlas(
 
 The output contains one row per tract per age stratum.
 
-```{r}
-hiv_tract_age %>%
+```{r, message = TRUE, warning = TRUE}
+hiv_tract_age |>
   count(age, indicator)
 ```
 
 Again, the diagnostic check is whether tract estimates sum back to the original
 county count within each county-age stratum.
 
-```{r}
-hiv_tract_age %>%
-  group_by(county_fips, age, indicator) %>%
+```{r, message = TRUE, warning = TRUE}
+hiv_tract_age |>
+  group_by(county_fips, age, indicator) |>
   summarize(
-    county_cases = first(county_cases),
+    county_cases = first(county_cases_allocated),
     tract_cases_sum = sum(area_cases, na.rm = TRUE),
     difference = tract_cases_sum - county_cases,
     .groups = "drop"
-  ) %>%
-  arrange(desc(abs(difference))) %>%
+  ) |>
+  arrange(desc(abs(difference))) |>
   head()
 ```
 
@@ -260,7 +288,7 @@ CDC AtlasPlus commonly uses a combined race/ethnicity variable. For example,
 Hispanic/Latino is represented as a single ethnicity category, while the
 remaining groups are usually non-Hispanic race categories.
 
-```{r}
+```{r, message = TRUE, warning = TRUE}
 hiv_tract_race <- get_atlas(
   disease = "hiv",
   year = 2022,
@@ -278,16 +306,19 @@ The package attempts to use Census variables that correspond to the AtlasPlus
 combined race/ethnicity categories, but users should inspect the denominator
 mapping before interpreting results.
 
-```{r}
-hiv_tract_race %>%
+```{r, message = TRUE, warning = TRUE}
+hiv_tract_race |>
   count(race_ethnicity, indicator)
 ```
 
 ## Multiple stratification variables
 
-Currently not supported
+`extrapolate_from_county()` takes data stratified by at most one variable.
+`get_atlas()` can download two-way strata (sex by age, for example), but these
+can't be extrapolated yet.
 
 ## Working with geometry
 
-Currently not supported
+The results have Census GEOIDs (`geoid`) but no boundaries. To map them, join
+them to tract boundaries, for example from the tigris package.
 

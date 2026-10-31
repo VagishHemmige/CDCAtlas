@@ -30,7 +30,6 @@ been imputed.}
 Every column computed from \code{state_cases} is \code{NA} if CDC suppressed the
 state total.
 }
-}
 \description{
 A state's total in CDC AtlasPlus includes cases with no valid county of
 residence, so it is usually larger than the sum of its counties.
@@ -49,7 +48,8 @@ Downloads the state data matching \code{x} (same diseases, years and
 stratification) from CDC AtlasPlus. The remainder also includes any county
 without a count in \code{x}: "Data not available" rows (whether
 \code{\link[=impute_suppressed]{impute_suppressed()}} dropped or kept them) and counties removed by
-filtering \code{x}.
+filtering \code{x}, and suppressed rows \code{\link[=impute_suppressed]{impute_suppressed()}} couldn't estimate
+(marked \code{cases_source = "not estimated"}), which count as 0 imputed cases.
 }
 \examples{
 \dontrun{

@@ -68,6 +68,13 @@
 #'     proportion to their counts, within each indicator and year, then
 #'     across areas as usual. A county with no cases of known race keeps its
 #'     unknown cases unallocated.
+#' @param unestimated Suppressed rows [impute_suppressed()] couldn't estimate
+#'   (`cases_source = "not estimated"`, with no count), such as a county CDC
+#'   still lists after it was abolished:
+#'   * `"leave out"` (default): left out, with a message naming the counties,
+#'     and listed in `attr(result, "not_allocated")`. Their cases count towards
+#'     the state's remainder with no county.
+#'   * `"error"`: stop with an error.
 #' @param acs_year The last year of the ACS 5-year estimates. `NULL` (default)
 #'   uses each data year. A single year can be given only if `x` has one year.
 #' @param weights Not yet supported; for sub-county weights later (#1).
@@ -116,7 +123,8 @@
 #' County rows with no Census denominator are left out and listed in
 #' `attr(result, "not_allocated")`: race "Other", race "Unknown" (unless
 #' redistributed), age groups
-#' other than CDC's HIV age groups, rows kept by
+#' other than CDC's HIV age groups, suppressed rows with no estimate (see
+#' `unestimated`), rows kept by
 #' `impute_suppressed(not_available = "keep")`, and counties with no ACS areas
 #' (such as Connecticut's planning regions with 2010 tracts, until #30 adds a
 #' crosswalk).
@@ -156,12 +164,14 @@ extrapolate_from_county <- function(
   ages = c("auto", "13+", "all"),
   race_table = c("B03002", "B01001"),
   unknown_race = c("report", "redistribute"),
+  unestimated = c("leave out", "error"),
   acs_year = NULL,
   weights = NULL
 ) {
   call <- rlang::current_env()
   .check_county_data(x, arg = "x", call = call)
-  .check_imputed(x, arg = "x", call = call)
+  unestimated <- rlang::arg_match(unestimated)
+  .check_imputed(x, arg = "x", call = call, unestimated = unestimated)
   to <- rlang::arg_match(to)
   no_county <- rlang::arg_match(no_county)
   spread_by <- rlang::arg_match(spread_by)
@@ -261,6 +271,11 @@ extrapolate_from_county <- function(
 
   .announce_extrapolation(
     out, report, not_allocated, no_county, empty_strata, to
+  )
+  .announce_not_estimated(
+    x,
+    paste("left out of the", to, "estimates and counted in the remainder",
+          "with no county")
   )
   if (!is.null(redistributed) && nrow(redistributed) > 0) {
     cli::cli_inform(c(
@@ -568,14 +583,18 @@ extrapolate_from_county <- function(
   county$stratum <- .row_stratum(county, stratify_by)
 
   not_available <- county$cases_source == "not available"
-  no_areas <- !not_available & !county$county_fips %in% pop$county_fips
-  no_denominator <- !not_available & !no_areas &
+  not_estimated <- county$cases_source == "not estimated" &
+    is.na(county$county_cases)
+  no_data <- not_available | not_estimated
+  no_areas <- !no_data & !county$county_fips %in% pop$county_fips
+  no_denominator <- !no_data & !no_areas &
     !county$stratum %in% pop$stratum
-  left_out <- not_available | no_areas | no_denominator
+  left_out <- no_data | no_areas | no_denominator
 
   not_allocated <- county[left_out, setdiff(names(county), "stratum")]
   not_allocated$reason <- dplyr::case_when(
     not_available[left_out] ~ "no CDC data for this county",
+    not_estimated[left_out] ~ "suppressed, not estimated",
     no_areas[left_out] ~ paste("no ACS", .area_plural(to), "for this county"),
     .default = "no Census population for this stratum"
   )
