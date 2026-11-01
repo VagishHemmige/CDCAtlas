@@ -8,7 +8,7 @@ Description: Automated data extraction from the CDC Atlas database of HIV and ST
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-URL: https://github.com/VagishHemmige/CDCAtlas
+URL: https://github.com/VagishHemmige/CDCAtlas, https://vagishhemmige.github.io/CDCAtlas
 BugReports: https://github.com/VagishHemmige/CDCAtlas/issues
 Imports: 
     cli (>= 3.0.0),
