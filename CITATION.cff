@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "CDCAtlas: Download CDC Atlas data into R"
+type: software
+authors:
+  - family-names: Hemmige
+    given-names: Vagish
+    orcid: "https://orcid.org/0009-0006-6346-1826"
+version: "0.0.0.9001"
+license: MIT
+abstract: "Retrieves selected public health surveillance data on HIV and STIs from the CDC AtlasPlus platform."
+repository-code: "https://github.com/VagishHemmige/CDCAtlas"
+url: "https://vagishhemmige.github.io/CDCAtlas/"
