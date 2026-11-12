@@ -16,7 +16,6 @@ Imports:
     magrittr,
     rlang (>= 1.0.0),
     ratelimitr,
-    rappdirs,
     httr,
     jsonlite,
     labelled,
@@ -25,11 +24,14 @@ Imports:
     tibble,
     lifecycle
 Suggests:
+    callr,
     ggplot2,
     knitr,
+    pkgload,
     rmarkdown,
     testthat (>= 3.0.0),
-    tidycensus (>= 1.8.0)
+    tidycensus (>= 1.8.0),
+    withr
 Additional_repositories:
     https://walkerke.r-universe.dev
 VignetteBuilder: knitr
