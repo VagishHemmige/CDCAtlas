@@ -13,7 +13,6 @@ BugReports: https://github.com/VagishHemmige/CDCAtlas/issues
 Imports: 
     cli (>= 3.0.0),
     dplyr (>= 1.1.0),
-    magrittr,
     rlang (>= 1.0.0),
     ratelimitr,
     httr,
@@ -25,6 +24,7 @@ Imports:
     lifecycle
 Suggests:
     callr,
+    codetools,
     ggplot2,
     knitr,
     pkgload,

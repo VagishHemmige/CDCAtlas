@@ -52,35 +52,35 @@ if (is.null(dat$sourcedata))
 
 # --- Convert to a data frame and label columns --
 #Uses internal package data varvals
-df <- as.data.frame(dat$sourcedata)%>%
+df <- as.data.frame(dat$sourcedata) |>
   #Add fips
-  dplyr::left_join(dplyr::select(varvals, id, fips), by=(c("V3"="id")))%>%
+  dplyr::left_join(dplyr::select(varvals, "id", "fips"), by = c("V3" = "id")) |>
 
   #Decode data
   dplyr::mutate(
-    across(
-      c(V1, V3:V8),    # <- put your coded columns here
+    dplyr::across(
+      dplyr::all_of(c("V1", "V3", "V4", "V5", "V6", "V7", "V8")),
       ~factor(.x, levels = varvals$id, labels = varvals$name)
     )
-  )%>%
-  dplyr::mutate(V2=V2+1478)%>%
+  ) |>
+  dplyr::mutate(V2 = .data$V2 + 1478) |>
   dplyr::rename(
-    indicator=V1,
-    year=V2,
-    geography=V3,
-    data_status=V4,
-    race_ethnicity=V5,
-    sex=V6,
-    age=V7,
-    transmission=V8,
-    rate100000=V9,
-    cases=V10,
-    population=V11,
-    lowerci_rate=V12,
-    upperci_rate=V13,
-    rse=V14,
-    lowerci_cases=V15,
-    upperci_cases=V16
+    indicator = "V1",
+    year = "V2",
+    geography = "V3",
+    data_status = "V4",
+    race_ethnicity = "V5",
+    sex = "V6",
+    age = "V7",
+    transmission = "V8",
+    rate100000 = "V9",
+    cases = "V10",
+    population = "V11",
+    lowerci_rate = "V12",
+    upperci_rate = "V13",
+    rse = "V14",
+    lowerci_cases = "V15",
+    upperci_cases = "V16"
   )
 
 
@@ -129,7 +129,7 @@ return(df)
 
   df <- df |>
     dplyr::mutate(
-      dplyr::across(where(is.factor), ~ droplevels(.x))
+      dplyr::across(dplyr::where(is.factor), ~ droplevels(.x))
     )
 
   df

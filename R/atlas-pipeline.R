@@ -246,13 +246,3 @@
   state$state_fips <- as.character(state$fips)
   state
 }
-
-# Columns used inside dplyr verbs by the pipeline functions.
-utils::globalVariables(c(
-  "allocation", "area_cases", "area_population_acs", "area_total_population",
-  "cases", "county_cases", "county_cases_allocated", "county_cases_spread",
-  "county_cases_unknown", "county_fips",
-  "county_population_acs", "county_total_population", "geoid", "imputed",
-  "indicator", "published", "rule", "stratum", "stratum_pop", "total_pop",
-  "value", "year"
-))

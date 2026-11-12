@@ -209,8 +209,8 @@ impute_suppressed <- function(
   for (year in sort(unique(county$year))) {
     pop <- .area_population(year, states, stratify_by, ages) |>
       dplyr::summarize(
-        population = sum(area_population_acs),
-        .by = c(county_fips, stratum)
+        population = sum(.data$area_population_acs),
+        .by = c("county_fips", "stratum")
       )
     rows <- county$year == year
     out[rows] <- pop$population[match(
