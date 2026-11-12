@@ -86,8 +86,8 @@ no_county_cases <- function(x) {
 
   report <- county |>
     dplyr::summarize(
-      published_cases = sum(published),
-      imputed_cases = sum(imputed),
+      published_cases = sum(.data$published),
+      imputed_cases = sum(.data$imputed),
       .by = dplyr::all_of(keys)
     )
   state_cases <- state$cases[match(.row_key(report, keys), .row_key(state, keys))]

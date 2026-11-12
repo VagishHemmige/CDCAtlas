@@ -517,8 +517,8 @@ extrapolate_from_county <- function(
       value = acs$estimate[keep] * table$weight[rows[keep]]
     ) |>
       dplyr::summarize(
-        value = sum(value, na.rm = TRUE),
-        .by = c(geoid, stratum)
+        value = sum(.data$value, na.rm = TRUE),
+        .by = c("geoid", "stratum")
       )
   }
   lookup_value <- function(sums, geoid) {
@@ -621,7 +621,7 @@ extrapolate_from_county <- function(
     !is.na(county$county_cases)
 
   known_total <- county[known, ] |>
-    dplyr::summarize(total = sum(county_cases), .by = dplyr::all_of(keys))
+    dplyr::summarize(total = sum(.data$county_cases), .by = dplyr::all_of(keys))
   unknown_rows <- county[unknown, ]
   unknown_rows$known_total <- known_total$total[match(
     .row_key(unknown_rows, keys), .row_key(known_total, keys)
@@ -675,9 +675,9 @@ extrapolate_from_county <- function(
 
   counties <- areas |>
     dplyr::summarize(
-      stratum_pop = sum(area_population_acs),
-      total_pop = sum(area_total_population),
-      cases = dplyr::first(county_cases + county_cases_unknown),
+      stratum_pop = sum(.data$area_population_acs),
+      total_pop = sum(.data$area_total_population),
+      cases = dplyr::first(.data$county_cases + .data$county_cases_unknown),
       .by = dplyr::all_of(county_keys)
     )
   remainder <- report$no_county_cases[
@@ -687,16 +687,18 @@ extrapolate_from_county <- function(
 
   counties <- counties |>
     dplyr::mutate(
-      rule = if (spread_by == "cases" && sum(cases) > 0) {
+      rule = if (spread_by == "cases" && sum(.data$cases) > 0) {
         "county cases"
       } else {
-        .allocation_rule(sum(stratum_pop), sum(total_pop), empty_strata)
+        .allocation_rule(
+          sum(.data$stratum_pop), sum(.data$total_pop), empty_strata
+        )
       },
       county_cases_spread = dplyr::coalesce(
-        remainder * dplyr::if_else(
-          rule == "county cases",
-          cases / sum(cases),
-          .shares(rule, stratum_pop, total_pop)
+        .data$remainder * dplyr::if_else(
+          .data$rule == "county cases",
+          .data$cases / sum(.data$cases),
+          .shares(.data$rule, .data$stratum_pop, .data$total_pop)
         ),
         0
       ),
@@ -712,20 +714,24 @@ extrapolate_from_county <- function(
 .allocate <- function(areas, empty_strata) {
   areas |>
     dplyr::mutate(
-      county_population_acs = sum(area_population_acs),
-      county_total_population = sum(area_total_population),
+      county_population_acs = sum(.data$area_population_acs),
+      county_total_population = sum(.data$area_total_population),
       allocation = .allocation_rule(
-        county_population_acs, county_total_population, empty_strata
+        .data$county_population_acs, .data$county_total_population,
+        empty_strata
       ),
-      county_cases_allocated = county_cases + county_cases_spread +
-        county_cases_unknown,
+      county_cases_allocated = .data$county_cases + .data$county_cases_spread +
+        .data$county_cases_unknown,
       area_cases = dplyr::if_else(
-        county_cases_allocated == 0,
+        .data$county_cases_allocated == 0,
         0,
-        county_cases_allocated *
-          .shares(allocation, area_population_acs, area_total_population)
+        .data$county_cases_allocated *
+          .shares(
+            .data$allocation, .data$area_population_acs,
+            .data$area_total_population
+          )
       ),
-      area_noncases = pmax(0, area_population_acs - area_cases),
+      area_noncases = pmax(0, .data$area_population_acs - .data$area_cases),
       .by = dplyr::all_of(.county_groups)
     )
 }
@@ -737,7 +743,10 @@ extrapolate_from_county <- function(
 .lines_by_indicator <- function(df, value) {
   df <- data.frame(indicator = df$indicator, year = df$year, cases = df[[value]])
   by_indicator <- df |>
-    dplyr::summarize(cases = sum(cases, na.rm = TRUE), .by = c(indicator, year))
+    dplyr::summarize(
+      cases = sum(.data$cases, na.rm = TRUE),
+      .by = c("indicator", "year")
+    )
   lines <- sprintf(
     "%s %s: %s",
     by_indicator$indicator,
@@ -821,7 +830,7 @@ extrapolate_from_county <- function(
   state_keys <- c("state_fips", .atlas_keys)
   spread <- unique(areas[c(state_keys, "county_fips", "county_cases_spread")]) |>
     dplyr::summarize(
-      spread = sum(county_cases_spread),
+      spread = sum(.data$county_cases_spread),
       .by = dplyr::all_of(state_keys)
     )
   wanted <- report
