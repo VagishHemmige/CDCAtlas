@@ -158,3 +158,26 @@ test_that("a failed request without a readable message still explains itself", {
   )
   expect_snapshot(error = TRUE, get_atlas("hiv", "state", 2017))
 })
+
+# Requests --------------------------------------------------------------------
+
+test_that("requests identify the package with a working link", {
+  seen <- NULL
+  local_mocked_bindings(.request_atlas = .request_atlas_internal)
+  local_mocked_bindings(client_rate = function() invisible(NULL))
+  local_mocked_bindings(
+    POST = function(url, ...) {
+      seen <<- list(...)
+      structure(list(), class = "fake_response")
+    },
+    status_code = function(res) 404L,
+    content = function(res, ...) "",
+    .package = "httr"
+  )
+  try(get_atlas("hiv", "state", 2017), silent = TRUE)
+  config <- Filter(function(x) inherits(x, "request"), seen)[[1]]
+  expect_equal(
+    unname(config$headers[["User-Agent"]]),
+    "R package CDCAtlas (https://github.com/VagishHemmige/CDCAtlas)"
+  )
+})

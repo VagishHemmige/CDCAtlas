@@ -26,7 +26,7 @@ res <- httr::POST(
     "Accept" = "application/json, text/javascript, */*; q=0.01",
     "Content-Type" = "application/json; charset=utf-8",
     "X-Requested-With" = "XMLHttpRequest",
-    "User-Agent" = "R package CDCAtlas (https://VagishHemmige.github.com/CDCAtlas)"
+    "User-Agent" = "R package CDCAtlas (https://github.com/VagishHemmige/CDCAtlas)"
   )
 )
 
@@ -176,6 +176,8 @@ client_rate <- ratelimitr::limit_rate(
 #' Cached wrapper around `.request_atlas_uncached()`.
 #'
 #' @keywords internal
+# memoise::cache_filesystem() needs digest, which memoise only suggests, so
+# digest stays in Imports even though CDCAtlas never calls it.
 .request_atlas <- memoise::memoise(
   .request_atlas_internal,
   cache = memoise::cache_filesystem(tools::R_user_dir("CDCAtlas", "cache"))
