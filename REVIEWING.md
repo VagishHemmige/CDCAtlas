@@ -41,7 +41,11 @@ Prioritize silent corruption, incorrect calculations, broken installation or
 exports, misleading claims, and privacy violations. Intentional documented
 interface changes can be acceptable during development; accidental breakage
 remains a defect. An incomplete milestone is not automatically release-ready.
-Do not demand unrelated cleanup or new options to postpone a design decision.
+Do not demand unrelated cleanup. When alternatives are reasonable, present
+their tradeoffs and a recommendation; consider an argument with a recommended
+default when it serves plausible user needs. Follow AGENTS.md's decision
+process rather than rejecting options categorically or requiring them for
+every close choice.
 Evaluate tests and CI independently: passing assertions can encode an incorrect
 scientific assumption. Explain whether external findings are agreed with,
 partly agreed with or disagreed with, and why.
@@ -57,6 +61,9 @@ not silently substituted current definitions.
 For ACS use the requested year's table metadata/universe and
 [Census geography-vintage documentation](https://www.census.gov/programs-surveys/acs/geography-acs/geography-boundaries-by-year.html).
 These are starting points, not evidence that every package mapping is correct.
+Use an available authorized browser/web-fetch or other retrieval tool; shell
+network access is not required. Disclose unavailable sources and the resulting
+evidence gap rather than inventing verification.
 
 Check, where affected:
 - Indicator definition, unit, population, denominator, age universe,
@@ -117,7 +124,10 @@ Keep these evidence categories separate:
 Never present synthetic checks as proof of live compatibility. Live checks
 must respect the suppression and data boundaries in AGENTS.md. Do not
 execute live checks blindly: inspect the existing imputation pipeline against
-those boundaries before selecting checks.
+those boundaries before selecting checks. The full live suite is appropriate
+only when every selected path is permitted; otherwise report the subset and
+coverage gap. Distinguish modeled estimates with assumptions and uncertainty
+from recovering suppressed observed counts.
 Report OS, R/package versions if execution occurred, failures, skipped checks
 and material coverage limits. Give exact remaining maintainer commands,
 including vignette rebuilds when affected, only after stating prerequisites,
