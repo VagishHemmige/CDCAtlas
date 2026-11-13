@@ -12,3 +12,4 @@
 ^CITATION\.cff$
 ^REVIEWING\.md$
 ^vignettes/articles$
+^\.github$

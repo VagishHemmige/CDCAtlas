@@ -1,0 +1,67 @@
+# Runs the live tests (tests/testthat/test-live-*.R) against CDC AtlasPlus and
+# the Census API. They take about 35 minutes, so they run only on request:
+#
+# - add the `live-tests` label to a pull request (remove and re-add it to run
+#   again after more pushes), or
+# - Actions tab -> live-tests.yaml -> Run workflow, on any branch.
+#
+# Needs the CENSUS_API_KEY repository secret. GitHub does not pass secrets to
+# pull requests from forks, so this works only for branches in this repository.
+# Fails if any live test fails or skips: a skip here means a test did not run.
+on:
+  pull_request:
+    types: [labeled]
+  workflow_dispatch:
+
+name: live-tests.yaml
+
+permissions: read-all
+
+jobs:
+  live-tests:
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'live-tests'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    concurrency:
+      group: live-tests-${{ github.ref }}
+      cancel-in-progress: true
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      CENSUS_API_KEY: ${{ secrets.CENSUS_API_KEY }}
+      CDCATLAS_LIVE_TESTS: "true"
+      NOT_CRAN: "true"
+
+    steps:
+      - name: Check the Census API key is set
+        run: |
+          if [ -z "$CENSUS_API_KEY" ]; then
+            echo "::error::CENSUS_API_KEY is not set. Add it under Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v7
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::testthat, local::.
+          needs: check
+
+      - name: Run live tests
+        run: |
+          res <- as.data.frame(testthat::test_local(
+            filter = "live",
+            reporter = "progress",
+            stop_on_failure = TRUE
+          ))
+          # A skip at the top of a test file leaves no rows, so check both.
+          if (nrow(res) == 0) {
+            stop("No live tests ran: check CDCATLAS_LIVE_TESTS and that CDC is reachable.")
+          }
+          if (any(res$skipped)) {
+            stop("Live tests skipped: ", paste(unique(res$test[res$skipped]), collapse = "; "))
+          }
+        shell: Rscript {0}

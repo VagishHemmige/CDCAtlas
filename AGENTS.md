@@ -122,6 +122,10 @@ cache creation, persistence and freshness before proposing changes
 ([#14](https://github.com/VagishHemmige/CDCAtlas/issues/14)); isolate existing
 writes during checks. Changing that behavior requires approval.
 
+CI has a `CENSUS_API_KEY` repository secret for the live tests and the site
+build. Workflows read it with `${{ secrets.CENSUS_API_KEY }}`; never print, log
+or commit its value.
+
 Run `devtools::document()` only in isolation when relevant; exclude unrelated
 Rd and incidental DESCRIPTION/RoxygenNote churn. Do not run formatters unless
 requested. Inspect generated exports/imports rather than assuming they are safe.
