@@ -103,6 +103,21 @@ independent verification of CDC definitions.
 
 ## Validation
 
+Choose validation scope for each PR from the changed behavior and its downstream
+reach, not merely the number of changed lines. State the selected scope and
+rationale. Run focused checks first; expand when shared interfaces, scientific
+calculations, dependencies, or observed failures warrant it. Distinguish failures
+introduced by the PR from existing failures. When attributing a failure to the
+PR, compare with the target-branch baseline under equivalent conditions where
+feasible; otherwise state that attribution remains uncertain. If adequate
+validation is unavailable, report the specific gap. Do not expand into an
+unrelated whole-package audit.
+
+Relevant CI results from the exact reviewed revision may supply validation
+evidence; independently assess whether those tests check the intended behavior.
+Use focused local execution for gaps, suspected defects and independent synthetic
+examples, keeping observed CI distinct from personally executed checks.
+
 Inspect test fixtures, helpers, startup and load-time effects before execution.
 Use only the isolated, permitted environment described in AGENTS.md.
 Inspect expectations independently of implementation; favor hand-checkable
