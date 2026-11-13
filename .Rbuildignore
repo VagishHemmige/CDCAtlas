@@ -11,3 +11,4 @@
 ^\.claude$
 ^CITATION\.cff$
 ^REVIEWING\.md$
+^vignettes/articles$

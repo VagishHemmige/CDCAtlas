@@ -1,11 +1,5 @@
 ---
 title: "Getting started with CDCAtlas"
-output:
-  rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Getting started with CDCAtlas}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, include = FALSE}
@@ -20,7 +14,7 @@ knitr::opts_chunk$set(
 **CDCAtlas** provides R functions for retrieving public health surveillance data
 from CDC AtlasPlus.
 
-This vignette introduces common use patterns:
+This article introduces common use patterns:
 
 - retrieving state- and county-level data
 - querying different diseases
@@ -28,8 +22,9 @@ This vignette introduces common use patterns:
 - comparing rates across groups
 - preparing AtlasPlus data for plotting and analysis
 
-This vignette does **not** cover tract-level extrapolation. That is an advanced
-use case covered separately.
+This article does **not** cover tract-level extrapolation. That is an advanced
+use case covered in
+[Extrapolation to tracts](extrapolation.html).
 
 ## Installation
 
@@ -350,6 +345,6 @@ After getting comfortable with basic queries, consider:
 - comparing state and county results
 - using sex, age, and race/ethnicity stratification
 - joining AtlasPlus data to Census or spatial data
-- using advanced vignettes for tract-level extrapolation and geographic access analyses
+- tract-level extrapolation ([Extrapolation to tracts](extrapolation.html))
 
 See `?get_atlas` for full argument documentation.

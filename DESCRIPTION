@@ -34,7 +34,6 @@ Suggests:
     withr
 Additional_repositories:
     https://walkerke.r-universe.dev
-VignetteBuilder: knitr
 Config/testthat/edition: 3
 Depends: 
     R (>= 4.1.0)
