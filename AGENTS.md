@@ -40,8 +40,10 @@ AtlasPlus endpoints, with a separate modeled-estimation pipeline:
 - `R/extrapolate_from_county.R`: ACS denominators and allocation to tracts
   or block groups; `R/atlas-pipeline.R` supplies shared keys and checks.
 - `tests/testthat/`: synthetic tests and separately gated live checks.
-- `vignettes/getting-started.Rmd` and `vignettes/extrapolation.Rmd`:
-  usage, assumptions and limitations; `docs/` contains generated site output.
+- `vignettes/articles/getting-started.Rmd` and
+  `vignettes/articles/extrapolation.Rmd`: website articles (not built with the
+  package) on usage, assumptions and limitations; `docs/` contains generated
+  site output.
 
 Read the relevant source and documentation before advising or changing it.
 [Issue #29](https://github.com/VagishHemmige/CDCAtlas/issues/29) records the

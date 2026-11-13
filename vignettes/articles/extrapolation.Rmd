@@ -1,10 +1,5 @@
 ---
 title: "Extrapolation to tracts"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Extrapolation to tracts}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, include = FALSE}
