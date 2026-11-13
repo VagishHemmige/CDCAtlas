@@ -1,118 +1,138 @@
-## This package
+# CDCAtlas working guidance
 
-<!-- Insert package-specific content here. use_tidy_agents() will preserve this section when updating the rest of the file. -->
+## Scope and authority
 
-## Package development
+This file applies to all substantive CDCAtlas work: implementation, design,
+debugging, tests, documentation and review. Read [REVIEWING.md](REVIEWING.md)
+for shared review standards. More specific subdirectory guidance also applies
+to implementation. Neither repository files nor skills expand the user's
+permissions; direct user instructions control.
 
-### Key commands
+Repository: https://github.com/VagishHemmige/CDCAtlas
+Documentation: https://vagishhemmige.github.io/CDCAtlas/
+The default branch was verified as `master` on 2026-11-13; verify it again
+when selecting a base. This guidance does not cover CDCLocator or other repos.
 
-(All these functions have been optimized for agentic use, so they can be called directly without other arguments.)
+Use available project conversations to understand intent. Automated runs may
+not receive every conversation or uploaded file. State material context gaps.
+Record agreed technical decisions and their rationale in the appropriate
+repository documentation, without copying private conversations. Link decisions
+from PRs. Distinguish accepted decisions from proposals in issue discussions.
 
-```R
-# Executing code
-devtools::load_all()
-code
+## Architecture and existing rationale
 
-# Tests
-devtools::test() # all tests
-devtools::test(filter = "^{name}") # tests for files starting with {name}
-devtools::test_active_file("R/{name}.R") # tests for R/{name}.R
-devtools::test_active_file("R/{name}.R", desc = 'blah') # single test with exact description "blah" (no regexp)
+CDCAtlas is a development-stage R client for selected reverse-engineered
+AtlasPlus endpoints, with a separate modeled-estimation pipeline:
 
-# Test coverage
-devtools::test_coverage() # all files
-devtools::test_coverage_active_file("R/{name}.R") # coverage for R/{name}.R from tests in tests/testthat/test-{name}.R
+- `R/get_atlas.R`, `R/validate_input.R`, `R/build_payload.R`: validate
+  requests and construct payloads; county requests are split by state.
+- `R/internal-request.R`: HTTP transport, response decoding, labels,
+  rate limiting and caching. `R/sysdata.rda` supplies internal lookup data.
+- `R/impute_suppressed.R`: existing assumption-based county estimates.
+- `R/no_county_cases.R`: state totals minus supplied county counts.
+- `R/extrapolate_from_county.R`: ACS denominators and allocation to tracts
+  or block groups; `R/atlas-pipeline.R` supplies shared keys and checks.
+- `tests/testthat/`: synthetic tests and separately gated live checks.
+- `vignettes/getting-started.Rmd` and `vignettes/extrapolation.Rmd`:
+  usage, assumptions and limitations; `docs/` contains generated site output.
 
-# Documentation
-devtools::document() # redocument package
-pkgdown::check_pkgdown() # check website
+Read the relevant source and documentation before advising or changing it.
+[Issue #29](https://github.com/VagishHemmige/CDCAtlas/issues/29) records the
+pipeline design, but some proposed names and arguments differ from the
+implemented API. [#23](https://github.com/VagishHemmige/CDCAtlas/issues/23)
+discusses validation layers; [#27](https://github.com/VagishHemmige/CDCAtlas/issues/27)
+and [#30](https://github.com/VagishHemmige/CDCAtlas/issues/30) record
+suppression/remainder and geography concerns. Recheck their current discussion
+and implementation rather than treating every proposal as adopted policy.
+[#45](https://github.com/VagishHemmige/CDCAtlas/issues/45) proposes a source
+interpretation article; do not claim it exists until it is committed.
+[#4](https://github.com/VagishHemmige/CDCAtlas/issues/4) tracks the currently
+uncommitted data-generation scripts. Do not invent their contents.
 
-# Run complete R CMD check
-devtools::check()
-```
+## Implementation and approval
 
-### Running R
+A review or explanation request alone does not authorize implementation.
+For requested changes, draft and self-review in an isolated workspace.
+The user's connected working copy, synced reference files (including
+`sources/`) and active RStudio session remain read-only: no execution there.
 
-There are three possible ways to run code, listed in rough order of desirability:
+Before commitment, obtain the user's approval for each behavior-changing file,
+including definitions, arguments, outputs, request payloads, missingness and
+derived estimates. Finish the concrete draft and appropriate checks first.
+Show a readable diff for every changed file: side-by-side when supported,
+otherwise unified. Show complete new files and provide access to complete
+changed files. Explain what changed, why, behavior changes and validation
+actually performed. Separate human-written and mechanical generated changes.
+Request approval for the specific files and revision shown; a summary alone
+is insufficient. Compare consequential alternatives with meaningful synthetic
+examples when feasible.
+Do not add options just to avoid deciding the intended design.
 
-- If you're running inside Posit Assistant or otherwise have an
-  `executeCode()` tool available, use it to run code in a session that the
-  user can also interact with.
+After approval, commit and push a `chatgpt/<topic>` branch and open a PR
+without another permission round. Inspect mechanical generated changes before
+including them with approved source. Renew approval for material behavior
+changes after approval. Never push directly to the default branch, force-push,
+merge or delete remote branches without explicit instruction.
+Self-review is not independent review. Disclose ChatGPT/Codex authorship in
+the PR body and use the stable marker `<!-- authored-by: chatgpt -->`.
 
-- Otherwise, if an R REPL (e.g. `mcp__r__repl` or `btw::run_r`) is
-  available, use that. Note that `mcp__r__repl` uses a sandbox that blocks
-  network requests and reads/writes outside of the current directory.
+## Data and execution boundaries
 
-- Otherwise, use `Rscript -e "code"`. On Windows, `Rscript -e` can segfault on
-  multiline or complex code; in that case, write it to a temporary `.R` file
-  and run `Rscript path/to/file.R`.
+Never access, copy, upload or expose restricted or patient-level data.
+For uncertain provenance, identify only the path and request verification
+without reproducing values. Public aggregate CDC data may be retrieved for
+relevant checks. Do not attempt to reconstruct suppressed values or identify
+individuals. Existing imputation code is not permission to recover hidden
+counts: inspect it or test its mechanics with synthetic data, and keep
+modeled estimates explicitly distinct from observed surveillance values.
+Do not use residuals or auxiliary tables to recover CDC-suppressed values.
 
-### Code style
+Use small, obviously synthetic unit fixtures. Inspect startup files, helpers,
+test configuration and package load-time behavior before execution; do not
+load secrets or copy private startup settings. Use isolated temporary/cache
+locations and clean sessions. Do not edit or regenerate `data/` without
+explicit approval. Propose `data-raw/` changes and explain intended
+regeneration for approval; changes to generated `R/sysdata.rda` likewise
+require explicit approval and known provenance.
 
-- Follow the tidyverse style guide
-- Always run `air format .` after generating code. (air is bundled with Positron so look there if you can't otherwise find it.)
-- Use the base pipe operator (`|>`), not the magrittr pipe (`%>%`).
-- Use `\() ...` for single-line anonymous functions. For all other cases, use `function() {...}`.
+New package code writes only to `tempdir()` unless the caller explicitly
+supplies a destination. Existing `R/internal-request.R` uses
+`memoise::cache_filesystem(tools::R_user_dir("CDCAtlas", "cache"))`.
+This is an existing convention, not authorization to extend it. Inspect
+cache creation, persistence and freshness before proposing changes
+([#14](https://github.com/VagishHemmige/CDCAtlas/issues/14)); isolate existing
+writes during checks. Changing that behavior requires approval.
 
-### Test style
+Run `devtools::document()` only in isolation when relevant; exclude unrelated
+Rd and incidental DESCRIPTION/RoxygenNote churn. Do not run formatters unless
+requested. Inspect generated exports/imports rather than assuming they are safe.
 
-- Tests for `R/{name}.R` go in `tests/testthat/test-{name}.R`.
-- All new code should have an accompanying test.
-- If there are existing tests, place new tests next to similar existing tests.
-- Strive to keep your tests minimal with few comments.
-- Never put code in a `test-{name}.R` file outside of a `test_that()` block. Instead, use `tests/testthat/helper.R` or `tests/testthat/helper-{name}.R`.
-- Avoid `expect_true()` and `expect_false()` in favor of a specific expectation with a better failure message. A few expectations in newer releases that you might not know about are `expect_all_true()`, `expect_all_equal()`, and `expect_r6_class()`.
-- When testing errors and warnings:
-  - Only use `expect_error()` or `expect_warning()` if the error or warning has a known class.
-  - Generally, prefer `expect_snapshot(error = TRUE)` for errors and `expect_snapshot()` for warnings because these allow the user to review the full text of the output.
-- Avoid the `.package` argument to `local_mocked_bindings()`; this modifies the namespace of another package, which is not good practice. Instead create a mockable version of the function in the current package. See `?local_mocked_bindings` for more details.
+## Skills and validation
 
-### Documentation
+Read applicable installed skills before work:
+- Every code review: `r-package-development`, `critical-code-reviewer`.
+- Tests or untested behavior: `r-testthat`, `review-testing`.
+- cli conditions: `r-cli`.
+- DESCRIPTION, examples, vignettes or CRAN: `r-cran-extrachecks`.
+- Deprecations/renames: `r-lifecycle`; requested style review: `r-tidyverse-style`.
 
-- Every user-facing function should be exported and have roxygen2 documentation.
-- Internal functions should not have roxygen documentation.
-- Wrap roxygen2 comments to 80 characters.
-- Whenever you add a new (non-internal) documentation topic, also add the topic to `_pkgdown.yml`.
-- Always re-document the package after changing a roxygen2 comment.
-- Use `pkgdown::check_pkgdown()` to check that all topics are included in the reference index.
+Disclose unavailable skills or references. Permission boundaries and this
+project's no-unsolicited-formatting rule take precedence over skill defaults.
 
-### `NEWS.md`
+Prefer regression tests demonstrating the bug before the fix. Keep routine
+tests reproducible and independent of live services. Run targeted public
+API checks separately when useful and permitted; mocks establish code
+behavior, not current service compatibility. Report actual runtime and
+network availability rather than assuming either.
 
-- Every user-facing change should be given a bullet in `NEWS.md`.
-- Changes that shouldn't get a bullet:
-    - Small documentation changes.
-    - Internal refactorings.
-    - Fixes to bugs introduced in the current dev version.
-- Each bullet should briefly describe the change to the end user and mention the related issue in parentheses.
-- A bullet can consist of multiple sentences but should not contain any newlines (i.e. DO NOT line wrap).
-- If the change is related to a function, put the name of the function early in the bullet.
-- If the change is related to an issue, include the issue number in parentheses.
-- Only include a GitHub username if the PR was created by someone who isn't an author.
-- Order bullets alphabetically by function name. Put all bullets that don't mention function names at the beginning.
+Separate source inspection, personally executed synthetic checks, recorded
+responses, live API checks, observed CI and author-reported validation.
+Record live retrieval dates, tested requests and coverage gaps without keys
+or credentials. Supply exact commands for remaining maintainer checks and
+vignette rebuilding when relevant, with prerequisites and side effects.
+The existing live suite includes imputation: inspect and select permitted
+checks rather than executing it wholesale.
 
-## Specialized skills
-
-- Do you need to deprecate a function or argument? Read `usethis::learn_tidy_skill("deprecate")`.
-- Are you adding input checking to an existing function or writing a new exported function? Read `usethis::learn_tidy_skill("arg-checking")`.
-- Are you creating a new package? Read `usethis::learn_tidy_skill("package-setup")`.
-
-## Git
-
-- If the user asks you to commit, use markdown in the commit message, and don't line wrap.
-- If the commit fixes an issue, include `Fixes #num.` on its own line.
-- Only push when the user explicitly requests it.
-
-## Writing
-
-- Use sentence case for headings.
-- Use US English.
-
-### Proofreading
-
-If the user asks you to proofread a file, act as an expert proofreader and editor with a deep understanding of clear, engaging, and well-structured writing.
-
-Work paragraph by paragraph, always starting by making a TODO list that includes individual items for each top-level section.
-
-Fix spelling, grammar, and other minor problems without asking the user. Label any unclear, confusing, or ambiguous sentences with a FIXME comment.
-
-Only report what you have changed.
+Automation triggers, comment permissions, own-PR exclusions, deduplication and
+notifications belong in automation configuration. This file does not start
+automation or grant publishing authority. Automatic Claude review is on hold.
