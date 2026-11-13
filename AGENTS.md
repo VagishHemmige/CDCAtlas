@@ -1,5 +1,9 @@
 # CDCAtlas working guidance
 
+Adapted from the `usethis::use_tidy_agents()` template committed in PR #39.
+Do not regenerate this file in place; preserve the project-specific guidance
+and review changes against the committed version.
+
 ## Scope and authority
 
 This file applies to all substantive CDCAtlas work: implementation, design,
@@ -15,9 +19,12 @@ when selecting a base. This guidance does not cover CDCLocator or other repos.
 
 Use available project conversations to understand intent. Automated runs may
 not receive every conversation or uploaded file. State material context gaps.
-Record agreed technical decisions and their rationale in the appropriate
-repository documentation, without copying private conversations. Link decisions
-from PRs. Distinguish accepted decisions from proposals in issue discussions.
+Record agreed technical decisions and rationale in existing issues and design
+records, linking them from PRs and relevant documentation. Available project
+pages can provide context; do not assume every assistant can access them.
+Preserve the durable technical decision without copying private conversations.
+A new repository notes directory is not implied. Distinguish accepted decisions
+from proposals in issue discussions.
 
 ## Architecture and existing rationale
 
@@ -66,15 +73,20 @@ actually performed. Separate human-written and mechanical generated changes.
 Request approval for the specific files and revision shown; a summary alone
 is insufficient. Compare consequential alternatives with meaningful synthetic
 examples when feasible.
-Do not add options just to avoid deciding the intended design.
+When two or more alternatives are reasonable, present them with their
+tradeoffs and a recommendation before settling the design. Consider a function
+argument with a recommended default when alternatives serve plausible user
+needs; an argument is a proposal, not an automatic requirement. Seek the
+maintainer's decision before implementation. Do not conceal unresolved
+scientific definitions or present an invalid method as an equally acceptable
+choice. Use meaningful synthetic comparisons where feasible.
 
-After approval, commit and push a `chatgpt/<topic>` branch and open a PR
-without another permission round. Inspect mechanical generated changes before
-including them with approved source. Renew approval for material behavior
-changes after approval. Never push directly to the default branch, force-push,
-merge or delete remote branches without explicit instruction.
-Self-review is not independent review. Disclose ChatGPT/Codex authorship in
-the PR body and use the stable marker `<!-- authored-by: chatgpt -->`.
+What each assistant may commit, push, post, merge or delete is set by the
+maintainer outside this repository. This file grants none of those permissions.
+Inspect mechanical generated changes before including them with approved
+source; material behavior changes after approval require renewed approval.
+Self-review is not independent review. Identify assistant authorship in the PR
+body so independent review can be routed correctly.
 
 ## Data and execution boundaries
 
@@ -85,7 +97,12 @@ relevant checks. Do not attempt to reconstruct suppressed values or identify
 individuals. Existing imputation code is not permission to recover hidden
 counts: inspect it or test its mechanics with synthetic data, and keep
 modeled estimates explicitly distinct from observed surveillance values.
-Do not use residuals or auxiliary tables to recover CDC-suppressed values.
+Distinguish statistical estimation under explicit assumptions and uncertainty
+from recovering hidden observed counts. A censored model or calibration method
+is not automatically prohibited, nor automatically validated or authorized.
+Assess its purpose and data flow against the user's permissions before using
+live data. Do not use residuals or auxiliary tables to recover CDC-suppressed
+values; synthetic checks remain available for evaluating method mechanics.
 
 Use small, obviously synthetic unit fixtures. Inspect startup files, helpers,
 test configuration and package load-time behavior before execution; do not
@@ -109,12 +126,14 @@ requested. Inspect generated exports/imports rather than assuming they are safe.
 
 ## Skills and validation
 
-Read applicable installed skills before work:
-- Every code review: `r-package-development`, `critical-code-reviewer`.
-- Tests or untested behavior: `r-testthat`, `review-testing`.
-- cli conditions: `r-cli`.
-- DESCRIPTION, examples, vignettes or CRAN: `r-cran-extrachecks`.
-- Deprecations/renames: `r-lifecycle`; requested style review: `r-tidyverse-style`.
+Use applicable R package-development and critical-code-review guidance for
+substantive work. Add testing and test-review guidance for tests or untested
+behavior, cli guidance for conditions, CRAN guidance for DESCRIPTION/examples/
+vignettes or CRAN preparation, and lifecycle guidance for deprecations.
+Use style guidance for requested style reviews.
+Names vary by environment: `r-testthat` / `testing-r-packages`,
+`r-cli` / `cli`, `r-cran-extrachecks` / `cran-extrachecks`, and
+`r-lifecycle` / `lifecycle`. Use the installed equivalent.
 
 Disclose unavailable skills or references. Permission boundaries and this
 project's no-unsolicited-formatting rule take precedence over skill defaults.
@@ -130,9 +149,56 @@ responses, live API checks, observed CI and author-reported validation.
 Record live retrieval dates, tested requests and coverage gaps without keys
 or credentials. Supply exact commands for remaining maintainer checks and
 vignette rebuilding when relevant, with prerequisites and side effects.
-The existing live suite includes imputation: inspect and select permitted
-checks rather than executing it wholesale.
+The established pipeline-validation workflow includes the full live suite
+with `CDCATLAS_LIVE_TESTS=true` and `devtools::test(filter = "live")`.
+Before using that workflow, inspect all selected tests, including imputation,
+and their data/cache effects. Run the full suite only when every selected path
+is permitted; otherwise run the permitted subset and report the coverage gap.
+A test flag is not authorization to cross the user's data boundaries.
 
 Automation triggers, comment permissions, own-PR exclusions, deduplication and
 notifications belong in automation configuration. This file does not start
-automation or grant publishing authority. Automatic Claude review is on hold.
+automation or grant publishing authority. Each assistant's automation status
+is maintained outside these shared technical standards.
+
+## Package conventions retained from the template
+
+- Use US English and sentence-case headings. Follow existing tidyverse style,
+  using the base pipe and single-line anonymous-function shorthand where
+  appropriate. Do not perform unrelated style cleanup.
+- Put tests for `R/{name}.R` in `tests/testthat/test-{name}.R`, near related
+  tests. Keep test code inside `test_that()`; shared setup belongs in helpers.
+  Use meaningful tests for new behavior and specific expectations with useful
+  failures. For errors/warnings, prefer snapshots when message text matters;
+  use class-based expectations when testing a known condition class.
+  Avoid `.package` mocking of another package's namespace; use a local
+  service boundary that can be mocked.
+- Document and export public functions with roxygen2. Internal documentation
+  should not create public help topics; use `@noRd` when appropriate.
+  Wrap roxygen comments to 80 characters. Add new public topics to
+  `_pkgdown.yml` and check reference coverage with
+  `pkgdown::check_pkgdown()`. Redocument relevant roxygen changes in isolation.
+- Give user-facing changes a `NEWS.md` bullet, except small documentation
+  changes, internal refactoring and fixes introduced in the current development
+  version. Put the function name early; mention the related issue in
+  parentheses. Keep each bullet on one line, order function bullets
+  alphabetically, and put non-function bullets first. Credit a GitHub username
+  only when the PR contributor is not already a package author.
+- When committing is authorized, use Markdown in the commit message without
+  wrapping its lines; include `Fixes #num.` on its own line when applicable.
+
+## Documentation maintenance and publication
+
+The paths above describe the current layout. Update them when the cleanup in
+[#20](https://github.com/VagishHemmige/CDCAtlas/issues/20) and
+[#43](https://github.com/VagishHemmige/CDCAtlas/issues/43) lands.
+Air adoption in [#42](https://github.com/VagishHemmige/CDCAtlas/issues/42)
+does not itself authorize unsolicited formatting.
+
+`.Rbuildignore` excludes AGENTS.md and REVIEWING.md from package builds,
+not from pkgdown. Both root Markdown files can become unlinked website pages,
+including search and sitemap entries.
+[#40](https://github.com/VagishHemmige/CDCAtlas/issues/40) currently defers
+the publication fix. Do not claim these files are unpublished or private.
+A publishing change requires a separately reviewed build/deployment solution;
+search exclusion alone does not remove the pages.
