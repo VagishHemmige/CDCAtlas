@@ -1,0 +1,104 @@
+# CDCAtlas
+
+`CDCAtlas` is an R package for retrieving selected public health
+surveillance data from the CDC’s **AtlasPlus** platform.
+
+![Lifecycle:
+experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)![License:
+MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+
+## What is the CDC Atlas database?
+
+**AtlasPlus** is an interactive CDC data tool that provides access to
+reported data on HIV, sexually transmitted infections, tuberculosis,
+viral hepatitis, and selected social determinants of health. It allows
+users to explore these data through maps, charts, tables, and
+downloadable reports.
+
+This package provides a programmatic interface to selected AtlasPlus
+data so that researchers can query, cache, and analyze results directly
+in R rather than working only through the web interface, which requires
+downloading individual files which require manual cleanup before
+importing into R.
+
+  
+  
+
+[![NCHHSTP AtlasPlus is an interactive tool that provides CDC an
+effective way to disseminate HIV, Viral Hepatitis, STD, TB and Social
+Determinants of Health Data, while allowing users to observe trends and
+patterns by creating detailed reports, maps, and other graphics. Find
+out more!
+https://www.cdc.govnchhstp/about/atlasplus.html](https://www.cdc.gov/nchhstp/about/images/atlasplus-buttons/AtlasPlus-728x90.jpg)](https://www.cdc.gov/nchhstp/about/atlasplus.html?s_cid=bb-od-atlasplus_005 "NCHHSTP AtlasPlus gives you the power to access data reported to CDC’s National Center for HIV, Viral Hepatitis, STD, and TB Prevention (NCHHSTP). Use HIV, viral hepatitis, STD, TB and Social Determinants of Health Data to create maps, charts, and detailed reports, and analyze trends and patterns.")
+
+  
+  
+
+## What the package does
+
+`CDCAtlas` provides a **polite, cache-aware R client** for selected CDC
+**AtlasPlus** endpoints.
+
+AtlasPlus is not a stable, public API.  
+This package aims for safe and respectful usage:
+
+- identifies via a custom **User-Agent**
+- applies **rate limiting** and **retry backoff**
+- **caches responses** to reduce server traffic
+- handles schema changes gracefully when possible
+
+## Installation
+
+You can install the development version of CDCAtlas from
+[GitHub](https://github.com/) with:
+
+``` r
+
+
+install.packages("devtools")
+devtools::install_github("VagishHemmige/CDCAtlas")
+```
+
+## Example
+
+This is a basic example which shows you how to solve a common problem:
+
+``` r
+
+
+library(CDCAtlas)
+
+gonorrhea_us <- get_atlas(
+  disease = "gonorrhea",
+  geography = "state",
+  year = 2022
+)
+```
+
+# Package index
+
+## Data Access
+
+- [`get_atlas()`](https://vagishhemmige.github.io/CDCAtlas/reference/get_atlas.md)
+  : Retrieve STI surveillance data from CDC AtlasPlus
+
+## Estimates below county level
+
+- [`impute_suppressed()`](https://vagishhemmige.github.io/CDCAtlas/reference/impute_suppressed.md)
+  : Fill in suppressed county counts
+- [`no_county_cases()`](https://vagishhemmige.github.io/CDCAtlas/reference/no_county_cases.md)
+  : Cases in state totals that no county accounts for
+- [`extrapolate_from_county()`](https://vagishhemmige.github.io/CDCAtlas/reference/extrapolate_from_county.md)
+  : Share county counts across smaller Census areas
+
+# Articles
+
+### Getting started
+
+- [Getting started with
+  CDCAtlas](https://vagishhemmige.github.io/CDCAtlas/articles/getting-started.md):
+
+### Extrapolation of county data to tracts
+
+- [Extrapolation to
+  tracts](https://vagishhemmige.github.io/CDCAtlas/articles/extrapolation.md):
