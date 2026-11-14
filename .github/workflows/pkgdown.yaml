@@ -1,10 +1,12 @@
 # Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
 # Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
 #
-# Builds the pkgdown site on every PR (to check it renders) and deploys it to
-# the gh-pages branch on pushes to master, releases and manual runs. The
-# articles call CDC AtlasPlus and the Census API, so the build needs network
-# access and the CENSUS_API_KEY repository secret.
+# Builds the pkgdown site on PRs (to check it renders) and deploys it to the
+# gh-pages branch on pushes to master, releases and manual runs. The articles
+# call CDC AtlasPlus and the Census API, so the build needs network access and
+# the CENSUS_API_KEY secret (a Dependabot secret too, for Dependabot's PRs).
+# GitHub gives no secrets to PRs from forks, so on those this job fails at the
+# key check; the offline checks in the other workflows still run.
 on:
   push:
     branches: [main, master]
