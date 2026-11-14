@@ -1,0 +1,13 @@
+# Opens one pull request a month that updates the versions of the GitHub
+# Actions used in .github/workflows/ (for example actions/checkout).
+# R packages are not covered: Dependabot cannot read DESCRIPTION.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

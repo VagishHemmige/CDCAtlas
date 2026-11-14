@@ -14,6 +14,7 @@ Automated data extraction from the CDC Atlas database of HIV and STI data
 Useful links:
 \itemize{
   \item \url{https://github.com/VagishHemmige/CDCAtlas}
+  \item \url{https://vagishhemmige.github.io/CDCAtlas}
   \item Report bugs at \url{https://github.com/VagishHemmige/CDCAtlas/issues}
 }
 
