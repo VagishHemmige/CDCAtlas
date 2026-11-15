@@ -227,7 +227,7 @@ test_that("each disease's race codes are exactly the ones CDC offers (#105)", {
     sent <- intersect(as.integer(sent), race_ids)
     for (id in indicator_ids(disease)) {
       cdc <- setdiff(offered$code[offered$indicator == id], 551)
-      expect_setequal(sent, cdc)
+      expect_setequal(sent, cdc, label = paste(disease, id))
       expect_contains(offered$code[offered$indicator == id], 551)
     }
   }
