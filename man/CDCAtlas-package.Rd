@@ -8,7 +8,7 @@
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-Downloads HIV, sexually transmitted infection, tuberculosis and viral hepatitis surveillance data from 'AtlasPlus', the interactive tool of the Centers for Disease Control and Prevention (CDC), through the endpoints its web application uses. Estimates suppressed county counts, reports cases in state totals that have no county, and allocates county counts to census tracts or block groups in proportion to American Community Survey (ACS) populations. Not affiliated with or endorsed by CDC.
+Downloads HIV, sexually transmitted infection, tuberculosis and viral hepatitis surveillance data from 'AtlasPlus', the interactive tool of the Centers for Disease Control and Prevention (CDC), through the endpoints its web application uses. Estimates suppressed county counts, reports the difference between state totals and the county counts supplied, and allocates county counts to census tracts or block groups in proportion to American Community Survey (ACS) populations. Not affiliated with or endorsed by CDC.
 }
 \seealso{
 Useful links:
@@ -20,11 +20,11 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Vagish Hemmige \email{vagish.hemmige@gmail.com} (\href{https://orcid.org/0009-0006-6346-1826}{ORCID})
+\strong{Maintainer}: Vagish Hemmige \email{vagish.hemmige@gmail.com} (\href{https://orcid.org/0009-0006-6346-1826}{ORCID}) [copyright holder]
 
 Authors:
 \itemize{
-  \item Vagish Hemmige \email{vagish.hemmige@gmail.com} (\href{https://orcid.org/0009-0006-6346-1826}{ORCID})
+  \item Vagish Hemmige \email{vagish.hemmige@gmail.com} (\href{https://orcid.org/0009-0006-6346-1826}{ORCID}) [copyright holder]
 }
 
 }
