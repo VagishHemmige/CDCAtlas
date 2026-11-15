@@ -272,7 +272,7 @@ return(df)
   }
 
   results <- vector("list", length(payloads))
-  for (i in cli::cli_progress_along(payloads, "Downloading county data by state")) {
+  for (i in cli::cli_progress_along(payloads, "Downloading from CDC AtlasPlus")) {
     results[[i]] <- .request_atlas(payloads[[i]])
   }
 
@@ -299,16 +299,55 @@ client_rate <- ratelimitr::limit_rate(
 
 
 
-#' Internal AtlasPlus request helper with caching
-#'
-#' @description
-#' Cached wrapper around `.request_atlas_uncached()`.
-#'
-#' @keywords internal
-# memoise::cache_filesystem() needs digest, which memoise only suggests, so
-# digest stays in Imports even though CDCAtlas never calls it.
-.request_atlas <- memoise::memoise(
-  .request_atlas_internal,
-  cache = memoise::cache_filesystem(tools::R_user_dir("CDCAtlas", "cache"))
-)
+# Cached AtlasPlus requests.
+#
+# Responses are kept on disk for 30 days, so CDC revisions reach users within a
+# month, and get_atlas(refresh = TRUE) replaces them sooner. The age counts
+# from the download: reading a response does not make it newer, so "fifo".
+# The cache is set up at the first request, not when the package is built or
+# loaded, so it is always in the current user's cache folder.
+.atlas_cache_max_age <- 30 * 24 * 60 * 60
 
+.atlas_cache <- new.env(parent = emptyenv())
+
+.atlas_cache_dir <- function() {
+  file.path(tools::R_user_dir("CDCAtlas", "cache"), "atlasplus")
+}
+
+# The memoised request function, made again if the cache folder has changed
+# (for example, R_USER_CACHE_DIR set after the first request) or has been
+# deleted: cachem refuses to use a cache whose folder is gone.
+.atlas_cached_request <- function() {
+  dir <- .atlas_cache_dir()
+  if (!identical(.atlas_cache$dir, dir) || !dir.exists(dir)) {
+    .atlas_cache$request <- memoise::memoise(
+      .request_atlas_download,
+      cache = cachem::cache_disk(
+        dir,
+        max_age = .atlas_cache_max_age,
+        evict = "fifo"
+      )
+    )
+    .atlas_cache$dir <- dir
+  }
+  .atlas_cache$request
+}
+
+# Looks up .request_atlas_internal() at each call, so tests can replace it.
+.request_atlas_download <- function(payload) {
+  .request_atlas_internal(payload)
+}
+
+.request_atlas <- function(payload) {
+  .atlas_cached_request()(payload)
+}
+
+# Drop the cached responses to these payloads, so the next request downloads
+# them again.
+.forget_atlas_requests <- function(payloads) {
+  drop <- memoise::drop_cache(.atlas_cached_request())
+  for (payload in payloads) {
+    drop(payload)
+  }
+  invisible()
+}

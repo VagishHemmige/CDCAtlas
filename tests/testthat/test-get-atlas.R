@@ -17,3 +17,9 @@ test_that("get_atlas() only downloads", {
   )
   expect_equal(get_atlas("hiv", "county", 2022), fake_county_atlas())
 })
+
+test_that("an old positional extrapolate_to_tract still stops before any request", {
+  local_mocked_bindings(.request_atlas_all = function(payloads) stop("CDC was called"))
+  expect_snapshot(get_atlas("hiv", "county", 2022, NULL, TRUE), error = TRUE)
+  expect_snapshot(get_atlas("hiv", "county", 2022, NULL, FALSE), error = TRUE)
+})

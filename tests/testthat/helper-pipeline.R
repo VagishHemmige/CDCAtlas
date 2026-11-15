@@ -167,6 +167,19 @@ fake_state_atlas <- function(no_county = 0, ...) {
 # Replace CDC and the Census with the made-up data for one test.
 # `county_totals` is CDC's full county table for the request; NULL means the
 # county data being processed is complete.
+# The rows of a fake state table that one request asks for: requests are
+# split by disease and year, so answer with that year's rows for the
+# indicators requested.
+fake_state_response <- function(state, payload) {
+  ids <- as.integer(strsplit(payload$VariableIDs, ",")[[1]])
+  years <- ids[ids %in% varvals$id[varvals$vtid == 2]] + 1478
+  indicators <- varvals$name[varvals$id %in% ids]
+  state[
+    as.numeric(as.character(state$year)) %in% years &
+      as.character(state$indicator) %in% indicators,
+  ]
+}
+
 local_fake_sources <- function(
   state = fake_state_atlas(),
   acs = fake_acs(),
@@ -174,7 +187,8 @@ local_fake_sources <- function(
   env = parent.frame()
 ) {
   local_mocked_bindings(
-    .request_atlas = function(payload) state,
+    .request_atlas = function(payload) fake_state_response(state, payload),
+    .label_atlas_columns = function(df) df,
     .fetch_county_totals = function(x) county_totals %||% x,
     .check_census_ready = function(call) invisible(),
     .get_acs_areas = function(variables, year, states, to) {
