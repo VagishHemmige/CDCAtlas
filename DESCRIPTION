@@ -1,6 +1,6 @@
 Package: CDCAtlas
 Title: Download 'CDC AtlasPlus' Data and Estimate Tract-Level Counts
-Version: 0.0.0.9001
+Version: 0.1.0
 Authors@R: 
     person("Vagish", "Hemmige", , "vagish.hemmige@gmail.com", role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0009-0006-6346-1826"))
