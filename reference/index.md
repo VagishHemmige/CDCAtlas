@@ -4,6 +4,8 @@
 
 - [`get_atlas()`](https://vagishhemmige.github.io/CDCAtlas/reference/get_atlas.md)
   : Retrieve STI surveillance data from CDC AtlasPlus
+- [`clear_atlas_cache()`](https://vagishhemmige.github.io/CDCAtlas/reference/clear_atlas_cache.md)
+  : Delete saved CDC downloads
 
 ## Estimates below county level
 

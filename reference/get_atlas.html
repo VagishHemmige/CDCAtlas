@@ -58,7 +58,8 @@ tibble.</p>
 <span>  <span class="va">geography</span>,</span>
 <span>  <span class="va">year</span>,</span>
 <span>  stratify_by <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  extrapolate_to_tract <span class="op">=</span> <span class="fu">deprecated</span><span class="op">(</span><span class="op">)</span></span>
+<span>  extrapolate_to_tract <span class="op">=</span> <span class="fu">deprecated</span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  refresh <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -89,6 +90,14 @@ Can be a single year (e.g., <code>2022</code>) or a sequence (e.g., <code>2018:2
 <dt id="arg-extrapolate-to-tract">extrapolate_to_tract<a class="anchor" aria-label="anchor" href="#arg-extrapolate-to-tract"></a></dt>
 <dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> No longer
 supported. Use <code><a href="impute_suppressed.html">impute_suppressed()</a></code> and then <code><a href="extrapolate_from_county.html">extrapolate_from_county()</a></code>.</p></dd>
+
+
+<dt id="arg-refresh">refresh<a class="anchor" aria-label="anchor" href="#arg-refresh"></a></dt>
+<dd><p>If <code>TRUE</code>, download the data again from CDC even if a saved
+copy is less than 30 days old, and save the new copy. For county data
+this also drops the saved state totals that <code><a href="impute_suppressed.html">impute_suppressed()</a></code>,
+<code><a href="no_county_cases.html">no_county_cases()</a></code> and <code><a href="extrapolate_from_county.html">extrapolate_from_county()</a></code> use with them, so
+those are downloaded again too. Default <code>FALSE</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -182,7 +191,20 @@ for each geography-year pair.</p>
 <p>This function is a reverse-engineered wrapper around the AtlasPlus
 public query system. The CDC does not publish an official API specification,
 and internal identifiers may change without notice. If the CDC modifies the
-backend schema, requests may fail. Please report issues via GitHub.</p>
+backend schema, requests may fail. Please report issues via GitHub.</p><div class="section">
+<h3 id="saved-downloads">Saved downloads<a class="anchor" aria-label="anchor" href="#saved-downloads"></a></h3>
+
+
+<p>Data are requested from CDC one disease and one year at a time (and for
+counties, one state at a time). Each response is saved in the folder given
+by <code>tools::R_user_dir("CDCAtlas", "cache")</code> and reused for 30 days, so data
+already downloaded, alone or as part of a larger request, aren't downloaded
+again. After 30 days the data are
+downloaded again, which picks up any revisions CDC has made. Use
+<code>refresh = TRUE</code> to download them sooner, or <code><a href="clear_atlas_cache.html">clear_atlas_cache()</a></code> to delete
+every saved response.</p>
+</div>
+
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

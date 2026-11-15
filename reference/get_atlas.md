@@ -14,7 +14,8 @@ get_atlas(
   geography,
   year,
   stratify_by = NULL,
-  extrapolate_to_tract = deprecated()
+  extrapolate_to_tract = deprecated(),
+  refresh = FALSE
 )
 ```
 
@@ -46,6 +47,17 @@ get_atlas(
   [`impute_suppressed()`](https://vagishhemmige.github.io/CDCAtlas/reference/impute_suppressed.md)
   and then
   [`extrapolate_from_county()`](https://vagishhemmige.github.io/CDCAtlas/reference/extrapolate_from_county.md).
+
+- refresh:
+
+  If `TRUE`, download the data again from CDC even if a saved copy is
+  less than 30 days old, and save the new copy. For county data this
+  also drops the saved state totals that
+  [`impute_suppressed()`](https://vagishhemmige.github.io/CDCAtlas/reference/impute_suppressed.md),
+  [`no_county_cases()`](https://vagishhemmige.github.io/CDCAtlas/reference/no_county_cases.md)
+  and
+  [`extrapolate_from_county()`](https://vagishhemmige.github.io/CDCAtlas/reference/extrapolate_from_county.md)
+  use with them, so those are downloaded again too. Default `FALSE`.
 
 ## Value
 
@@ -185,6 +197,18 @@ public query system. The CDC does not publish an official API
 specification, and internal identifiers may change without notice. If
 the CDC modifies the backend schema, requests may fail. Please report
 issues via GitHub.
+
+### Saved downloads
+
+Data are requested from CDC one disease and one year at a time (and for
+counties, one state at a time). Each response is saved in the folder
+given by `tools::R_user_dir("CDCAtlas", "cache")` and reused for 30
+days, so data already downloaded, alone or as part of a larger request,
+aren't downloaded again. After 30 days the data are downloaded again,
+which picks up any revisions CDC has made. Use `refresh = TRUE` to
+download them sooner, or
+[`clear_atlas_cache()`](https://vagishhemmige.github.io/CDCAtlas/reference/clear_atlas_cache.md)
+to delete every saved response.
 
 ## See also
 
