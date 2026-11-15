@@ -49,8 +49,29 @@ test_that("national requests use CDC's United States code, 5000", {
   expect_identical(varvals$name[varvals$id == 5000], "United States")
 })
 
+test_that("region requests use CDC's four Census regions and the territories", {
+  ids <- payload_ids(.build_payload("hiv", "region", 2022))
+  regions <- c(8453:8457)
+
+  expect_contains(ids, regions)
+  expect_equal(intersect(ids, c(5000, lookup[["state"]]$geo_id)), integer(0))
+  expect_identical(
+    varvals$name[match(regions, varvals$id)],
+    c(
+      "Northeast", "Midwest", "South", "West",
+      "U.S. territories and freely associated states"
+    )
+  )
+})
+
+test_that("get_atlas() accepts geography = \"region\"", {
+  local_mocked_bindings(.request_atlas_all = function(payloads) payloads)
+  payloads <- get_atlas("hiv", "region", 2022)
+  expect_length(payloads, 1)
+})
+
 test_that("other geographies are still sent as one payload", {
-  for (geography in c("national", "state", "msa")) {
+  for (geography in c("national", "region", "state", "msa")) {
     payloads <- .build_payloads("hiv", geography, 2022)
     expect_length(payloads, 1)
     expect_identical(payloads[[1]], .build_payload("hiv", geography, 2022))

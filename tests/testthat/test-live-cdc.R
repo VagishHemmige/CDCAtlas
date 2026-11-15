@@ -40,6 +40,26 @@ test_that("national HIV request matches AtlasPlus, 2022", {
   expect_equal(out$cases[out$indicator == "HIV prevalence"], 1087524)
 })
 
+test_that("region HIV request returns the four regions and the territories, 2022", {
+  local_mocked_bindings(.request_atlas = .request_atlas_internal)
+  out <- get_atlas("hiv", "region", 2022)
+
+  expect_setequal(
+    as.character(unique(out$geography)),
+    c(
+      "Northeast", "Midwest", "South", "West",
+      "U.S. territories and freely associated states"
+    )
+  )
+  expect_equal(sum(duplicated(out[c("geography", "indicator")])), 0)
+  # The four regions together are the 50 states and DC, so their diagnoses
+  # add up to no more than the national count checked above.
+  regions <- out[out$geography %in% c("Northeast", "Midwest", "South", "West") &
+    out$indicator == "HIV diagnoses", ]
+  expect_lte(sum(regions$cases), 37685)
+  expect_gt(sum(regions$cases), 30000)
+})
+
 test_that("national HIV request returns both indicators, 2017", {
   local_mocked_bindings(.request_atlas = .request_atlas_internal)
   out <- get_atlas("hiv", "national", 2017)

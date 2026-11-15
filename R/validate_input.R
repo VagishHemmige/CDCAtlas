@@ -19,6 +19,7 @@
 
   valid_geographies <- c(
     "national",
+    "region",
     "state",
     "county",
     "msa"
@@ -59,16 +60,6 @@
       c(
         "{.arg geography} must be a single character string.",
         "x" = "You supplied a {.cls {class(geography)}} of length {length(geography)}."
-      ),
-      call = call
-    )
-  }
-
-  if (identical(geography, "region")) {
-    cli::cli_abort(
-      c(
-        "{.code geography = \"region\"} is not supported yet.",
-        "i" = "Use {.val national} or {.val state} instead."
       ),
       call = call
     )
