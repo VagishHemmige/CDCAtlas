@@ -22,10 +22,11 @@ if ("estimate" %in% disease) {id <- c(id, 285:287)}
 if ("hepatitis" %in% disease) {id<-c(id, 210:212)}
 
 #Add geography to payload.  Only allows one geography
-#Of note, there is a specific marker () to group by region; otherwise,
 id<- switch (geography,
 "national" =  c(id,5000),  #5000 is the United States; state codes start at 5001
-"region"=id, #Placeholder code
+#CDC's region level (geoLevel 1005): the four Census regions (8453-8456) and
+#U.S. territories and freely associated states (8457)
+"region"=c(id, varvals$id[varvals$geoLevel %in% 1005]),
 "state"=c(id,lookup[["state"]]$geo_id),
 "county"= c(id, geo_ids %||% lookup[["counties"]]$geo_id),
 "msa"=c(id,lookup[["msa"]]$geo_id)
@@ -60,21 +61,43 @@ id<-c(id,801)
 }
 
 
-# County requests are split by state. A single request for every county can
+# Requests are split into one per disease and year, and county requests also
+# by state, so each saved response covers one disease, one year and (for
+# counties) one state. Then get_atlas(refresh = TRUE) and the pipeline's own
+# requests always name the same saved pieces, whatever years or diseases they
+# were asked for together (#77). A single request for every county can also
 # exceed CDC's database timeout (seen for 2017 in October 2026), while one
 # state's counties returns in a few seconds.
+#
+# `states`: for counties, the 2-digit state FIPS codes to request (all if
+# NULL). County payloads are named by state code.
 .build_payloads <- function(
     disease,
     geography,
     year,
-    stratify_by = NULL
+    stratify_by = NULL,
+    states = NULL
 ) {
+  years <- sort(unique(as.numeric(year)))
+  pieces <- lapply(unique(disease), function(one_disease) {
+    lapply(years, function(one_year) {
+      .build_year_payloads(one_disease, geography, one_year, stratify_by, states)
+    })
+  })
+  unlist(unlist(pieces, recursive = FALSE), recursive = FALSE)
+}
+
+# The payloads for one disease and year: one, or one per state for counties.
+.build_year_payloads <- function(disease, geography, year, stratify_by, states) {
   if (geography != "county") {
     return(list(.build_payload(disease, geography, year, stratify_by)))
   }
 
   counties <- lookup[["counties"]]
   by_state <- split(counties$geo_id, substr(counties$fips, 1, 2))
+  if (!is.null(states)) {
+    by_state <- by_state[intersect(names(by_state), states)]
+  }
 
   lapply(by_state, function(geo_ids) {
     .build_payload(disease, geography, year, stratify_by, geo_ids = geo_ids)

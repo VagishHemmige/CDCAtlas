@@ -42,11 +42,62 @@ test_that("state payloads keep the same indicator, year and category codes", {
   }
 })
 
+test_that("requests are split into one per disease and year", {
+  payloads <- .build_payloads(c("hiv", "chlamydia"), "state", c(2022, 2017))
+  expected <- list(
+    .build_payload("hiv", "state", 2017),
+    .build_payload("hiv", "state", 2022),
+    .build_payload("chlamydia", "state", 2017),
+    .build_payload("chlamydia", "state", 2022)
+  )
+  expect_equal(payloads, expected)
+})
+
+test_that("county requests are split by disease, year and state", {
+  payloads <- .build_payloads("hiv", "county", 2017:2018)
+  expect_length(payloads, 2 * length(unique(county_states)))
+})
+
+test_that("the order and repeats of years don't change the requests", {
+  expect_identical(
+    .build_payloads("hiv", "county", c(2022, 2017, 2022)),
+    .build_payloads("hiv", "county", c(2017, 2022))
+  )
+})
+
 test_that("national requests use CDC's United States code, 5000", {
   ids <- payload_ids(.build_payload("hiv", "national", 2022))
   expect_contains(ids, 5000)
   expect_equal(intersect(ids, 500), integer(0))
   expect_identical(varvals$name[varvals$id == 5000], "United States")
+})
+
+test_that("region requests use CDC's four Census regions and the territories", {
+  ids <- payload_ids(.build_payload("estimate", "region", 2022))
+  regions <- c(8453:8457)
+
+  expect_contains(ids, regions)
+  expect_equal(intersect(ids, c(5000, lookup[["state"]]$geo_id)), integer(0))
+  expect_identical(
+    varvals$name[match(regions, varvals$id)],
+    c(
+      "Northeast", "Midwest", "South", "West",
+      "U.S. territories and freely associated states"
+    )
+  )
+})
+
+test_that("get_atlas() accepts geography = \"region\" for HIV estimates", {
+  local_mocked_bindings(.request_atlas_all = function(payloads) payloads)
+  payloads <- get_atlas("estimate", "region", 2022)
+  expect_length(payloads, 1)
+})
+
+test_that("region requests for reported data stop before asking CDC", {
+  # CDC returns no region rows for reported indicators: AtlasPlus asks for
+  # the states and adds them up in the browser.
+  local_mocked_bindings(.request_atlas_all = function(payloads) stop("CDC was called"))
+  expect_snapshot(get_atlas("hiv", "region", 2022), error = TRUE)
 })
 
 test_that("other geographies are still sent as one payload", {
@@ -116,6 +167,15 @@ test_that("the combined table keeps column types and labels", {
   expect_identical(labelled::var_label(out$fips), "Census FIPS code for geographical merging with Census data")
 })
 
+test_that("get_atlas() returns a tibble, for one request or many (#17)", {
+  local_fake_cdc()
+  state <- get_atlas("hiv", "state", 2017)
+  county <- suppressMessages(get_atlas("hiv", "county", 2017))
+
+  expect_s3_class(state, "tbl_df")
+  expect_s3_class(county, "tbl_df")
+})
+
 test_that("combined factor levels follow CDC's lookup order, as a single request would", {
   local_fake_cdc()
   out <- suppressMessages(get_atlas("hiv", "county", 2017))
@@ -134,6 +194,7 @@ test_that("a state request is still one CDC request", {
 test_that("a failed request passes on CDC's message without the server trace", {
   local_mocked_bindings(.request_atlas = .request_atlas_internal)
   local_mocked_bindings(client_rate = function() invisible(NULL))
+  local_mocked_bindings(.atlas_sleep = function(seconds) invisible(NULL))
   local_mocked_bindings(
     POST = function(...) structure(list(), class = "fake_response"),
     status_code = function(res) 400L,
@@ -180,4 +241,122 @@ test_that("requests identify the package with a working link", {
     unname(config$headers[["User-Agent"]]),
     "R package CDCAtlas (https://github.com/VagishHemmige/CDCAtlas)"
   )
+})
+
+# Request problems (#13) -------------------------------------------------------
+
+test_that("requests have a time limit", {
+  seen <- NULL
+  local_mocked_bindings(.request_atlas = .request_atlas_internal)
+  local_mocked_bindings(client_rate = function() invisible(NULL))
+  local_mocked_bindings(
+    POST = function(url, ...) {
+      seen <<- list(...)
+      structure(list(), class = "fake_response")
+    },
+    status_code = function(res) 404L,
+    content = function(res, ...) "",
+    .package = "httr"
+  )
+  try(get_atlas("hiv", "state", 2017), silent = TRUE)
+  configs <- Filter(function(x) inherits(x, "request"), seen)
+  timeouts <- unlist(lapply(configs, function(x) x$options$timeout_ms))
+  expect_equal(unname(timeouts), .atlas_timeout_seconds * 1000)
+})
+
+test_that("a request that can't reach CDC says so", {
+  local_mocked_bindings(.request_atlas = .request_atlas_internal)
+  local_mocked_bindings(client_rate = function() invisible(NULL))
+  local_mocked_bindings(
+    POST = function(...) stop("Could not resolve host: gis.cdc.gov"),
+    .package = "httr"
+  )
+  expect_snapshot(error = TRUE, get_atlas("hiv", "state", 2017))
+})
+
+test_that("an empty response says what may be wrong", {
+  local_mocked_bindings(.request_atlas = .request_atlas_internal)
+  local_mocked_bindings(client_rate = function() invisible(NULL))
+  local_mocked_bindings(
+    POST = function(...) structure(list(), class = "fake_response"),
+    status_code = function(res) 200L,
+    content = function(res, ...) '{"sourcedata": null}',
+    .package = "httr"
+  )
+  expect_snapshot(error = TRUE, get_atlas("hiv", "state", 2017))
+})
+
+# Retries (#13) ----------------------------------------------------------------
+
+# Made-up outcomes for one request: a response, or a failure to reach CDC.
+cdc_ok <- function(body) list(status = 200L, text = fake_cdc_response(body))
+cdc_timeout <- function(body) {
+  list(status = 400L, text = paste0(
+    '{"success":false,"message":"Execution Timeout Expired.  The timeout period ',
+    'elapsed prior to completion of the operation or the server is not responding."}'
+  ))
+}
+cdc_not_found <- function(body) list(status = 404L, text = "<html>Not Found</html>")
+network_timeout <- function(body) stop("Timeout was reached: Operation timed out")
+no_host <- function(body) stop("Could not resolve host: gis.cdc.gov")
+
+# Replace CDC with `outcomes`, one per request (the last one repeats), and
+# record the requests made and the waits between them.
+local_cdc_outcomes <- function(outcomes, env = parent.frame()) {
+  calls <- new.env()
+  calls$n <- 0
+  calls$waits <- numeric()
+  local_mocked_bindings(.request_atlas = .request_atlas_internal, .env = env)
+  local_mocked_bindings(client_rate = function() invisible(NULL), .env = env)
+  local_mocked_bindings(
+    .atlas_sleep = function(seconds) calls$waits <- c(calls$waits, seconds),
+    .env = env
+  )
+  local_mocked_bindings(
+    POST = function(url, body, ...) {
+      calls$n <- calls$n + 1
+      outcome <- outcomes[[min(calls$n, length(outcomes))]]
+      structure(outcome(body), class = "fake_response")
+    },
+    status_code = function(res) res$status,
+    content = function(res, ...) as.character(res$text),
+    .package = "httr",
+    .env = env
+  )
+  calls
+}
+
+test_that("a CDC timeout is retried twice, then fails", {
+  calls <- local_cdc_outcomes(list(cdc_timeout))
+  expect_snapshot(error = TRUE, get_atlas("hiv", "state", 2017))
+  expect_equal(calls$n, 3)
+  expect_equal(calls$waits, c(10, 30))
+})
+
+test_that("a request that works on a retry returns the data", {
+  expected <- local({
+    local_cdc_outcomes(list(cdc_ok))
+    suppressMessages(get_atlas("hiv", "state", 2017))
+  })
+  calls <- local_cdc_outcomes(list(cdc_timeout, cdc_ok))
+  out <- suppressMessages(get_atlas("hiv", "state", 2017))
+  expect_equal(calls$n, 2)
+  expect_equal(calls$waits, 10)
+  expect_identical(out, expected)
+})
+
+test_that("a network timeout is retried", {
+  calls <- local_cdc_outcomes(list(network_timeout, network_timeout, cdc_ok))
+  suppressMessages(get_atlas("hiv", "state", 2017))
+  expect_equal(calls$n, 3)
+  expect_equal(calls$waits, c(10, 30))
+})
+
+test_that("other failures are not retried", {
+  for (outcome in list(cdc_not_found, no_host)) {
+    calls <- local_cdc_outcomes(list(outcome, cdc_ok))
+    expect_error(get_atlas("hiv", "state", 2017))
+    expect_equal(calls$n, 1)
+    expect_equal(calls$waits, numeric())
+  }
 })

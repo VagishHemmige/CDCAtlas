@@ -44,6 +44,10 @@ ages, summed from its tracts as \code{\link[=extrapolate_from_county]{extrapolat
 tidycensus and a Census API key.
 }
 
+\code{"acs"} accepts the same strata as \code{\link[=extrapolate_from_county]{extrapolate_from_county()}}: at most
+one stratification variable, and age only for HIV. Other input stops
+before anything is downloaded; use \code{"cdc"} for it.
+
 Neither covers Connecticut's 2017 planning regions: CDC gives them no
 population, and 2017 ACS tracts belong to the old counties (#30).}
 

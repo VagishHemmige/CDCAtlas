@@ -1,27 +1,34 @@
 Package: CDCAtlas
-Title: A package for downloading CDC Atlas data into R
+Title: Download 'CDC AtlasPlus' Data and Estimate Tract-Level Counts
 Version: 0.0.0.9001
 Authors@R: 
-    person("Vagish", "Hemmige", , "vagish.hemmige@gmail.com", role = c("aut", "cre"),
+    person("Vagish", "Hemmige", , "vagish.hemmige@gmail.com", role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0009-0006-6346-1826"))
-Description: Automated data extraction from the CDC Atlas database of HIV and STI data
+Description: Downloads HIV, sexually transmitted infection, tuberculosis and
+    viral hepatitis surveillance data from 'AtlasPlus', the interactive tool of
+    the Centers for Disease Control and Prevention (CDC), through the
+    endpoints its web application uses. Estimates suppressed county counts,
+    reports the difference between state totals and the county counts
+    supplied, and allocates county counts to census tracts or block groups
+    in proportion to American Community Survey (ACS) populations. Not
+    affiliated with or endorsed by CDC.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 URL: https://github.com/VagishHemmige/CDCAtlas, https://vagishhemmige.github.io/CDCAtlas
 BugReports: https://github.com/VagishHemmige/CDCAtlas/issues
 Imports: 
-    cli (>= 3.0.0),
-    dplyr (>= 1.1.0),
-    rlang (>= 1.0.0),
+    cli (>= 3.4.0),
+    dplyr (>= 1.1.1),
+    rlang (>= 1.1.0),
     ratelimitr,
     httr,
     jsonlite,
     labelled,
-    memoise,
-    digest,
+    cachem (>= 1.0.0),
+    memoise (>= 2.0.0),
     tibble,
-    lifecycle
+    lifecycle (>= 1.0.3)
 Suggests:
     callr,
     codetools,
@@ -29,11 +36,9 @@ Suggests:
     knitr,
     pkgload,
     rmarkdown,
-    testthat (>= 3.0.0),
+    testthat (>= 3.1.9),
     tidycensus (>= 1.8.0),
-    withr
-Additional_repositories:
-    https://walkerke.r-universe.dev
+    withr (>= 2.4.3)
 Config/testthat/edition: 3
 Depends: 
     R (>= 4.1.0)

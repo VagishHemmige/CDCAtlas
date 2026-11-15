@@ -16,7 +16,7 @@ from CDC AtlasPlus.
 
 This article introduces common use patterns:
 
-- retrieving state- and county-level data
+- retrieving national, state- and county-level data
 - querying different diseases
 - using sex, age, and race/ethnicity stratification
 - comparing rates across groups
@@ -56,7 +56,9 @@ head(chlamydia_state)
 ```
 
 The returned object is a data frame that can be used directly with tidyverse
-tools.
+tools. Each row is one indicator, place, year and stratum; the `indicator`
+column says what was counted, and `data_status` says whether a value is
+suppressed or not available.
 
 ```{r}
 glimpse(chlamydia_state)
@@ -64,14 +66,21 @@ glimpse(chlamydia_state)
 
 ## Plot state-level rates
 
+AtlasPlus's state level also includes U.S. territories. Their FIPS codes are
+above 56, so this keeps the 50 states and the District of Columbia:
+
 ```{r}
+is_state_or_dc <- function(fips) as.integer(fips) <= 56
+```
+
+```{r, fig.alt = "Bar chart of 2022 chlamydia rates per 100,000 population for the 50 states and DC, sorted from highest to lowest."}
 chlamydia_state |>
-  filter(!is.na(rate100000)) |>
+  filter(is_state_or_dc(fips), !is.na(rate100000)) |>
   ggplot(aes(x = reorder(geography, rate100000), y = rate100000)) +
   geom_col() +
   coord_flip() +
   labs(
-    title = "Chlamydia rate by state, 2022",
+    title = "Chlamydia rate by state and DC, 2022",
     x = NULL,
     y = "Rate per 100,000"
   )
@@ -119,9 +128,9 @@ head(gonorrhea_sex)
 
 Now we can compare rates by sex within each state.
 
-```{r}
+```{r, fig.alt = "Two bar charts, one per sex, of the ten states or DC with the highest 2022 gonorrhea rates per 100,000 population."}
 gonorrhea_sex |>
-  filter(!is.na(rate100000)) |>
+  filter(is_state_or_dc(fips), !is.na(rate100000)) |>
   group_by(sex) |>
   slice_max(rate100000, n = 10, with_ties = FALSE) |>
   ungroup() |>
@@ -130,7 +139,7 @@ gonorrhea_sex |>
   coord_flip() +
   facet_wrap(~ sex, scales = "free_y") +
   labs(
-    title = "States with highest gonorrhea rates by sex, 2022",
+    title = "States (and DC) with the highest gonorrhea rates by sex, 2022",
     x = NULL,
     y = "Rate per 100,000"
   )
@@ -139,40 +148,29 @@ gonorrhea_sex |>
 ## Stratification by age
 
 AtlasPlus also supports age-stratified queries for many disease/geography
-combinations.
+combinations. For national figures, ask for `geography = "national"` rather
+than adding up states: CDC's national totals don't depend on which state cells
+are suppressed, and state rows include territories.
 
 ```{r}
 hiv_age <- get_atlas(
   disease   = "hiv",
-  geography = "state",
+  geography = "national",
   year      = 2022,
   stratify_by = "age"
-
 )
 
-head(hiv_age)
+hiv_age |>
+  select(indicator, age, cases, rate100000)
 ```
 
-We can summarize national patterns by aggregating across states.
-
-```{r}
-hiv_age_summary <- hiv_age |>
-  group_by(age, indicator) |>
-  summarize(
-    cases = sum(cases, na.rm = TRUE),
-    .groups = "drop"
-  )
-
-hiv_age_summary
-```
-
-```{r}
-hiv_age_summary |>
-  filter(indicator=="HIV diagnoses")|>
+```{r, fig.alt = "Bar chart of 2022 U.S. HIV diagnoses by age group."}
+hiv_age |>
+  filter(indicator == "HIV diagnoses") |>
   ggplot(mapping=aes(x = age, y = cases)) +
   geom_col() +
   labs(
-    title = "HIV diagnoses by age group, 2022",
+    title = "HIV diagnoses by age group, United States, 2022",
     x = "Age group",
     y = "Cases"
   )
@@ -185,39 +183,28 @@ separate race and Hispanic ethnicity fields.
 
 ```{r}
 hiv_race <- get_atlas(
-  disease        = "hiv",
-  geography      = "state",
-  year           = 2022,
+  disease     = "hiv",
+  geography   = "national",
+  year        = 2022,
   stratify_by = "race"
-
 )
 
-head(hiv_race)
+hiv_race |>
+  select(indicator, race_ethnicity, cases, rate100000) |>
+  arrange(indicator, desc(cases))
 ```
 
-A useful first look is to compare total reported cases by race/ethnicity.
+Cases with unknown race/ethnicity are counted in the totals but not shown by
+race, so the groups may not add up to the total.
 
-```{r}
-hiv_race_summary <- hiv_race |>
-  group_by(race_ethnicity, indicator) |>
-  summarize(
-    cases = sum(cases, na.rm = TRUE),
-    .groups = "drop"
-  ) |>
-  arrange(desc(cases))
-
-hiv_race_summary
-```
-
-```{r}
-
-hiv_race_summary |>
-  filter(indicator=="HIV diagnoses")|>
+```{r, fig.alt = "Bar chart of 2022 U.S. HIV diagnoses by race and ethnicity, sorted from most to fewest."}
+hiv_race |>
+  filter(indicator == "HIV diagnoses") |>
   ggplot(mapping =aes(x = reorder(race_ethnicity, cases), y = cases)) +
   geom_col() +
   coord_flip() +
   labs(
-    title = "HIV cases by race/ethnicity, 2022",
+    title = "HIV diagnoses by race/ethnicity, United States, 2022",
     x = NULL,
     y = "Cases"
   )
@@ -231,37 +218,26 @@ and age.
 
 ```{r}
 hiv_age_sex <- get_atlas(
-  disease   = "hiv",
-  geography = "state",
-  year      = 2022,
+  disease     = "hiv",
+  geography   = "national",
+  year        = 2022,
   stratify_by = c("sex", "age")
-
 )
 
-head(hiv_age_sex)
+hiv_age_sex |>
+  select(indicator, sex, age, cases)
 ```
 
 This allows direct comparison of age distributions by sex.
 
-```{r}
-hiv_age_sex_summary <- hiv_age_sex |>
-  group_by(sex, age, indicator) |>
-  summarize(
-    cases = sum(cases, na.rm = TRUE),
-    .groups = "drop"
-  )
-
-hiv_age_sex_summary
-```
-
-```{r}
-hiv_age_sex_summary |>
-  filter(indicator=="HIV diagnoses")|>
+```{r, fig.alt = "Two bar charts, one per sex, of 2022 U.S. HIV diagnoses by age group."}
+hiv_age_sex |>
+  filter(indicator == "HIV diagnoses") |>
   ggplot(aes(x = age, y = cases)) +
   geom_col() +
   facet_wrap(~ sex) +
   labs(
-    title = "HIV cases by age and sex, 2022",
+    title = "HIV diagnoses by age and sex, United States, 2022",
     x = "Age group",
     y = "Cases"
   )
@@ -269,38 +245,32 @@ hiv_age_sex_summary |>
 
 ## Comparing years
 
-You can also query multiple years and compare trends over time.
+You can also query multiple years and compare trends over time. AtlasPlus
+warns that "due to the impact of the COVID-19 pandemic, data for 2020 and 2021
+may need to be interpreted with caution"
+([AtlasPlus](https://gis.cdc.gov/grasp/nchhstpatlas/main.html)), so read
+changes across those years carefully.
 
 ```{r}
-syphilis_years <- get_atlas(
+syphilis_trend <- get_atlas(
   disease   = "adult syphilis",
-  geography = "state",
+  geography = "national",
   year      = 2018:2022
 )
 
-head(syphilis_years)
+syphilis_trend |>
+  select(year, indicator, cases, rate100000)
 ```
 
-For example, compare national totals by year.
+`"adult syphilis"` returns one indicator per stage.
 
-```{r}
-syphilis_trend <- syphilis_years |>
-  group_by(year, indicator) |>
-  summarize(
-    cases = sum(cases, na.rm = TRUE),
-    .groups = "drop"
-  )
-
-syphilis_trend
-```
-
-```{r}
+```{r, fig.alt = "Line chart of U.S. adult syphilis cases from 2018 to 2022, one line per stage."}
 syphilis_trend |>
 ggplot(mapping= aes(x = year, y = cases, color=indicator, group=indicator)) +
   geom_line() +
   geom_point() +
   labs(
-    title = "Adult syphilis cases over time",
+    title = "Adult syphilis cases by stage, United States, 2018-2022",
     x = "Year",
     y = "Cases"
   )
@@ -310,6 +280,7 @@ ggplot(mapping= aes(x = year, y = cases, color=indicator, group=indicator)) +
 
 CDC AtlasPlus may suppress or censor some values, especially for small counts.
 Depending on the disease and geography, `cases` or `rate100000` may be missing.
+`data_status` says why.
 
 A common first step is to inspect missingness.
 
@@ -320,7 +291,15 @@ chlamydia_county |>
     missing_cases = sum(is.na(cases)),
     missing_rates = sum(is.na(rate100000))
   )
+
+chlamydia_county |>
+  count(data_status)
 ```
+
+Recent years can also be provisional. For HIV, AtlasPlus's technical notes say
+data are preliminary until a 12-month reporting delay has passed and shouldn't
+be used for formal trend analyses until then. Check the technical notes for each
+indicator (in the AtlasPlus menu) before comparing years.
 
 
 ## Choosing diseases and stratification variables
@@ -341,7 +320,6 @@ get_atlas(disease = "tuberculosis", geography = "state", year = 2022)
 
 After getting comfortable with basic queries, consider:
 
-- querying multiple diseases
 - comparing state and county results
 - using sex, age, and race/ethnicity stratification
 - joining AtlasPlus data to Census or spatial data
