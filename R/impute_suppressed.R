@@ -14,7 +14,10 @@
 #'   from; `not_available` says whether it is dropped or kept. Either way its
 #'   cases are still in the state total, so [no_county_cases()] counts them in
 #'   the remainder.
-#' * Any other row with no count is suppressed and is filled in by `method`.
+#' * A row marked "Data suppressed" with no count is filled in by `method`.
+#' * A row with no count and any other status (or none), such as "No reported
+#'   cases" or a code this version doesn't know, is not filled in: it stays
+#'   `NA` and is marked `"not estimated"`, with a warning.
 #'
 #' @param x County data from `get_atlas(geography = "county")`.
 #' @param method How suppressed counts are filled in:
@@ -60,8 +63,9 @@
 #'   `cases_source`:
 #'   * `"published"`: CDC's count.
 #'   * `"state_rate"` or `"zero"`: filled in by `method`.
-#'   * `"not estimated"`: `"state_rate"` couldn't estimate it; `NA`, or 0 with
-#'     `unestimated = "zero"`.
+#'   * `"not estimated"`: `"state_rate"` couldn't estimate it (`NA`, or 0
+#'     with `unestimated = "zero"`), or it had no count and wasn't marked
+#'     "Data suppressed" (always `NA`).
 #'   * `"not available"`: kept with `not_available = "keep"`; `NA`.
 #'
 #'   `data_status` is unchanged, so suppressed rows can still be identified.
@@ -137,9 +141,25 @@ impute_suppressed <- function(
     unavailable <- rep(FALSE, nrow(x))
   }
 
-  suppressed <- is.na(x$cases) & !unavailable
+  # Only rows CDC marks as suppressed are filled in. A missing count with any
+  # other status is left alone rather than treated as suppression (#107).
+  no_count <- is.na(x$cases) & !unavailable
+  suppressed <- no_count & as.character(x$data_status) %in% "Data suppressed"
+  unexplained <- no_count & !suppressed
   x$cases_source <- ifelse(suppressed, method, "published")
   x$cases_source[unavailable] <- "not available"
+  x$cases_source[unexplained] <- "not estimated"
+  if (any(unexplained)) {
+    statuses <- unique(as.character(x$data_status[unexplained]))
+    statuses[is.na(statuses)] <- "none"
+    cli::cli_warn(c(
+      "{sum(unexplained)} row{?s} with no count {?is/are} not marked {.val
+       Data suppressed}, so {?it is/they are} not filled in and left {.code
+       NA}.",
+      "i" = "Data status: {.val {statuses}}.",
+      "i" = "They are marked {.code cases_source = \"not estimated\"}."
+    ))
+  }
   if (!any(suppressed)) {
     return(x)
   }

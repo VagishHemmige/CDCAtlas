@@ -845,7 +845,10 @@ extrapolate_from_county <- function(
   not_allocated <- county[left_out, setdiff(names(county), "stratum")]
   not_allocated$reason <- dplyr::case_when(
     not_available[left_out] ~ "no CDC data for this county",
-    not_estimated[left_out] ~ "suppressed, not estimated",
+    not_estimated[left_out] &
+      as.character(county$data_status[left_out]) %in% "Data suppressed" ~
+      "suppressed, not estimated",
+    not_estimated[left_out] ~ "no count, not marked suppressed",
     no_areas[left_out] ~ paste("no ACS", .area_plural(to), "for this county"),
     .default = "no Census population for this stratum"
   )
