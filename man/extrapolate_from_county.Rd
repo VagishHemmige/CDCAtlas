@@ -68,7 +68,8 @@ county with no residents of one age group):
 \item{ages}{Ages the Census populations cover:
 \itemize{
 \item \code{"auto"} (default): 13 and older for HIV indicators (as CDC reports
-them), all ages otherwise.
+them), all ages otherwise, decided indicator by indicator, so \code{x} can
+combine HIV with other diseases.
 \item \code{"13+"} or \code{"all"}: set it yourself.
 }
 
