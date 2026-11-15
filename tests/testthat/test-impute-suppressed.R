@@ -174,6 +174,19 @@ test_that("population = 'acs' uses the county's tracts in the same stratum", {
   expect_equal(male$cases_source, "state_rate")
 })
 
+test_that("population = 'acs' doesn't treat a missing population as 0 (#52)", {
+  acs <- fake_acs()
+  acs$estimate[acs$GEOID == "01003000100" & acs$variable == "B01001_030"] <- NA
+  local_fake_sources(acs = acs)
+  county <- fake_county_atlas(suppressed = "01003")
+
+  out <- suppressWarnings(impute_suppressed(county, cap = Inf, population = "acs"))
+  suppressed <- out[out$fips == "01003", ]
+
+  expect_equal(suppressed$cases, c(NA_real_, NA_real_))
+  expect_equal(unique(suppressed$cases_source), "not estimated")
+})
+
 test_that("population = 'acs' needs a Census key", {
   withr::local_envvar(CENSUS_API_KEY = "")
   local_mocked_bindings(.request_atlas = function(payload) stop("CDC was called"))

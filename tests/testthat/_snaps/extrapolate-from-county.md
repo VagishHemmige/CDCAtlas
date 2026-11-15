@@ -51,6 +51,26 @@
       * HIV prevalence 2022: 500
         See `attr(x, "no_county_cases")` for each state.
 
+# a missing age band leaves its county out, with a warning
+
+    Code
+      tracts <- run_extrapolation(NULL, acs = acs)
+    Condition
+      Warning:
+      2 county stratum rows in 1 county left out: the ACS population is missing for some of its areas.
+      i For example "County 01001 (01001)".
+      i See `attr(x, "not_allocated")`.
+
+# missing_population = 'error' stops instead
+
+    Code
+      run_extrapolation(NULL, acs = acs, missing_population = "error")
+    Condition
+      Error in `extrapolate_from_county()`:
+      ! The ACS population is missing for some areas of 1 county.
+      x For example "County 01001 (01001)".
+      i Use `missing_population = "leave out"` to leave those county strata out instead.
+
 # county counts with no matching tracts are left out with a warning
 
     Code
