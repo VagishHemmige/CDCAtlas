@@ -368,6 +368,18 @@ test_that("race scaling needs B01001_001", {
   expect_equal(unique(tracts$county_fips), "01003")
 })
 
+test_that("an empty result is still a result when every county is left out", {
+  acs <- acs_missing(fake_tracts$geoid, "B01001_005")
+  for (no_county in c("report", "spread")) {
+    tracts <- suppressWarnings(
+      run_extrapolation(NULL, acs = acs, no_county = no_county)
+    )
+    expect_equal(nrow(tracts), 0)
+    expect_true("area_cases" %in% names(tracts))
+    expect_setequal(attr(tracts, "not_allocated")$county_fips, c("01001", "01003"))
+  }
+})
+
 test_that("missing_population = 'error' stops instead", {
   acs <- acs_missing("01001000100", "B01001_005")
   expect_snapshot(

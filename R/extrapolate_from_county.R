@@ -266,12 +266,12 @@ extrapolate_from_county <- function(
   areas <- missing_pop$areas
   not_allocated <- dplyr::bind_rows(not_allocated, missing_pop$not_allocated)
 
-  areas$county_cases_spread <- 0
+  areas$county_cases_spread <- rep(0, nrow(areas))
   if (no_county == "spread") {
     areas <- .spread_no_county(areas, report, empty_strata, spread_by)
   }
   areas <- .allocate(areas, empty_strata)
-  areas$area_type <- to
+  areas$area_type <- rep(to, nrow(areas))
 
   out <- tibble::as_tibble(areas[c(
     "year", "acs_year", "area_type", "geoid", "area_name", "county_fips",
