@@ -55,13 +55,8 @@
   #Add age: each disease's own age groups, or its age total
   id <- c(id, .atlas_age_codes(disease, "age" %in% stratify_by))
 
-  #Add race stratification variables
-  if ("race" %in% stratify_by) {
-    id <- c(id, 552, 553, 554, 555, 562, 556, 559, 557)
-  }
-  if (!("race" %in% stratify_by)) {
-    id <- c(id, 551)
-  }
+  #Add race: each disease's own race groups, or the race total
+  id <- c(id, .atlas_race_codes(disease, "race" %in% stratify_by))
 
   #Add sex stratification variables
   if ("sex" %in% stratify_by) {
@@ -136,6 +131,37 @@
   })
 }
 
+
+# AtlasPlus race codes for one disease: its race groups when stratified by
+# race, otherwise the total (551). From CDC's set-up data (`combo`), checked
+# both ways by a live test (#105):
+# - chlamydia, gonorrhea, syphilis and tuberculosis: the seven groups and
+#   "Unknown" (559);
+# - HIV and the HIV estimates: the seven groups, no "Unknown";
+# - hepatitis: Asian/Pacific Islander (560) and "Other" (561) in place of
+#   Asian, Native Hawaiian/Other Pacific Islander and Multiracial, plus
+#   "Unknown".
+# Congenital syphilis has no race groups.
+.atlas_race_codes <- function(disease, by_race) {
+  if (!by_race) {
+    return(551)
+  }
+  groups <- c(552, 553, 554, 555, 562, 556, 557)
+  switch(
+    disease,
+    "hiv" = ,
+    "estimate" = groups,
+    "chlamydia" = ,
+    "gonorrhea" = ,
+    "adult syphilis" = ,
+    "tuberculosis" = c(groups, 559),
+    "hepatitis" = c(552, 554, 555, 557, 559, 560, 561),
+    "congenital syphilis" = cli::cli_abort(
+      "CDC has no race groups for congenital syphilis.",
+      .internal = TRUE
+    )
+  )
+}
 
 # AtlasPlus age codes for one disease: its age groups when stratified by age,
 # otherwise its total. From CDC's set-up data (`combo`, which lists the codes

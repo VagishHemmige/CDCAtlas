@@ -88,6 +88,9 @@
 #' Each disease has its own age groups, as AtlasPlus offers them: 13-24 to 65+
 #' for `"hiv"` and `"estimate"`; 0-14, 15-19 and so on to 65+ for the other
 #' diseases, plus "Unknown" for chlamydia, gonorrhea and adult syphilis.
+#' Race groups also differ: hepatitis has Asian/Pacific Islander and Other in
+#' place of Asian, Native Hawaiian/Other Pacific Islander and Multiracial;
+#' HIV and the HIV estimates have no Unknown group.
 #' Congenital syphilis can't be stratified.
 #' @param refresh If `TRUE`, download the data again from CDC even if a saved
 #'   copy is less than 30 days old, and save the new copy. For county data

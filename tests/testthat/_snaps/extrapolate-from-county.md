@@ -27,9 +27,17 @@
       i Counties: "County 02001" and "County 02003".
       i See `attr(x, "not_allocated")`.
     Message
-      i Cases with no county that could not be spread (no county with tracts in that state and stratum):
+      i Cases with no county that could not be spread (no county with tracts in that state and stratum, or no tracts with population there):
       * HIV diagnoses 2022: 321
       * HIV prevalence 2022: 421
+
+# spread cases that reach no area are reported as not spread (#114)
+
+    Code
+      .announce_spread(out, report, "tract")
+    Message
+      i Cases with no county that could not be spread (no county with tracts in that state and stratum, or no tracts with population there):
+      * HIV diagnoses 2022: 10
 
 # spreading stops when `x` lacks some of a state's counties (#54)
 
@@ -71,6 +79,16 @@
       2 county stratum rows in 1 county left out: the ACS population is missing for some of its areas.
       i For example "County 01001 (01001)".
       i See `attr(x, "not_allocated")`.
+
+# a duplicated ACS tract stops rather than skewing shares (#111)
+
+    Code
+      run_extrapolation(NULL, acs = acs)
+    Condition
+      Error:
+      ! The Census returned some ACS variables more than once for the same area.
+      i Area: "01001000100".
+      i This shouldn't happen; please report it at <https://github.com/VagishHemmige/CDCAtlas/issues>.
 
 # missing_population = 'error' stops instead
 
@@ -200,7 +218,7 @@
       * HIV diagnoses 2022: 21
       * HIV prevalence 2022: 121
         See `attr(x, "no_county_cases")` for each state.
-      i 2 suppressed rows that `impute_suppressed()` couldn't estimate were left out of the tract estimates and counted in the remainder with no county.
+      i 2 rows with no count that `impute_suppressed()` couldn't estimate were left out of the tract estimates and counted in the remainder with no county.
         County: "County 01003".
 
 # unestimated = 'error' refuses rows impute_suppressed() couldn't estimate
@@ -209,8 +227,8 @@
       extrapolate_from_county(county, unestimated = "error")
     Condition
       Error in `extrapolate_from_county()`:
-      ! `x` has 2 suppressed rows with no count.
-      i These are suppressed rows `impute_suppressed()` could not estimate (no state rate or county population).
+      ! `x` has 2 rows with no count.
+      i These are rows `impute_suppressed()` could not estimate (no state rate or county population, or not marked "Data suppressed").
       i Remove them, use `impute_suppressed(unestimated = "zero")`, or use `unestimated = "leave out"`.
 
 # ACS years before an area's first release are refused
