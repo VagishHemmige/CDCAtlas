@@ -187,6 +187,13 @@ Run it on county data that has been through \code{\link[=impute_suppressed]{impu
 
 The estimates are modelled, not observed: they assume the same rate in every
 area of a county within a stratum.
+
+For Knowledge of Status, \code{county_cases} is the number of people with HIV
+who know their status, and it is shared across areas by their residents,
+as if people with HIV lived in each area in proportion to its population.
+The ACS columns are residents, not people with HIV, so
+\code{area_cases / area_population_acs} is not the percentage who know their
+status.
 }
 \details{
 The denominator is the sum of the county's areas, so the estimates add up
