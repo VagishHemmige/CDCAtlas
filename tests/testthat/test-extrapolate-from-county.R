@@ -85,6 +85,34 @@ test_that("other diseases use all ages", {
   expect_equal(unique(tracts$age), "All age groups")
 })
 
+test_that("HIV keeps ages 13+ when combined with another disease (#53)", {
+  mixed <- function(make) {
+    rbind(make(indicators = "HIV prevalence"), make(indicators = "Chlamydia"))
+  }
+  # One fake response holds both diseases' state rows.
+  local_mocked_bindings(.request_atlas_all = function(payloads) {
+    mixed(fake_state_atlas)
+  })
+  combined <- run_extrapolation(
+    county = mixed(fake_county_atlas),
+    state = mixed(fake_state_atlas)
+  )
+  hiv_alone <- run_extrapolation(
+    county = fake_county_atlas(indicators = "HIV prevalence"),
+    state = fake_state_atlas(indicators = "HIV prevalence")
+  )
+  chlamydia_alone <- run_extrapolation(
+    county = fake_county_atlas(indicators = "Chlamydia"),
+    state = fake_state_atlas(indicators = "Chlamydia")
+  )
+
+  cols <- c("geoid", "area_population_acs", "area_cases")
+  hiv <- combined[combined$indicator == "HIV prevalence", cols]
+  chlamydia <- combined[combined$indicator == "Chlamydia", cols]
+  expect_equal(hiv, hiv_alone[cols], ignore_attr = TRUE)
+  expect_equal(chlamydia, chlamydia_alone[cols], ignore_attr = TRUE)
+})
+
 test_that("`ages` overrides the default", {
   tracts <- run_extrapolation(NULL, ages = "all")
   pop <- fake_acs_tract("01001000100")
