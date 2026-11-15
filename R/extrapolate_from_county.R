@@ -164,17 +164,19 @@
 #' regions is shared by land area. The crosswalk ships in
 #' `inst/extdata/tract-2010-crosswalk.csv`.
 #'
-#' Which ACS releases match CDC's county map:
-#' * ACS 2010 to 2019: every current county, Connecticut and Alaska through
-#'   the crosswalk.
-#' * ACS 2020 and 2021: everywhere except Connecticut, which these releases
-#'   still code by its old counties (#121).
-#' * ACS 2022 on: every current county.
-#' * ACS 2009 (2000 tracts): not Connecticut's planning regions or Chugach
-#'   and Copper River.
+#' CDC's current county codes the package knows an ACS release lacks:
+#' * Connecticut's planning regions: handled by the crosswalk for ACS 2010 to
+#'   2019; missing from ACS 2009, 2020 and 2021, which code Connecticut by its
+#'   old counties (#121); in ACS 2022 on.
+#' * Chugach and Copper River, Alaska: handled by the crosswalk for ACS 2010
+#'   to 2019; missing from ACS 2009; in ACS 2020 on.
+#' * Kusilvak, Alaska (02158, formerly Wade Hampton 02270) and Oglala Lakota,
+#'   South Dakota (46102, formerly Shannon 46113), renamed in 2015: missing
+#'   from ACS releases before 2015 (#121).
 #'
+#' This list is not a full check of every ACS vintage against CDC's map.
 #' Counties a release doesn't match are left out with a warning that says
-#' why. In 2010-2019 a block group follows its tract: the block groups of the
+#' why, for the cases above. In 2010-2019 a block group follows its tract: the block groups of the
 #' one split tract (09013890201) are shared between Capitol and Northeastern
 #' Connecticut planning regions by the tract's land area, not by where each
 #' block group lies.
@@ -794,15 +796,20 @@ extrapolate_from_county <- function(
 # - Chugach (02063) and Copper River (02066), split from Valdez-Cordova in
 #   2019, are reached through the crosswalk for ACS 2010-2019 and are in ACS
 #   2020 on; ACS 2009 uses 2000 tracts.
-# Recoding ACS 2020 and 2021 to the planning regions is #121.
+# - Kusilvak (02158) and Oglala Lakota (46102) were renamed from Wade Hampton
+#   (02270) and Shannon (46113) in Census's 2015 geography changes, so earlier
+#   releases use the old codes.
+# Recoding these is #121.
 .acs_vintage_note <- function(county_fips, acs_year) {
   connecticut <- county_fips %in%
     sprintf("09%d0", 11:19) &
     acs_year %in% c(2009, 2020, 2021)
   alaska <- county_fips %in% c("02063", "02066") & acs_year == 2009
+  renamed <- county_fips %in% c("02158", "46102") & acs_year < 2015
   out <- dplyr::case_when(
     connecticut ~ "Connecticut's planning regions",
     alaska ~ "Chugach and Copper River, Alaska",
+    renamed ~ "Kusilvak, AK and Oglala Lakota, SD (renamed in 2015)",
     .default = NA_character_
   )
   rlang::set_names(out, county_fips)
@@ -1166,15 +1173,17 @@ extrapolate_from_county <- function(
       what = .acs_vintage_note(no_areas$county_fips, no_areas$acs_year),
       acs_year = no_areas$acs_year
     )))
+    use <- dplyr::case_when(
+      notes$what == "Connecticut's planning regions" ~
+        "ACS 2010-2019 or 2022 and later",
+      startsWith(notes$what, "Kusilvak") ~ "ACS 2015 or later",
+      .default = "ACS 2010 or later"
+    )
     notes <- sprintf(
       "ACS %s doesn't have CDC's current codes for %s; use %s.",
       notes$acs_year,
       notes$what,
-      ifelse(
-        notes$what == "Connecticut's planning regions",
-        "ACS 2010-2019 or 2022 and later",
-        "ACS 2010 or later"
-      )
+      use
     )
     cli::cli_warn(c(
       "{nrow(no_areas)} county row{?s} {?was/were} not allocated: no matching

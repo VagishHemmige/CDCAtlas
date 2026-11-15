@@ -190,7 +190,10 @@ Connecticut's and Valdez-Cordova's 2010 tracts to the current counties (#30).
 ACS 2016–2020 and 2017–2021 use 2020 tracts but still code Connecticut by its
 old counties; planning regions first appear in 2018–2022. So Connecticut data
 for 2020 and 2021 is left out of tract estimates with a warning that says why
-(a recode is #121). Rows left out are listed in
+(a recode is #121). Kusilvak, Alaska and Oglala Lakota, South Dakota were
+renamed in 2015 with new codes, so ACS releases before 2015 don't have them
+either. These are the cases the package knows about, not a full check of
+every ACS release. Rows left out are listed in
 `attr(result, "not_allocated")`.
 
 ## Census denominators

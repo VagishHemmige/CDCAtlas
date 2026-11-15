@@ -1018,6 +1018,17 @@ test_that("ACS 2009 says why current Connecticut and Alaska counties have no tra
   expect_equal(unname(.acs_vintage_note("02063", 2020)), NA_character_)
 })
 
+test_that("counties renamed in 2015 are explained for earlier ACS releases (#112)", {
+  notes <- .acs_vintage_note(c("02158", "46102", "02158"), c(2014, 2012, 2015))
+  expect_equal(
+    unname(notes),
+    c(
+      rep("Kusilvak, AK and Oglala Lakota, SD (renamed in 2015)", 2),
+      NA_character_
+    )
+  )
+})
+
 test_that("the shipped crosswalk gives each 2010 tract shares that sum to 1", {
   crosswalk <- .tract_crosswalk()
   expect_equal(unique(nchar(crosswalk$tract_2010)), 11)
