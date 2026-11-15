@@ -150,8 +150,12 @@ The CDC AtlasPlus API supports stratification by one or two dimensions:
 }
 
 Stratification increases the number of returned rows. For example,
-\code{stratify_by = c("race", "sex")} returns all race × sex combinations
-for each geography-year pair.
+\code{stratify_by = c("race", "sex")} returns the race × sex combinations CDC
+offers for each geography-year pair. CDC doesn't offer every disease,
+geography and stratification together (hepatitis by sex at state level,
+for example); such a request stops with "CDC AtlasPlus returned no data".
+If CDC returns some of a disease's indicators but not others, a warning
+names the missing ones.
 
 This function is a reverse-engineered wrapper around the AtlasPlus
 public query system. The CDC does not publish an official API specification,

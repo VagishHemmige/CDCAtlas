@@ -65,8 +65,12 @@
 #' - `"sex"`
 #'
 #' Stratification increases the number of returned rows. For example,
-#' `stratify_by = c("race", "sex")` returns all race × sex combinations
-#' for each geography-year pair.
+#' `stratify_by = c("race", "sex")` returns the race × sex combinations CDC
+#' offers for each geography-year pair. CDC doesn't offer every disease,
+#' geography and stratification together (hepatitis by sex at state level,
+#' for example); such a request stops with "CDC AtlasPlus returned no data".
+#' If CDC returns some of a disease's indicators but not others, a warning
+#' names the missing ones.
 #'
 #' @param disease A single disease name (e.g. `"gonorrhea"`).
 #' Multiple diseases are not currently supported in a single request.
@@ -217,5 +221,33 @@ get_atlas <- function(
       ))
     }
   }
-  .request_atlas_all(payloads)
+  out <- .request_atlas_all(payloads)
+  .warn_missing_indicators(out, disease, year)
+  out
+}
+
+# CDC can answer a request without one of the indicators it asked for (HIV in
+# 2025 returned diagnoses but not prevalence). Say so rather than returning
+# an incomplete table silently (#116).
+.warn_missing_indicators <- function(out, disease, year) {
+  lookup <- .disease_indicators()
+  wanted <- expand.grid(
+    indicator = lookup$indicator[lookup$disease == disease],
+    year = sort(unique(year)),
+    stringsAsFactors = FALSE
+  )
+  returned <- paste(as.character(out$indicator), out$year)
+  missing <- wanted[!paste(wanted$indicator, wanted$year) %in% returned, ]
+  if (nrow(missing) == 0) {
+    return(invisible())
+  }
+  cli::cli_warn(c(
+    "CDC returned no rows for {nrow(missing)} requested indicator-year{?s}:",
+    rlang::set_names(
+      paste(missing$indicator, missing$year),
+      rep("*", nrow(missing))
+    ),
+    "i" = "CDC may not have released them yet, or may not offer them for this
+           geography and stratification."
+  ))
 }
