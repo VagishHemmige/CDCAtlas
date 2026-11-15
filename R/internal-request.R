@@ -58,13 +58,6 @@
       by = c("V3" = "id")
     ) |>
 
-    #Decode data
-    dplyr::mutate(
-      dplyr::across(
-        dplyr::all_of(c("V1", "V3", "V4", "V5", "V6", "V7", "V8")),
-        ~ factor(.x, levels = varvals$id, labels = varvals$name)
-      )
-    ) |>
     dplyr::mutate(V2 = .data$V2 + 1478) |>
     dplyr::rename(
       indicator = "V1",
@@ -83,7 +76,16 @@
       rse = "V14",
       lowerci_cases = "V15",
       upperci_cases = "V16"
-    )
+    ) |>
+    .decode_atlas_codes(c(
+      "indicator",
+      "geography",
+      "data_status",
+      "race_ethnicity",
+      "sex",
+      "age",
+      "transmission"
+    ))
 
   df <- tibble::as_tibble(.label_atlas_columns(df))
 
@@ -198,6 +200,43 @@
   )
 }
 
+
+# Codes CDC uses that the stored table (R/sysdata.rda) doesn't have yet. Move
+# them into data-raw/DATASET.R at the next rebuild of the table (#106, #118).
+.atlas_code_supplement <- data.frame(id = 414, name = "No reported cases")
+
+# Turn CDC's numeric codes into labelled factors. A code that is neither in the
+# stored table nor in the supplement is kept as "CDC code <id>", never NA, with
+# one warning listing the unknown codes (#106).
+.decode_atlas_codes <- function(df, columns) {
+  codes <- rbind(varvals[c("id", "name")], .atlas_code_supplement)
+  codes <- codes[!duplicated(codes$id), ]
+  unknown <- character(0)
+  for (column in columns) {
+    values <- df[[column]]
+    new <- sort(setdiff(unique(values[!is.na(values)]), codes$id))
+    if (length(new) > 0) {
+      unknown <- c(unknown, paste0(column, ": ", toString(new)))
+    }
+    df[[column]] <- factor(
+      values,
+      levels = c(codes$id, new),
+      labels = c(codes$name, sprintf("CDC code %s", new))
+    )
+  }
+  if (length(unknown) > 0) {
+    cli::cli_warn(
+      c(
+        "CDC returned codes this version of CDCAtlas doesn't know.",
+        rlang::set_names(unknown, "*"),
+        "i" = "They are labelled {.val CDC code <number>}. Please report them at
+               {.url https://github.com/VagishHemmige/CDCAtlas/issues}."
+      ),
+      call = NULL
+    )
+  }
+  df
+}
 
 # CDC's AtlasPlus set-up data: the code table (`varvals`) and the menus the web
 # app is built from. data-raw/DATASET.R builds R/sysdata.rda from it, and the

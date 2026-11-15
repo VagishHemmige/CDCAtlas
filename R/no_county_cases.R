@@ -131,8 +131,8 @@ no_county_cases <- function(x) {
   }
   counties <- unique(as.character(x$geography[rows]))
   cli::cli_inform(c(
-    "i" = "{sum(rows)} suppressed row{?s} that {.fn impute_suppressed} couldn't
-           estimate {?was/were} {what_happens}.",
+    "i" = "{sum(rows)} row{?s} with no count that {.fn impute_suppressed}
+           couldn't estimate {?was/were} {what_happens}.",
     " " = "{cli::qty(length(counties))}Count{?y/ies}: {.val {counties}}."
   ))
 }
