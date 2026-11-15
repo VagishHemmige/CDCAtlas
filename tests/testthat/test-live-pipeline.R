@@ -57,7 +57,8 @@ test_that("imputation respects the cap and keeps published counts, 2022", {
     paste(published$fips, published$indicator, published$sex),
     paste(county$fips, county$indicator, county$sex)
   )]
-  expect_equal(published$cases, original)
+  # `[` drops the column's variable label from `original`; compare the counts.
+  expect_equal(published$cases, original, ignore_attr = "label")
 })
 
 # County rows the default pipeline is known to leave out. Anything else in
