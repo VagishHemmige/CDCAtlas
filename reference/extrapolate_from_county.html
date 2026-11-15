@@ -31,8 +31,11 @@ area of a county within a stratum."><meta property="og:image" content="https://v
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with CDCAtlas</a></li>
     <li><a class="dropdown-item" href="../articles/extrapolation.html">Extrapolation to tracts</a></li>
+    <li><a class="dropdown-item" href="../articles/about-atlasplus-data.html">About CDC AtlasPlus data</a></li>
   </ul></li>
-      </ul><ul class="navbar-nav"><li class="nav-item"><a class="external-link nav-link" href="https://github.com/VagishHemmige/CDCAtlas" aria-label="GitHub"><span class="fa fab fa-github"></span></a></li>
+      </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
+ <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/VagishHemmige/CDCAtlas" aria-label="GitHub"><span class="fa fab fa-github"></span></a></li>
       </ul></div>
 
 
@@ -273,8 +276,14 @@ once.</p>
 (unless redistributed), suppressed rows with no estimate (see
 <code>unestimated</code>), rows kept by
 <code>impute_suppressed(not_available = "keep")</code>, and counties with no ACS areas
-(such as Connecticut's planning regions with 2010 tracts, until #30 adds a
-crosswalk).</p>
+(such as Valdez-Cordova, Alaska, which CDC still lists with no population).</p>
+<p>CDC reports every year on its current county map. ACS releases from
+2006-2010 to 2015-2019 use 2010 tracts, so in Connecticut (now planning
+regions) and the old Valdez-Cordova Census Area, Alaska (now Chugach and
+Copper River), each 2010 tract and its block groups are assigned to the
+current county they fall in. The one 2010 tract split between two planning
+regions is shared by land area. The crosswalk ships in
+<code>inst/extdata/tract-2010-crosswalk.csv</code>.</p>
 <p>Tract and block group boundaries change every ten years, so estimates from
 ACS years on different sides of a decennial census (2017 and 2022, say)
 can't be compared area by area.</p>
@@ -286,7 +295,9 @@ births, so Census populations are the wrong denominator.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="impute_suppressed.html">impute_suppressed()</a></code>, <code><a href="no_county_cases.html">no_county_cases()</a></code>.</p></div>
+    <div class="dont-index"><p><code><a href="impute_suppressed.html">impute_suppressed()</a></code>, <code><a href="no_county_cases.html">no_county_cases()</a></code>; the article
+<a href="https://vagishhemmige.github.io/CDCAtlas/articles/about-atlasplus-data.html">"About CDC AtlasPlus data"</a>
+on CDC's county map and the Census denominators.</p></div>
     </div>
 
     <div class="section level2">

@@ -278,8 +278,16 @@ County rows with no Census denominator are left out and listed in
 (unless redistributed), suppressed rows with no estimate (see
 `unestimated`), rows kept by
 `impute_suppressed(not_available = "keep")`, and counties with no ACS
-areas (such as Connecticut's planning regions with 2010 tracts, until
-\#30 adds a crosswalk).
+areas (such as Valdez-Cordova, Alaska, which CDC still lists with no
+population).
+
+CDC reports every year on its current county map. ACS releases from
+2006-2010 to 2015-2019 use 2010 tracts, so in Connecticut (now planning
+regions) and the old Valdez-Cordova Census Area, Alaska (now Chugach and
+Copper River), each 2010 tract and its block groups are assigned to the
+current county they fall in. The one 2010 tract split between two
+planning regions is shared by land area. The crosswalk ships in
+`inst/extdata/tract-2010-crosswalk.csv`.
 
 Tract and block group boundaries change every ten years, so estimates
 from ACS years on different sides of a decennial census (2017 and 2022,
@@ -297,7 +305,10 @@ births, so Census populations are the wrong denominator.
 ## See also
 
 [`impute_suppressed()`](https://vagishhemmige.github.io/CDCAtlas/reference/impute_suppressed.md),
-[`no_county_cases()`](https://vagishhemmige.github.io/CDCAtlas/reference/no_county_cases.md).
+[`no_county_cases()`](https://vagishhemmige.github.io/CDCAtlas/reference/no_county_cases.md);
+the article ["About CDC AtlasPlus
+data"](https://vagishhemmige.github.io/CDCAtlas/articles/about-atlasplus-data.html)
+on CDC's county map and the Census denominators.
 
 ## Examples
 

@@ -47,8 +47,11 @@ Any other row with no count is suppressed and is filled in by method.
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with CDCAtlas</a></li>
     <li><a class="dropdown-item" href="../articles/extrapolation.html">Extrapolation to tracts</a></li>
+    <li><a class="dropdown-item" href="../articles/about-atlasplus-data.html">About CDC AtlasPlus data</a></li>
   </ul></li>
-      </ul><ul class="navbar-nav"><li class="nav-item"><a class="external-link nav-link" href="https://github.com/VagishHemmige/CDCAtlas" aria-label="GitHub"><span class="fa fab fa-github"></span></a></li>
+      </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
+ <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/VagishHemmige/CDCAtlas" aria-label="GitHub"><span class="fa fab fa-github"></span></a></li>
       </ul></div>
 
 
@@ -128,8 +131,9 @@ tidycensus and a Census API key.</p></li>
 one stratification variable, and no congenital syphilis (whose rates are
 per 100,000 live births). Other input stops before anything is
 downloaded; use <code>"cdc"</code> for it.</p>
-<p>Neither covers Connecticut's 2017 planning regions: CDC gives them no
-population, and 2017 ACS tracts belong to the old counties (#30).</p></dd>
+<p>CDC gives Connecticut's 2017 planning regions no population, so <code>"cdc"</code>
+can't estimate them; <code>"acs"</code> can, from 2010 tracts assigned to the
+planning regions (see <code><a href="extrapolate_from_county.html">extrapolate_from_county()</a></code>).</p></dd>
 
 
 <dt id="arg-unestimated">unestimated<a class="anchor" aria-label="anchor" href="#arg-unestimated"></a></dt>
@@ -169,7 +173,9 @@ tract populations from the Census.</p>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="no_county_cases.html">no_county_cases()</a></code> for cases in state totals that no county
-accounts for; <code><a href="extrapolate_from_county.html">extrapolate_from_county()</a></code> for the next step.</p></div>
+accounts for; <code><a href="extrapolate_from_county.html">extrapolate_from_county()</a></code> for the next step; the article
+<a href="https://vagishhemmige.github.io/CDCAtlas/articles/about-atlasplus-data.html">"About CDC AtlasPlus data"</a>
+for CDC's suppression rules.</p></div>
     </div>
 
     <div class="section level2">

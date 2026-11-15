@@ -88,8 +88,10 @@ impute_suppressed(
   rates are per 100,000 live births). Other input stops before anything
   is downloaded; use `"cdc"` for it.
 
-  Neither covers Connecticut's 2017 planning regions: CDC gives them no
-  population, and 2017 ACS tracts belong to the old counties (#30).
+  CDC gives Connecticut's 2017 planning regions no population, so
+  `"cdc"` can't estimate them; `"acs"` can, from 2010 tracts assigned to
+  the planning regions (see
+  [`extrapolate_from_county()`](https://vagishhemmige.github.io/CDCAtlas/reference/extrapolate_from_county.md)).
 
 - unestimated:
 
@@ -140,7 +142,9 @@ years and stratification) from CDC AtlasPlus, and with
 [`no_county_cases()`](https://vagishhemmige.github.io/CDCAtlas/reference/no_county_cases.md)
 for cases in state totals that no county accounts for;
 [`extrapolate_from_county()`](https://vagishhemmige.github.io/CDCAtlas/reference/extrapolate_from_county.md)
-for the next step.
+for the next step; the article ["About CDC AtlasPlus
+data"](https://vagishhemmige.github.io/CDCAtlas/articles/about-atlasplus-data.html)
+for CDC's suppression rules.
 
 ## Examples
 

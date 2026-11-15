@@ -29,7 +29,8 @@ get_atlas(
 - geography:
 
   Character scalar. One of `"national"`, `"region"` (HIV estimates
-  only), `"state"`, `"county"`, or `"msa"`.
+  only), `"state"`, `"county"` (not hepatitis or congenital syphilis),
+  or `"msa"` (`"hiv"` only), as AtlasPlus offers them.
 
 - year:
 

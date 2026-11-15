@@ -45,9 +45,11 @@ AtlasPlus endpoints, with a separate modeled-estimation pipeline:
   tracts or block groups; `R/atlas-pipeline.R` supplies shared keys and
   checks.
 - `tests/testthat/`: synthetic tests and separately gated live checks.
-- `vignettes/articles/getting-started.Rmd` and
-  `vignettes/articles/extrapolation.Rmd`: website articles (not built
-  with the package) on usage, assumptions and limitations.
+- `vignettes/articles/getting-started.Rmd`,
+  `vignettes/articles/extrapolation.Rmd` and
+  `vignettes/articles/about-atlasplus-data.Rmd`: website articles (not
+  built with the package) on usage, assumptions and limitations, and on
+  what CDC’s data mean.
 - `.github/workflows/pkgdown.yaml`: builds the site on GitHub Actions
   and publishes it from the `gh-pages` branch. `docs/` is local build
   output and is not committed.
@@ -62,13 +64,12 @@ validation layers;
 [\#30](https://github.com/VagishHemmige/CDCAtlas/issues/30) record
 suppression/remainder and geography concerns. Recheck their current
 discussion and implementation rather than treating every proposal as
-adopted policy.
-[\#45](https://github.com/VagishHemmige/CDCAtlas/issues/45) proposes a
-source interpretation article; do not claim it exists until it is
-committed. `data-raw/DATASET.R` builds `R/sysdata.rda` from CDC’s
-AtlasPlus set-up data;
-[\#4](https://github.com/VagishHemmige/CDCAtlas/issues/4) tracks the
-remaining data-generation work (age schemes).
+adopted policy. `vignettes/articles/about-atlasplus-data.Rmd` (#45)
+explains CDC’s data status, suppression, denominators and county map for
+users; keep it in step when changing how any of these are handled.
+`data-raw/DATASET.R` builds `R/sysdata.rda` from CDC’s AtlasPlus set-up
+data; [\#4](https://github.com/VagishHemmige/CDCAtlas/issues/4) tracks
+the remaining data-generation work (age schemes).
 
 ## Implementation and approval
 

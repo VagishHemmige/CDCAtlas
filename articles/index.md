@@ -9,3 +9,8 @@
 
 - [Extrapolation to
   tracts](https://vagishhemmige.github.io/CDCAtlas/articles/extrapolation.md):
+
+### About the data
+
+- [About CDC AtlasPlus
+  data](https://vagishhemmige.github.io/CDCAtlas/articles/about-atlasplus-data.md):

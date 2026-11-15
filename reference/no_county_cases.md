@@ -1,19 +1,24 @@
 # Cases in state totals that no county accounts for
 
-A state's total in CDC AtlasPlus includes cases with no valid county of
-residence, so it is usually larger than the sum of its counties.
-`no_county_cases()` compares each state total with its counties. Run it
-after
+A state's total in CDC AtlasPlus is usually larger than the sum of its
+counties. `no_county_cases()` compares each state total with the county
+counts supplied. Run it after
 [`impute_suppressed()`](https://vagishhemmige.github.io/CDCAtlas/reference/impute_suppressed.md)
-for the remainder with no county; on county data straight from
+for the remainder that no county accounts for; on county data straight
+from
 [`get_atlas()`](https://vagishhemmige.github.io/CDCAtlas/reference/get_atlas.md)
 it reports only the gap left by published counts.
 
-Most of the gap is cases with no county, not suppressed counties (#27),
-so it can't be used to fill in suppressed counties.
+The remainder is a difference, not a count of identified cases. One
+likely explanation is cases whose county of residence is unknown or not
+released, but CDC's documentation doesn't say so; it also includes any
+counties left out of `x`. In 2022 the gap was far larger than suppressed
+counties could hold at 1-4 cases each (#27), so it can't be used to fill
+them in.
 [`extrapolate_from_county()`](https://vagishhemmige.github.io/CDCAtlas/reference/extrapolate_from_county.md)
-leaves these cases out by default; `no_county = "spread"` shares them
-across the state's counties instead.
+leaves the remainder out by default; `no_county = "spread"` shares it
+across the state's counties instead. See the "About CDC AtlasPlus data"
+article.
 
 ## Usage
 
@@ -50,8 +55,8 @@ A tibble with one row per state, indicator, year and stratum:
 
 - unpublished_cases:
 
-  `state_cases - published_cases`: cases in suppressed counties and
-  cases with no county together (the figures in \#27).
+  `state_cases - published_cases`: cases in suppressed counties together
+  with the remainder no county accounts for (the figures in \#27).
 
 - imputed_cases:
 
@@ -82,7 +87,10 @@ as 0 imputed cases.
 ## See also
 
 [`impute_suppressed()`](https://vagishhemmige.github.io/CDCAtlas/reference/impute_suppressed.md),
-[`extrapolate_from_county()`](https://vagishhemmige.github.io/CDCAtlas/reference/extrapolate_from_county.md).
+[`extrapolate_from_county()`](https://vagishhemmige.github.io/CDCAtlas/reference/extrapolate_from_county.md);
+the article ["About CDC AtlasPlus
+data"](https://vagishhemmige.github.io/CDCAtlas/articles/about-atlasplus-data.html)
+on why state totals and county counts differ.
 
 ## Examples
 
