@@ -113,7 +113,6 @@ test_that("kept 'Data not available' rows count towards the remainder", {
   expect_equal(kept$no_county_cases, c(21, 121))
 })
 
-<<<<<<< HEAD
 test_that("for HIV estimates the report says the remainder includes non-EHE counties (#109)", {
   indicator <- "Estimated HIV incidence"
   local_fake_sources(
@@ -132,7 +131,8 @@ test_that("reported data get no EHE message", {
   local_fake_sources()
   county <- impute_suppressed(fake_county_atlas(), method = "zero")
   expect_no_message(no_county_cases(county))
-=======
+})
+
 # Two states: Alabama (01001) has a count; Alaska's only county (02003) is
 # "Data not available" with no count, so its whole state total is unpublished.
 two_states_one_unavailable <- function() {
@@ -166,5 +166,4 @@ test_that("not_available = 'drop' warns when it removes a whole state's rows (#1
     county <- impute_suppressed(data$county, not_available = "drop")
   )
   expect_equal(unique(county$fips), "01001")
->>>>>>> claude/keep-not-available
 })
