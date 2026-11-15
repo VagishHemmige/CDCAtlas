@@ -5,7 +5,7 @@ surveillance data from CDC AtlasPlus.
 
 This article introduces common use patterns:
 
-- retrieving state- and county-level data
+- retrieving national, state- and county-level data
 - querying different diseases
 - using sex, age, and race/ethnicity stratification
 - comparing rates across groups
@@ -60,7 +60,9 @@ head(chlamydia_state)
 ```
 
 The returned object is a data frame that can be used directly with
-tidyverse tools.
+tidyverse tools. Each row is one indicator, place, year and stratum; the
+`indicator` column says what was counted, and `data_status` says whether
+a value is suppressed or not available.
 
 ``` r
 
@@ -88,21 +90,31 @@ glimpse(chlamydia_state)
 
 ## Plot state-level rates
 
+AtlasPlus’s state level also includes U.S. territories. Their FIPS codes
+are above 56, so this keeps the 50 states and the District of Columbia:
+
+``` r
+
+is_state_or_dc <- function(fips) as.integer(fips) <= 56
+```
+
 ``` r
 
 chlamydia_state |>
-  filter(!is.na(rate100000)) |>
+  filter(is_state_or_dc(fips), !is.na(rate100000)) |>
   ggplot(aes(x = reorder(geography, rate100000), y = rate100000)) +
   geom_col() +
   coord_flip() +
   labs(
-    title = "Chlamydia rate by state, 2022",
+    title = "Chlamydia rate by state and DC, 2022",
     x = NULL,
     y = "Rate per 100,000"
   )
 ```
 
-![](getting-started_files/figure-html/unnamed-chunk-6-1.png)
+![Bar chart of 2022 chlamydia rates per 100,000 population for the 50
+states and DC, sorted from highest to
+lowest.](getting-started_files/figure-html/unnamed-chunk-7-1.png)
 
 ## Query county-level data
 
@@ -190,7 +202,7 @@ Now we can compare rates by sex within each state.
 ``` r
 
 gonorrhea_sex |>
-  filter(!is.na(rate100000)) |>
+  filter(is_state_or_dc(fips), !is.na(rate100000)) |>
   group_by(sex) |>
   slice_max(rate100000, n = 10, with_ties = FALSE) |>
   ungroup() |>
@@ -199,87 +211,67 @@ gonorrhea_sex |>
   coord_flip() +
   facet_wrap(~ sex, scales = "free_y") +
   labs(
-    title = "States with highest gonorrhea rates by sex, 2022",
+    title = "States (and DC) with the highest gonorrhea rates by sex, 2022",
     x = NULL,
     y = "Rate per 100,000"
   )
 ```
 
-![](getting-started_files/figure-html/unnamed-chunk-10-1.png)
+![Two bar charts, one per sex, of the ten states or DC with the highest
+2022 gonorrhea rates per 100,000
+population.](getting-started_files/figure-html/unnamed-chunk-11-1.png)
 
 ## Stratification by age
 
 AtlasPlus also supports age-stratified queries for many
-disease/geography combinations.
+disease/geography combinations. For national figures, ask for
+`geography = "national"` rather than adding up states: CDC’s national
+totals don’t depend on which state cells are suppressed, and state rows
+include territories.
 
 ``` r
 
 hiv_age <- get_atlas(
   disease   = "hiv",
-  geography = "state",
+  geography = "national",
   year      = 2022,
   stratify_by = "age"
-
 )
 
-head(hiv_age)
-#> # A tibble: 6 × 17
-#>   indicator   year geography data_status race_ethnicity sex   age   transmission
-#>   <fct>      <dbl> <fct>     <fct>       <fct>          <fct> <fct> <fct>       
-#> 1 HIV diagn…  2022 Alabama   Not Suppre… All races/eth… Both… 13-24 All transmi…
-#> 2 HIV diagn…  2022 Alabama   Not Suppre… All races/eth… Both… 25-34 All transmi…
-#> 3 HIV diagn…  2022 Alabama   Not Suppre… All races/eth… Both… 35-44 All transmi…
-#> 4 HIV diagn…  2022 Alabama   Not Suppre… All races/eth… Both… 45-54 All transmi…
-#> 5 HIV diagn…  2022 Alabama   Not Suppre… All races/eth… Both… 55-64 All transmi…
-#> 6 HIV diagn…  2022 Alabama   Not Suppre… All races/eth… Both… 65+   All transmi…
-#> # ℹ 9 more variables: rate100000 <dbl>, cases <dbl>, population <dbl>,
-#> #   lowerci_rate <dbl>, upperci_rate <dbl>, rse <dbl>, lowerci_cases <dbl>,
-#> #   upperci_cases <dbl>, fips <chr>
-```
-
-We can summarize national patterns by aggregating across states.
-
-``` r
-
-hiv_age_summary <- hiv_age |>
-  group_by(age, indicator) |>
-  summarize(
-    cases = sum(cases, na.rm = TRUE),
-    .groups = "drop"
-  )
-
-hiv_age_summary
-#> # A tibble: 12 × 3
-#>    age   indicator       cases
-#>    <fct> <fct>           <dbl>
-#>  1 13-24 HIV diagnoses    7151
-#>  2 13-24 HIV prevalence  28335
-#>  3 25-34 HIV diagnoses   14200
-#>  4 25-34 HIV prevalence 166715
-#>  5 35-44 HIV diagnoses    8340
-#>  6 35-44 HIV prevalence 211977
-#>  7 45-54 HIV diagnoses    4595
-#>  8 45-54 HIV prevalence 237860
-#>  9 55-64 HIV diagnoses    2861
-#> 10 55-64 HIV prevalence 295885
-#> 11 65+   HIV diagnoses     889
-#> 12 65+   HIV prevalence 162026
+hiv_age |>
+  select(indicator, age, cases, rate100000)
+#> # A tibble: 12 × 4
+#>    indicator      age    cases rate100000
+#>    <fct>          <fct>  <dbl>      <dbl>
+#>  1 HIV diagnoses  13-24   7104       13.6
+#>  2 HIV diagnoses  25-34  14077       30.8
+#>  3 HIV diagnoses  35-44   8265       18.8
+#>  4 HIV diagnoses  45-54   4539       11.2
+#>  5 HIV diagnoses  55-64   2829        6.7
+#>  6 HIV diagnoses  65+      871        1.5
+#>  7 HIV prevalence 13-24  28153       53.7
+#>  8 HIV prevalence 25-34 165315      362. 
+#>  9 HIV prevalence 35-44 209819      477. 
+#> 10 HIV prevalence 45-54 234447      578. 
+#> 11 HIV prevalence 55-64 290975      687. 
+#> 12 HIV prevalence 65+   158815      276.
 ```
 
 ``` r
 
-hiv_age_summary |>
-  filter(indicator=="HIV diagnoses")|>
+hiv_age |>
+  filter(indicator == "HIV diagnoses") |>
   ggplot(mapping=aes(x = age, y = cases)) +
   geom_col() +
   labs(
-    title = "HIV diagnoses by age group, 2022",
+    title = "HIV diagnoses by age group, United States, 2022",
     x = "Age group",
     y = "Cases"
   )
 ```
 
-![](getting-started_files/figure-html/unnamed-chunk-13-1.png)
+![Bar chart of 2022 U.S. HIV diagnoses by age
+group.](getting-started_files/figure-html/unnamed-chunk-13-1.png)
 
 ## Stratification by race/ethnicity
 
@@ -289,77 +281,54 @@ than separate race and Hispanic ethnicity fields.
 ``` r
 
 hiv_race <- get_atlas(
-  disease        = "hiv",
-  geography      = "state",
-  year           = 2022,
+  disease     = "hiv",
+  geography   = "national",
+  year        = 2022,
   stratify_by = "race"
-
 )
 
-head(hiv_race)
-#> # A tibble: 6 × 17
-#>   indicator   year geography data_status race_ethnicity sex   age   transmission
-#>   <fct>      <dbl> <fct>     <fct>       <fct>          <fct> <fct> <fct>       
-#> 1 HIV diagn…  2022 Alabama   Not Suppre… American Indi… Both… Ages… All transmi…
-#> 2 HIV diagn…  2022 Alabama   Not Suppre… Asian          Both… Ages… All transmi…
-#> 3 HIV diagn…  2022 Alabama   Not Suppre… Black/African… Both… Ages… All transmi…
-#> 4 HIV diagn…  2022 Alabama   Not Suppre… Hispanic/Lati… Both… Ages… All transmi…
-#> 5 HIV diagn…  2022 Alabama   Not Suppre… Native Hawaii… Both… Ages… All transmi…
-#> 6 HIV diagn…  2022 Alabama   Not Suppre… White          Both… Ages… All transmi…
-#> # ℹ 9 more variables: rate100000 <dbl>, cases <dbl>, population <dbl>,
-#> #   lowerci_rate <dbl>, upperci_rate <dbl>, rse <dbl>, lowerci_cases <dbl>,
-#> #   upperci_cases <dbl>, fips <chr>
+hiv_race |>
+  select(indicator, race_ethnicity, cases, rate100000) |>
+  arrange(indicator, desc(cases))
+#> # A tibble: 14 × 4
+#>    indicator      race_ethnicity                          cases rate100000
+#>    <fct>          <fct>                                   <dbl>      <dbl>
+#>  1 HIV diagnoses  Black/African American                  14276       40.8
+#>  2 HIV diagnoses  Hispanic/Latino                         12084       23.8
+#>  3 HIV diagnoses  White                                    8873        5.2
+#>  4 HIV diagnoses  Multiracial                              1401       25.8
+#>  5 HIV diagnoses  Asian                                     773        4.4
+#>  6 HIV diagnoses  American Indian/Alaska Native             206       10.1
+#>  7 HIV diagnoses  Native Hawaiian/Other Pacific Islander     72       13.7
+#>  8 HIV prevalence Black/African American                 427091     1220. 
+#>  9 HIV prevalence White                                  301218      176. 
+#> 10 HIV prevalence Hispanic/Latino                        272472      536. 
+#> 11 HIV prevalence Multiracial                             65402     1204. 
+#> 12 HIV prevalence Asian                                   16819       96.2
+#> 13 HIV prevalence American Indian/Alaska Native            3033      149. 
+#> 14 HIV prevalence Native Hawaiian/Other Pacific Islander    876      167.
 ```
 
-A useful first look is to compare total reported cases by
-race/ethnicity.
+Cases with unknown race/ethnicity are counted in the totals but not
+shown by race, so the groups may not add up to the total.
 
 ``` r
 
-hiv_race_summary <- hiv_race |>
-  group_by(race_ethnicity, indicator) |>
-  summarize(
-    cases = sum(cases, na.rm = TRUE),
-    .groups = "drop"
-  ) |>
-  arrange(desc(cases))
-
-hiv_race_summary
-#> # A tibble: 14 × 3
-#>    race_ethnicity                         indicator       cases
-#>    <fct>                                  <fct>           <dbl>
-#>  1 Black/African American                 HIV prevalence 427114
-#>  2 White                                  HIV prevalence 301263
-#>  3 Hispanic/Latino                        HIV prevalence 287669
-#>  4 Multiracial                            HIV prevalence  65407
-#>  5 Asian                                  HIV prevalence  16821
-#>  6 Black/African American                 HIV diagnoses   14277
-#>  7 Hispanic/Latino                        HIV diagnoses   12428
-#>  8 White                                  HIV diagnoses    8878
-#>  9 American Indian/Alaska Native          HIV prevalence   3034
-#> 10 Multiracial                            HIV diagnoses    1402
-#> 11 Native Hawaiian/Other Pacific Islander HIV prevalence    877
-#> 12 Asian                                  HIV diagnoses     773
-#> 13 American Indian/Alaska Native          HIV diagnoses     206
-#> 14 Native Hawaiian/Other Pacific Islander HIV diagnoses      72
-```
-
-``` r
-
-
-hiv_race_summary |>
-  filter(indicator=="HIV diagnoses")|>
+hiv_race |>
+  filter(indicator == "HIV diagnoses") |>
   ggplot(mapping =aes(x = reorder(race_ethnicity, cases), y = cases)) +
   geom_col() +
   coord_flip() +
   labs(
-    title = "HIV cases by race/ethnicity, 2022",
+    title = "HIV diagnoses by race/ethnicity, United States, 2022",
     x = NULL,
     y = "Cases"
   )
 ```
 
-![](getting-started_files/figure-html/unnamed-chunk-16-1.png)
+![Bar chart of 2022 U.S. HIV diagnoses by race and ethnicity, sorted
+from most to
+fewest.](getting-started_files/figure-html/unnamed-chunk-15-1.png)
 
 ## Multiple stratification variables
 
@@ -370,130 +339,88 @@ queried by both sex and age.
 ``` r
 
 hiv_age_sex <- get_atlas(
-  disease   = "hiv",
-  geography = "state",
-  year      = 2022,
+  disease     = "hiv",
+  geography   = "national",
+  year        = 2022,
   stratify_by = c("sex", "age")
-
 )
 
-head(hiv_age_sex)
-#> # A tibble: 6 × 17
-#>   indicator   year geography data_status race_ethnicity sex   age   transmission
-#>   <fct>      <dbl> <fct>     <fct>       <fct>          <fct> <fct> <fct>       
-#> 1 HIV diagn…  2022 Alabama   Not Suppre… All races/eth… Male  13-24 All transmi…
-#> 2 HIV diagn…  2022 Alabama   Not Suppre… All races/eth… Male  25-34 All transmi…
-#> 3 HIV diagn…  2022 Alabama   Not Suppre… All races/eth… Male  35-44 All transmi…
-#> 4 HIV diagn…  2022 Alabama   Not Suppre… All races/eth… Male  45-54 All transmi…
-#> 5 HIV diagn…  2022 Alabama   Not Suppre… All races/eth… Male  55-64 All transmi…
-#> 6 HIV diagn…  2022 Alabama   Not Suppre… All races/eth… Male  65+   All transmi…
-#> # ℹ 9 more variables: rate100000 <dbl>, cases <dbl>, population <dbl>,
-#> #   lowerci_rate <dbl>, upperci_rate <dbl>, rse <dbl>, lowerci_cases <dbl>,
-#> #   upperci_cases <dbl>, fips <chr>
+hiv_age_sex |>
+  select(indicator, sex, age, cases)
+#> # A tibble: 24 × 4
+#>    indicator     sex    age   cases
+#>    <fct>         <fct>  <fct> <dbl>
+#>  1 HIV diagnoses Male   13-24  6244
+#>  2 HIV diagnoses Male   25-34 12043
+#>  3 HIV diagnoses Male   35-44  6472
+#>  4 HIV diagnoses Male   45-54  3308
+#>  5 HIV diagnoses Male   55-64  2052
+#>  6 HIV diagnoses Male   65+     607
+#>  7 HIV diagnoses Female 13-24   860
+#>  8 HIV diagnoses Female 25-34  2034
+#>  9 HIV diagnoses Female 35-44  1793
+#> 10 HIV diagnoses Female 45-54  1231
+#> # ℹ 14 more rows
 ```
 
 This allows direct comparison of age distributions by sex.
 
 ``` r
 
-hiv_age_sex_summary <- hiv_age_sex |>
-  group_by(sex, age, indicator) |>
-  summarize(
-    cases = sum(cases, na.rm = TRUE),
-    .groups = "drop"
-  )
-
-hiv_age_sex_summary
-#> # A tibble: 24 × 4
-#>    sex   age   indicator       cases
-#>    <fct> <fct> <fct>           <dbl>
-#>  1 Male  13-24 HIV diagnoses    6283
-#>  2 Male  13-24 HIV prevalence  22927
-#>  3 Male  25-34 HIV diagnoses   12143
-#>  4 Male  25-34 HIV prevalence 141428
-#>  5 Male  35-44 HIV diagnoses    6534
-#>  6 Male  35-44 HIV prevalence 164437
-#>  7 Male  45-54 HIV diagnoses    3346
-#>  8 Male  45-54 HIV prevalence 172026
-#>  9 Male  55-64 HIV diagnoses    2076
-#> 10 Male  55-64 HIV prevalence 226017
-#> # ℹ 14 more rows
-```
-
-``` r
-
-hiv_age_sex_summary |>
-  filter(indicator=="HIV diagnoses")|>
+hiv_age_sex |>
+  filter(indicator == "HIV diagnoses") |>
   ggplot(aes(x = age, y = cases)) +
   geom_col() +
   facet_wrap(~ sex) +
   labs(
-    title = "HIV cases by age and sex, 2022",
+    title = "HIV diagnoses by age and sex, United States, 2022",
     x = "Age group",
     y = "Cases"
   )
 ```
 
-![](getting-started_files/figure-html/unnamed-chunk-19-1.png)
+![Two bar charts, one per sex, of 2022 U.S. HIV diagnoses by age
+group.](getting-started_files/figure-html/unnamed-chunk-17-1.png)
 
 ## Comparing years
 
 You can also query multiple years and compare trends over time.
+AtlasPlus warns that “due to the impact of the COVID-19 pandemic, data
+for 2020 and 2021 may need to be interpreted with caution”
+([AtlasPlus](https://gis.cdc.gov/grasp/nchhstpatlas/main.html)), so read
+changes across those years carefully.
 
 ``` r
 
-syphilis_years <- get_atlas(
+syphilis_trend <- get_atlas(
   disease   = "adult syphilis",
-  geography = "state",
+  geography = "national",
   year      = 2018:2022
 )
 
-head(syphilis_years)
-#> # A tibble: 6 × 17
-#>   indicator   year geography data_status race_ethnicity sex   age   transmission
-#>   <fct>      <dbl> <fct>     <fct>       <fct>          <fct> <fct> <fct>       
-#> 1 Primary a…  2018 Alabama   Not Suppre… All races/eth… Both… All … All transmi…
-#> 2 Primary a…  2018 Alaska    Not Suppre… All races/eth… Both… All … All transmi…
-#> 3 Primary a…  2018 Arizona   Not Suppre… All races/eth… Both… All … All transmi…
-#> 4 Primary a…  2018 Arkansas  Not Suppre… All races/eth… Both… All … All transmi…
-#> 5 Primary a…  2018 Californ… Not Suppre… All races/eth… Both… All … All transmi…
-#> 6 Primary a…  2018 Colorado  Not Suppre… All races/eth… Both… All … All transmi…
-#> # ℹ 9 more variables: rate100000 <dbl>, cases <dbl>, population <dbl>,
-#> #   lowerci_rate <dbl>, upperci_rate <dbl>, rse <dbl>, lowerci_cases <dbl>,
-#> #   upperci_cases <dbl>, fips <chr>
+syphilis_trend |>
+  select(year, indicator, cases, rate100000)
+#> # A tibble: 15 × 4
+#>     year indicator                                 cases rate100000
+#>    <dbl> <fct>                                     <dbl>      <dbl>
+#>  1  2018 Primary and Secondary Syphilis            35063       10.7
+#>  2  2018 Early Non-Primary, Non-Secondary Syphilis 38539       11.8
+#>  3  2018 Unknown Duration or Late Syphilis         40137       12.3
+#>  4  2019 Primary and Secondary Syphilis            38992       11.9
+#>  5  2019 Early Non-Primary, Non-Secondary Syphilis 41655       12.7
+#>  6  2019 Unknown Duration or Late Syphilis         47296       14.4
+#>  7  2020 Primary and Secondary Syphilis            41655       12.6
+#>  8  2020 Early Non-Primary, Non-Secondary Syphilis 43145       13  
+#>  9  2020 Unknown Duration or Late Syphilis         46997       14.2
+#> 10  2021 Primary and Secondary Syphilis            53767       16.2
+#> 11  2021 Early Non-Primary, Non-Secondary Syphilis 51830       15.6
+#> 12  2021 Unknown Duration or Late Syphilis         68261       20.6
+#> 13  2022 Primary and Secondary Syphilis            59016       17.7
+#> 14  2022 Early Non-Primary, Non-Secondary Syphilis 56913       17.1
+#> 15  2022 Unknown Duration or Late Syphilis         87571       26.3
 ```
 
-For example, compare national totals by year.
-
-``` r
-
-syphilis_trend <- syphilis_years |>
-  group_by(year, indicator) |>
-  summarize(
-    cases = sum(cases, na.rm = TRUE),
-    .groups = "drop"
-  )
-
-syphilis_trend
-#> # A tibble: 15 × 3
-#>     year indicator                                 cases
-#>    <dbl> <fct>                                     <dbl>
-#>  1  2018 Primary and Secondary Syphilis            35447
-#>  2  2018 Early Non-Primary, Non-Secondary Syphilis 39119
-#>  3  2018 Unknown Duration or Late Syphilis         40285
-#>  4  2019 Primary and Secondary Syphilis            39327
-#>  5  2019 Early Non-Primary, Non-Secondary Syphilis 42118
-#>  6  2019 Unknown Duration or Late Syphilis         47473
-#>  7  2020 Primary and Secondary Syphilis            41942
-#>  8  2020 Early Non-Primary, Non-Secondary Syphilis 43486
-#>  9  2020 Unknown Duration or Late Syphilis         47256
-#> 10  2021 Primary and Secondary Syphilis            54108
-#> 11  2021 Early Non-Primary, Non-Secondary Syphilis 52247
-#> 12  2021 Unknown Duration or Late Syphilis         68691
-#> 13  2022 Primary and Secondary Syphilis            59404
-#> 14  2022 Early Non-Primary, Non-Secondary Syphilis 57450
-#> 15  2022 Unknown Duration or Late Syphilis         88121
-```
+`"adult syphilis"` returns one indicator per stage.
 
 ``` r
 
@@ -502,19 +429,20 @@ ggplot(mapping= aes(x = year, y = cases, color=indicator, group=indicator)) +
   geom_line() +
   geom_point() +
   labs(
-    title = "Adult syphilis cases over time",
+    title = "Adult syphilis cases by stage, United States, 2018-2022",
     x = "Year",
     y = "Cases"
   )
 ```
 
-![](getting-started_files/figure-html/unnamed-chunk-22-1.png)
+![Line chart of U.S. adult syphilis cases from 2018 to 2022, one line
+per stage.](getting-started_files/figure-html/unnamed-chunk-19-1.png)
 
 ## Working with censored or missing values
 
 CDC AtlasPlus may suppress or censor some values, especially for small
 counts. Depending on the disease and geography, `cases` or `rate100000`
-may be missing.
+may be missing. `data_status` says why.
 
 A common first step is to inspect missingness.
 
@@ -530,7 +458,22 @@ chlamydia_county |>
 #>   n_rows missing_cases missing_rates
 #>    <int>         <int>         <int>
 #> 1   3231            19            19
+
+chlamydia_county |>
+  count(data_status)
+#> # A tibble: 3 × 2
+#>   data_status            n
+#>   <fct>              <int>
+#> 1 Data suppressed        9
+#> 2 Data not available    10
+#> 3 Not Suppressed      3212
 ```
+
+Recent years can also be provisional. For HIV, AtlasPlus’s technical
+notes say data are preliminary until a 12-month reporting delay has
+passed and shouldn’t be used for formal trend analyses until then. Check
+the technical notes for each indicator (in the AtlasPlus menu) before
+comparing years.
 
 ## Choosing diseases and stratification variables
 
@@ -550,7 +493,6 @@ get_atlas(disease = "tuberculosis", geography = "state", year = 2022)
 
 After getting comfortable with basic queries, consider:
 
-- querying multiple diseases
 - comparing state and county results
 - using sex, age, and race/ethnicity stratification
 - joining AtlasPlus data to Census or spatial data

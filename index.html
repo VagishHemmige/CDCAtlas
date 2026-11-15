@@ -69,49 +69,56 @@
 <h2 id="what-is-the-cdc-atlas-database">What is the CDC Atlas database?<a class="anchor" aria-label="anchor" href="#what-is-the-cdc-atlas-database"></a>
 </h2>
 <p><strong>AtlasPlus</strong> is an interactive CDC data tool that provides access to reported data on HIV, sexually transmitted infections, tuberculosis, viral hepatitis, and selected social determinants of health. It allows users to explore these data through maps, charts, tables, and downloadable reports.</p>
-<p>This package provides a programmatic interface to selected AtlasPlus data so that researchers can query, cache, and analyze results directly in R rather than working only through the web interface, which requires downloading individual files which require manual cleanup before importing into R.</p>
+<p>This package provides a programmatic interface to selected AtlasPlus data so that researchers can query, cache, and analyze results directly in R rather than downloading files from the web interface and cleaning them up by hand.</p>
 <p><br><br></p>
-<p><a href="https://www.cdc.gov/nchhstp/about/atlasplus.html?s_cid=bb-od-atlasplus_005" title="NCHHSTP AtlasPlus gives you the power to access data reported to CDC’s National Center for HIV, Viral Hepatitis, STD, and TB Prevention (NCHHSTP). Use HIV, viral hepatitis, STD, TB and Social Determinants of Health Data to create maps, charts, and detailed reports, and analyze trends and patterns." class="external-link"><img src="https://www.cdc.gov/nchhstp/about/images/atlasplus-buttons/AtlasPlus-728x90.jpg" style="width:728px; height:90px; border:0px;" alt="NCHHSTP AtlasPlus is an interactive tool that provides CDC an effective way to disseminate HIV, Viral Hepatitis, STD, TB and Social Determinants of Health Data, while allowing users to observe trends and patterns by creating detailed reports, maps, and other graphics. Find out more! https://www.cdc.govnchhstp/about/atlasplus.html"></a></p>
+<p><a href="https://www.cdc.gov/nchhstp/about/atlasplus.html?s_cid=bb-od-atlasplus_005" title="NCHHSTP AtlasPlus gives you the power to access data reported to CDC’s National Center for HIV, Viral Hepatitis, STD, and TB Prevention (NCHHSTP). Use HIV, viral hepatitis, STD, TB and Social Determinants of Health Data to create maps, charts, and detailed reports, and analyze trends and patterns." class="external-link"><img src="https://www.cdc.gov/nchhstp/about/images/atlasplus-buttons/AtlasPlus-728x90.jpg" style="max-width:100%; height:auto; border:0px;" alt="NCHHSTP AtlasPlus: CDC's interactive tool for HIV, viral hepatitis, STD, TB and social determinants of health data"></a></p>
 <p><br><br></p>
 </div>
 <div class="section level2">
 <h2 id="what-the-package-does">What the package does<a class="anchor" aria-label="anchor" href="#what-the-package-does"></a>
 </h2>
 <p><code>CDCAtlas</code> provides a <strong>polite, cache-aware R client</strong> for selected CDC <strong>AtlasPlus</strong> endpoints.</p>
-<p>AtlasPlus is not a stable, public API.<br>
-This package aims for safe and respectful usage:</p>
+<p>AtlasPlus is not a stable, public API, and CDC can change it without notice. This package aims for safe and respectful usage:</p>
 <ul>
-<li>identifies via a custom <strong>User-Agent</strong>
+<li>identifies itself with a custom <strong>User-Agent</strong>
 </li>
-<li>applies <strong>rate limiting</strong> and <strong>retry backoff</strong>
-</li>
+<li>applies <strong>rate limiting</strong> (at most 5 requests a second)</li>
 <li>
-<strong>caches responses</strong> to reduce server traffic</li>
-<li>handles schema changes gracefully when possible</li>
+<strong>caches responses</strong> on disk to reduce server traffic</li>
+<li>passes on CDC’s own error message when a request fails</li>
 </ul>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>You can install the development version of CDCAtlas from <a href="https://github.com/" class="external-link">GitHub</a> with:</p>
+<p>You can install the development version of CDCAtlas from <a href="https://github.com/VagishHemmige/CDCAtlas" class="external-link">GitHub</a> with:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"VagishHemmige/CDCAtlas"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"VagishHemmige/CDCAtlas"</span><span class="op">)</span></span></code></pre></div>
+<p>Census tract and block group estimates (<code><a href="reference/extrapolate_from_county.html">extrapolate_from_county()</a></code>) also need the tidycensus package (version 1.8.0 or later) and a Census API key.</p>
 </div>
 <div class="section level2">
 <h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
 </h2>
-<p>This is a basic example which shows you how to solve a common problem:</p>
+<p>State-level gonorrhea cases and rates for 2022:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/VagishHemmige/CDCAtlas" class="external-link">CDCAtlas</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/VagishHemmige/CDCAtlas" class="external-link">CDCAtlas</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">gonorrhea_us</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/get_atlas.html">get_atlas</a></span><span class="op">(</span></span>
+<span><span class="va">gonorrhea_state</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/get_atlas.html">get_atlas</a></span><span class="op">(</span></span>
 <span>  disease <span class="op">=</span> <span class="st">"gonorrhea"</span>,</span>
 <span>  geography <span class="op">=</span> <span class="st">"state"</span>,</span>
 <span>  year <span class="op">=</span> <span class="fl">2022</span></span>
 <span><span class="op">)</span></span></code></pre></div>
+<p>See the <a href="https://vagishhemmige.github.io/CDCAtlas/articles/getting-started.html">Getting started</a> article for more.</p>
+</div>
+<div class="section level2">
+<h2 id="citing-atlasplus">Citing AtlasPlus<a class="anchor" aria-label="anchor" href="#citing-atlasplus"></a>
+</h2>
+<p>Data downloaded with CDCAtlas come from CDC. CDC’s suggested citation for AtlasPlus is:</p>
+<blockquote>
+<p>Centers for Disease Control and Prevention. NCHHSTP AtlasPlus. <a href="https://www.cdc.gov/nchhstp/about/atlasplus.html" class="external-link uri">https://www.cdc.gov/nchhstp/about/atlasplus.html</a>. Accessed [date].</p>
+</blockquote>
+<p>Use the date you downloaded the data.</p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">

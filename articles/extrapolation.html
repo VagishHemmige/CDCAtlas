@@ -108,11 +108,20 @@ state, or national data, you do not need to set up
 <li>a Census API key</li>
 <li>the API key saved in your R environment</li>
 </ol>
-<p>You can install <code>tidycensus</code> from CRAN:</p>
+<p>You can install <code>tidycensus</code> (version 1.8.0 or later) from
+CRAN:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"tidycensus"</span><span class="op">)</span></span></code></pre></div>
 <p>Then request a free Census API key from the U.S. Census Bureau and
-install it using <code><a href="https://walker-data.com/tidycensus/reference/census_api_key.html" class="external-link">tidycensus::census_api_key()</a></code>.</p>
+save it with <code><a href="https://walker-data.com/tidycensus/reference/census_api_key.html" class="external-link">tidycensus::census_api_key()</a></code>. With
+<code>install = TRUE</code> it is written to your <code>.Renviron</code>
+file as <code>CENSUS_API_KEY</code>, so it is there in future
+sessions:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">tidycensus</span><span class="fu">::</span><span class="fu"><a href="https://walker-data.com/tidycensus/reference/census_api_key.html" class="external-link">census_api_key</a></span><span class="op">(</span><span class="st">"YOUR KEY HERE"</span>, install <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/readRenviron.html" class="external-link">readRenviron</a></span><span class="op">(</span><span class="st">"~/.Renviron"</span><span class="op">)</span> <span class="co"># or restart R</span></span></code></pre></div>
+<p>Without <code>install = TRUE</code>, the key lasts only for the
+current session.</p>
 <p>See <a href="https://walker-data.com/tidycensus/" class="external-link">https://walker-data.com/tidycensus/</a>
 for further details.</p>
 </div>
@@ -141,7 +150,7 @@ interpreted as observed tract-level surveillance data.</p>
 </h2>
 <p>The simplest use case is extrapolating county-level data to tracts
 using total tract population.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hiv_tract</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_atlas.html">get_atlas</a></span><span class="op">(</span></span>
 <span>  disease <span class="op">=</span> <span class="st">"hiv"</span>,</span>
 <span>  year <span class="op">=</span> <span class="fl">2022</span>,</span>
@@ -150,23 +159,23 @@ using total tract population.</p>
 <span>  <span class="fu"><a href="../reference/impute_suppressed.html">impute_suppressed</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/extrapolate_from_county.html">extrapolate_from_county</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■                              </span>   4% | ETA:  1m</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■                          </span>  15% | ETA: 45s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■                         </span>  21% | ETA: 45s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■                       </span>  27% | ETA: 43s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■                      </span>  29% | ETA: 43s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■                     </span>  33% | ETA: 43s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■                    </span>  37% | ETA: 43s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■                  </span>  42% | ETA: 36s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■                 </span>  46% | ETA: 35s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■                </span>  50% | ETA: 34s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■               </span>  54% | ETA: 31s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■             </span>  62% | ETA: 24s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■           </span>  67% | ETA: 20s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■          </span>  71% | ETA: 18s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■                         </span>  19% | ETA: 37s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■                         </span>  21% | ETA: 42s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■                       </span>  27% | ETA: 39s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■                      </span>  31% | ETA: 40s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■                     </span>  35% | ETA: 40s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■                   </span>  40% | ETA: 35s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■                 </span>  46% | ETA: 32s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■                </span>  50% | ETA: 30s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■               </span>  54% | ETA: 28s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■            </span>  63% | ETA: 21s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■           </span>  67% | ETA: 19s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■          </span>  71% | ETA: 17s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■         </span>  75% | ETA: 15s</span></span>
 <span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■       </span>  81% | ETA: 11s</span></span>
 <span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■      </span>  85% | ETA: 10s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■     </span>  87% | ETA:  8s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■■   </span>  92% | ETA:  5s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■    </span>  90% | ETA:  6s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■■   </span>  94% | ETA:  4s</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Dropped 17 rows marked <span style="color: #0000BB;">"Data not available"</span> with no count.</span></span>
 <span><span class="co">#&gt;   Their cases are still in the state totals; see `no_county_cases()`.</span></span>
 <span><span class="co">#&gt; Warning: 1 suppressed row could not be estimated and is set to `NA`.</span></span>
@@ -185,9 +194,10 @@ using total tract population.</p>
 <code><a href="../reference/extrapolate_from_county.html">extrapolate_from_county()</a></code> report what they could not
 estimate or allocate. Those messages are shown here on purpose: they say
 which cases are missing from the tract estimates.</p>
-<p>The returned data contain one row per tract, with the county-level
-AtlasPlus count allocated to tracts.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<p>The returned data contain one row per tract and indicator (here, HIV
+diagnoses and HIV prevalence), with the county-level AtlasPlus count
+allocated to tracts.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">hiv_tract</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 26</span></span></span>
 <span><span class="co">#&gt;    year acs_year area_type geoid    area_name county_fips county_name state_fips</span></span>
@@ -206,7 +216,7 @@ AtlasPlus count allocated to tracts.</p>
 <span><span class="co">#&gt; <span style="color: #949494;">#   area_total_population &lt;dbl&gt;, county_total_population &lt;dbl&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   allocation &lt;chr&gt;, area_cases &lt;dbl&gt;, area_noncases &lt;dbl&gt;</span></span></span></code></pre></div>
 <p>A typical output includes columns such as:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">hiv_tract</span><span class="op">)</span></span>
 <span><span class="co">#&gt;  [1] "year"                    "acs_year"               </span></span>
 <span><span class="co">#&gt;  [3] "area_type"               "geoid"                  </span></span>
@@ -221,20 +231,31 @@ AtlasPlus count allocated to tracts.</p>
 <span><span class="co">#&gt; [21] "county_population_acs"   "area_total_population"  </span></span>
 <span><span class="co">#&gt; [23] "county_total_population" "allocation"             </span></span>
 <span><span class="co">#&gt; [25] "area_cases"              "area_noncases"</span></span></code></pre></div>
-<p>You should expect columns identifying:</p>
+<p>The main columns are:</p>
 <ul>
-<li>the tract</li>
-<li>the parent county</li>
-<li>the AtlasPlus disease and year</li>
-<li>the county-level cases, and the cases shared across the county’s
-tracts (<code>county_cases_allocated</code>)</li>
-<li>the tract denominator</li>
-<li>the county denominator</li>
-<li>the tract share of the county denominator</li>
-<li>the extrapolated tract cases</li>
+<li>
+<code>geoid</code> and <code>area_name</code>: the tract</li>
+<li>
+<code>county_fips</code> and <code>county_name</code>: the county it
+is in</li>
+<li>
+<code>indicator</code> and <code>year</code>: what was counted, and
+when; <code>acs_year</code> is the ACS year of the population
+figures</li>
+<li>
+<code>county_cases</code>: the county’s count, and
+<code>county_cases_allocated</code>: the cases shared across the
+county’s tracts</li>
+<li>
+<code>area_population_acs</code> and
+<code>county_population_acs</code>: the ACS population of the tract and
+of the county’s tracts</li>
+<li>
+<code>area_cases</code>: the estimated cases in the tract</li>
 </ul>
+<p>See <code><a href="../reference/extrapolate_from_county.html">?extrapolate_from_county</a></code> for every column.</p>
 <p>The key calculation is:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">area_cases</span> <span class="op">=</span> <span class="va">county_cases_allocated</span> <span class="op">*</span> <span class="va">area_population_acs</span> <span class="op">/</span> <span class="va">county_population_acs</span></span></code></pre></div>
 <p>With the default options, <code>county_cases_allocated</code> is the
 county’s own count. It also includes any cases with no county that
@@ -247,7 +268,7 @@ that <code>unknown_race = "redistribute"</code> adds.</p>
 <p>After extrapolation, tract-level estimates should sum back to the
 county counts they share out (<code>county_cases_allocated</code>),
 allowing for small floating-point differences.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hiv_tract</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">county_fips</span>, <span class="va">indicator</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarize</a></span><span class="op">(</span></span>
@@ -275,7 +296,7 @@ very close to zero.</p>
 </h2>
 <p>Some county rows can’t be shared across tracts. They are listed, with
 a reason, in an attribute of the result:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">hiv_tract</span>, <span class="st">"not_allocated"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">reason</span>, <span class="va">indicator</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 3</span></span></span>
@@ -292,7 +313,7 @@ it is left out. Use
 <code>extrapolate_from_county(unestimated = "error")</code> to stop
 instead.</p>
 <p>Cases in state totals with no county are reported separately:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">hiv_tract</span>, <span class="st">"no_county_cases"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 12</span></span></span>
@@ -312,7 +333,7 @@ instead.</p>
 </h2>
 <p>For sex-stratified AtlasPlus data, the allocation denominator should
 also be sex-specific.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hiv_tract_sex</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_atlas.html">get_atlas</a></span><span class="op">(</span></span>
 <span>  disease <span class="op">=</span> <span class="st">"hiv"</span>,</span>
 <span>  year <span class="op">=</span> <span class="fl">2022</span>,</span>
@@ -321,21 +342,27 @@ also be sex-specific.</p>
 <span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/impute_suppressed.html">impute_suppressed</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/extrapolate_from_county.html">extrapolate_from_county</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■                            </span>  12% | ETA: 43s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■                       </span>  25% | ETA: 33s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■                      </span>  29% | ETA: 35s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■                     </span>  33% | ETA: 36s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■                    </span>  37% | ETA: 35s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■                 </span>  46% | ETA: 28s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■                </span>  50% | ETA: 27s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■               </span>  54% | ETA: 25s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■            </span>  63% | ETA: 19s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■          </span>  69% | ETA: 16s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■         </span>  75% | ETA: 13s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■       </span>  81% | ETA: 10s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■      </span>  85% | ETA:  9s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■    </span>  90% | ETA:  5s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■  </span>  96% | ETA:  2s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■                              </span>   4% | ETA:  1m</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■                         </span>  19% | ETA: 36s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■                        </span>  23% | ETA: 37s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■                      </span>  29% | ETA: 39s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■                      </span>  31% | ETA: 41s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■                     </span>  33% | ETA: 42s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■                    </span>  37% | ETA: 42s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■                  </span>  44% | ETA: 35s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■                 </span>  46% | ETA: 34s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■                </span>  50% | ETA: 33s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■               </span>  52% | ETA: 32s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■             </span>  60% | ETA: 26s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■           </span>  65% | ETA: 22s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■          </span>  69% | ETA: 20s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■          </span>  71% | ETA: 19s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■       </span>  79% | ETA: 14s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■      </span>  83% | ETA: 11s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■      </span>  85% | ETA: 11s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■     </span>  87% | ETA:  9s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■■   </span>  92% | ETA:  5s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■  </span>  98% | ETA:  1s</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Dropped 35 rows marked <span style="color: #0000BB;">"Data not available"</span> with no count.</span></span>
 <span><span class="co">#&gt;   Their cases are still in the state totals; see `no_county_cases()`.</span></span>
 <span><span class="co">#&gt; Warning: 1 suppressed row could not be estimated and is set to `NA`.</span></span>
@@ -366,8 +393,8 @@ using the female population in each tract.</p>
 \frac{\text{tract population}_{\text{female}}}
 {\text{county population}_{\text{female}}}
 </annotation></semantics></math> The resulting data should include one
-row per tract per sex stratum.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+row per tract, indicator and sex.</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hiv_tract_sex</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">sex</span>, <span class="va">indicator</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 3</span></span></span>
@@ -378,7 +405,7 @@ row per tract per sex stratum.</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Male   HIV diagnoses  <span style="text-decoration: underline;">85</span>396</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> Male   HIV prevalence <span style="text-decoration: underline;">85</span>396</span></span></code></pre></div>
 <p>You can verify the allocation within each county and sex stratum.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hiv_tract_sex</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">county_fips</span>, <span class="va">sex</span>, <span class="va">indicator</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarize</a></span><span class="op">(</span></span>
@@ -405,7 +432,7 @@ row per tract per sex stratum.</p>
 <p>Age-stratified extrapolation works the same way, except that the
 Census denominator is based on tract population within the corresponding
 AtlasPlus age group.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hiv_tract_age</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_atlas.html">get_atlas</a></span><span class="op">(</span></span>
 <span>  disease <span class="op">=</span> <span class="st">"hiv"</span>,</span>
 <span>  year <span class="op">=</span> <span class="fl">2022</span>,</span>
@@ -414,23 +441,25 @@ AtlasPlus age group.</p>
 <span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/impute_suppressed.html">impute_suppressed</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/extrapolate_from_county.html">extrapolate_from_county</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■                             </span>   6% | ETA: 34s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■                         </span>  21% | ETA: 37s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■                       </span>  27% | ETA: 34s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■                      </span>  29% | ETA: 35s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■                     </span>  33% | ETA: 36s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■                    </span>  37% | ETA: 36s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■                  </span>  44% | ETA: 29s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■                 </span>  48% | ETA: 28s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■               </span>  54% | ETA: 26s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■            </span>  63% | ETA: 19s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■           </span>  67% | ETA: 17s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■          </span>  71% | ETA: 16s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■       </span>  79% | ETA: 11s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■      </span>  83% | ETA:  9s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■      </span>  85% | ETA:  9s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■    </span>  90% | ETA:  5s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■  </span>  96% | ETA:  2s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■                              </span>   4% | ETA:  1m</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■                         </span>  19% | ETA: 40s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■                         </span>  21% | ETA: 46s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■                       </span>  27% | ETA: 42s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■                      </span>  29% | ETA: 43s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■                     </span>  33% | ETA: 43s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■                    </span>  37% | ETA: 42s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■                  </span>  44% | ETA: 34s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■                 </span>  48% | ETA: 33s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■               </span>  52% | ETA: 31s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■               </span>  54% | ETA: 30s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■            </span>  63% | ETA: 23s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■           </span>  67% | ETA: 20s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■          </span>  71% | ETA: 18s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■       </span>  79% | ETA: 13s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■      </span>  83% | ETA: 11s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■      </span>  85% | ETA: 10s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■    </span>  90% | ETA:  6s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■■   </span>  94% | ETA:  4s</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Dropped 107 rows marked <span style="color: #0000BB;">"Data not available"</span> with no count.</span></span>
 <span><span class="co">#&gt;   Their cases are still in the state totals; see `no_county_cases()`.</span></span>
 <span><span class="co">#&gt; Warning: 1 suppressed row could not be estimated and is set to `NA`.</span></span>
@@ -445,8 +474,8 @@ AtlasPlus age group.</p>
 <span><span class="co">#&gt;   See `attr(x, "no_county_cases")` for each state.<span style="color: #00BBBB;">ℹ</span> 1 suppressed row that `impute_suppressed()` couldn't estimate was left out of</span></span>
 <span><span class="co">#&gt;   the tract estimates and counted in the remainder with no county.</span></span>
 <span><span class="co">#&gt;   County: <span style="color: #0000BB;">"Valdez-Cordova Census Area, AK"</span>.</span></span></code></pre></div>
-<p>The output contains one row per tract per age stratum.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<p>The output contains one row per tract, indicator and age group.</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hiv_tract_age</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">age</span>, <span class="va">indicator</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 12 × 3</span></span></span>
@@ -466,7 +495,7 @@ AtlasPlus age group.</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> 65+   HIV prevalence <span style="text-decoration: underline;">85</span>396</span></span></code></pre></div>
 <p>Again, the diagnostic check is whether tract estimates sum back to
 the original county count within each county-age stratum.</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hiv_tract_age</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">county_fips</span>, <span class="va">age</span>, <span class="va">indicator</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarize</a></span><span class="op">(</span></span>
@@ -493,7 +522,7 @@ the original county count within each county-age stratum.</p>
 <p>CDC AtlasPlus commonly uses a combined race/ethnicity variable. For
 example, Hispanic/Latino is represented as a single ethnicity category,
 while the remaining groups are usually non-Hispanic race categories.</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hiv_tract_race</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_atlas.html">get_atlas</a></span><span class="op">(</span></span>
 <span>  disease <span class="op">=</span> <span class="st">"hiv"</span>,</span>
 <span>  year <span class="op">=</span> <span class="fl">2022</span>,</span>
@@ -502,22 +531,26 @@ while the remaining groups are usually non-Hispanic race categories.</p>
 <span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/impute_suppressed.html">impute_suppressed</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/extrapolate_from_county.html">extrapolate_from_county</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■                            </span>  12% | ETA: 44s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■                        </span>  23% | ETA: 36s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■                      </span>  29% | ETA: 36s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■                     </span>  33% | ETA: 37s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■                     </span>  35% | ETA: 38s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■                  </span>  44% | ETA: 30s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■                 </span>  48% | ETA: 28s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■               </span>  52% | ETA: 27s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■             </span>  62% | ETA: 20s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■           </span>  65% | ETA: 18s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■          </span>  71% | ETA: 16s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■        </span>  77% | ETA: 12s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■      </span>  83% | ETA:  9s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■      </span>  85% | ETA:  9s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■    </span>  90% | ETA:  5s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■■   </span>  94% | ETA:  3s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■                              </span>   4% | ETA:  1m</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■                         </span>  19% | ETA: 39s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■                         </span>  21% | ETA: 44s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■                       </span>  27% | ETA: 40s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■                      </span>  31% | ETA: 42s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■                     </span>  35% | ETA: 42s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■                    </span>  37% | ETA: 41s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■                  </span>  44% | ETA: 34s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■                 </span>  48% | ETA: 32s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■               </span>  52% | ETA: 31s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■              </span>  56% | ETA: 28s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■            </span>  63% | ETA: 22s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■          </span>  69% | ETA: 19s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■          </span>  71% | ETA: 18s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■       </span>  79% | ETA: 13s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■      </span>  83% | ETA: 11s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■      </span>  85% | ETA: 10s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■    </span>  90% | ETA:  6s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■■   </span>  92% | ETA:  5s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■  </span>  96% | ETA:  3s</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Dropped 125 rows marked <span style="color: #0000BB;">"Data not available"</span> with no count.</span></span>
 <span><span class="co">#&gt;   Their cases are still in the state totals; see `no_county_cases()`.</span></span>
 <span><span class="co">#&gt; Warning: 314 suppressed rows could not be estimated and are set to `NA`.</span></span>
@@ -552,7 +585,7 @@ perfectly.</p>
 <p>The package attempts to use Census variables that correspond to the
 AtlasPlus combined race/ethnicity categories, but users should inspect
 the denominator mapping before interpreting results.</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hiv_tract_race</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">race_ethnicity</span>, <span class="va">indicator</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 14 × 3</span></span></span>
