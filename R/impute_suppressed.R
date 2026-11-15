@@ -11,9 +11,10 @@
 #' * A published count is kept, whatever its data status. (Connecticut's 2017
 #'   planning regions are marked "Data not available" but have counts.)
 #' * A row marked "Data not available" with no count has no data to estimate
-#'   from; `not_available` says whether it is dropped or kept. Either way its
-#'   cases are still in the state total, so [no_county_cases()] counts them in
-#'   the remainder.
+#'   from; `not_available` says whether it is kept or dropped. Its cases are
+#'   still in the state total, so [no_county_cases()] counts them in the
+#'   remainder, as long as the state still has a row in that indicator, year
+#'   and stratum.
 #' * A row marked "Data suppressed" with no count is filled in by `method`.
 #' * A row with no count and any other status (or none), such as "No reported
 #'   cases" or a code this version doesn't know, is not filled in: it stays
@@ -56,8 +57,12 @@
 #'     `unestimated = "error"`).
 #'   * `"zero"`: set it to 0, with a warning.
 #' @param not_available Rows marked "Data not available" with no count:
-#'   * `"drop"` (default): remove them, with a message.
-#'   * `"keep"`: keep them with `NA` cases. The later steps leave them out.
+#'   * `"keep"` (default): keep them with `NA` cases. The later steps leave
+#'     them out of the tracts, and their cases stay in the state's remainder.
+#'   * `"drop"`: remove them, with a message. If that removes every row a
+#'     state has in an indicator, year and stratum, that state's remainder is
+#'     no longer reported by [no_county_cases()] or spread by
+#'     [extrapolate_from_county()], so this warns and names them.
 #'
 #' @return `x` with suppressed counts filled in and a new column
 #'   `cases_source`:
@@ -102,7 +107,7 @@ impute_suppressed <- function(
   floor = 0,
   population = c("cdc", "acs"),
   unestimated = c("na", "zero"),
-  not_available = c("drop", "keep")
+  not_available = c("keep", "drop")
 ) {
   call <- rlang::current_env()
   .check_county_data(x, arg = "x", call = call)
@@ -131,12 +136,14 @@ impute_suppressed <- function(
   unavailable <- is.na(x$cases) &
     as.character(x$data_status) %in% "Data not available"
   if (any(unavailable) && not_available == "drop") {
+    .warn_dropped_groups(x, unavailable)
     x <- x[!unavailable, , drop = FALSE]
     cli::cli_inform(c(
       "i" = "Dropped {sum(unavailable)} row{?s} marked {.val Data not
              available} with no count.",
-      " " = "Their cases are still in the state totals; see
-             {.fn no_county_cases}."
+      " " = "Their cases are still in the state totals, and
+             {.fn no_county_cases} counts them in the remainder for any state
+             group that still has rows."
     ))
     unavailable <- rep(FALSE, nrow(x))
   }
@@ -217,6 +224,33 @@ impute_suppressed <- function(
   }
 
   x
+}
+
+# Warn when dropping "Data not available" rows removes every row of a state
+# group (state, indicator, year and stratum): the remainder of that group is
+# then lost to no_county_cases() and extrapolate_from_county() (#110).
+.warn_dropped_groups <- function(x, unavailable) {
+  keys <- c("state_fips", .atlas_keys)
+  groups <- data.frame(
+    state_fips = substr(as.character(x$fips), 1, 2),
+    lapply(as.data.frame(x[.atlas_keys]), as.character)
+  )
+  key <- .row_key(groups, keys)
+  lost <- unique(groups[!key %in% key[!unavailable], , drop = FALSE])
+  if (nrow(lost) == 0) {
+    return(invisible())
+  }
+  states <- unique(lookup[["state"]]$name[
+    match(lost$state_fips, lookup[["state"]]$fips)
+  ])
+  cli::cli_warn(c(
+    "Dropping rows marked {.val Data not available} removed every row of
+     {nrow(lost)} state group{?s} (indicator, year and stratum).",
+    "i" = "{cli::qty(length(states))}State{?s}: {.val {states}}.",
+    "!" = "Their state totals are no longer counted by {.fn no_county_cases}
+           or spread by {.fn extrapolate_from_county}.",
+    "i" = "Use {.code not_available = \"keep\"} (the default) to keep them."
+  ))
 }
 
 .check_count_limit <- function(value, arg, call) {

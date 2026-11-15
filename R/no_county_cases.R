@@ -41,10 +41,13 @@
 #' @details
 #' Downloads the state data matching `x` (same diseases, years and
 #' stratification) from CDC AtlasPlus. The remainder also includes any county
-#' without a count in `x`: "Data not available" rows (whether
-#' [impute_suppressed()] dropped or kept them) and counties removed by
+#' without a count in `x`: "Data not available" rows, counties removed by
 #' filtering `x`, and suppressed rows [impute_suppressed()] couldn't estimate
 #' (marked `cases_source = "not estimated"`), which count as 0 imputed cases.
+#' The report has a row only for state groups (state, indicator, year and
+#' stratum) with at least one row in `x`: if
+#' `impute_suppressed(not_available = "drop")` or filtering removed every row
+#' of a group, its state total is not reported.
 #'
 #' @seealso [impute_suppressed()], [extrapolate_from_county()]; the article
 #'   ["About CDC AtlasPlus data"](https://vagishhemmige.github.io/CDCAtlas/articles/about-atlasplus-data.html)
