@@ -116,6 +116,15 @@ test_that("the combined table keeps column types and labels", {
   expect_identical(labelled::var_label(out$fips), "Census FIPS code for geographical merging with Census data")
 })
 
+test_that("get_atlas() returns a tibble, for one request or many (#17)", {
+  local_fake_cdc()
+  state <- get_atlas("hiv", "state", 2017)
+  county <- suppressMessages(get_atlas("hiv", "county", 2017))
+
+  expect_s3_class(state, "tbl_df")
+  expect_s3_class(county, "tbl_df")
+})
+
 test_that("combined factor levels follow CDC's lookup order, as a single request would", {
   local_fake_cdc()
   out <- suppressMessages(get_atlas("hiv", "county", 2017))
