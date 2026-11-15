@@ -54,7 +54,7 @@ local_request_cache <- function(env = parent.frame()) {
   local_mocked_bindings(
     .request_atlas_internal = function(payload) {
       calls$n <- calls$n + 1
-      data.frame(cases = calls$n)
+      data.frame(cases = calls$n, fips = "01")
     },
     .env = env
   )
@@ -140,6 +140,63 @@ test_that("get_atlas(refresh = TRUE) downloads again and updates the cache", {
 
   expect_equal(get_atlas("hiv", "national", 2020)$cases, 2)
   expect_equal(calls$n, 2)
+})
+
+test_that("get_atlas(refresh = TRUE) for counties also refreshes the state totals", {
+  calls <- local_request_cache()
+  local_mocked_bindings(.label_atlas_columns = function(df) df)
+  county <- data.frame(
+    indicator = "HIV prevalence",
+    year = c(2017, 2022),
+    race_ethnicity = "All races/ethnicities",
+    sex = c("Male", "Female"),
+    age = "Ages 13 years and older"
+  )
+  .fetch_state_totals(county)
+  .fetch_state_totals(county)
+  expect_equal(calls$n, 1)
+
+  suppressMessages(
+    get_atlas("hiv", "county", c(2022, 2017), stratify_by = "sex", refresh = TRUE)
+  )
+  downloads <- calls$n
+  .fetch_state_totals(county)
+  expect_equal(calls$n, downloads + 1)
+})
+
+test_that("get_atlas(refresh = TRUE) for states leaves county downloads alone", {
+  calls <- local_request_cache()
+  local_mocked_bindings(.label_atlas_columns = function(df) df)
+  suppressMessages(get_atlas("hiv", "county", 2022))
+  downloads <- calls$n
+
+  get_atlas("hiv", "state", 2022, refresh = TRUE)
+  suppressMessages(get_atlas("hiv", "county", 2022))
+  expect_equal(calls$n, downloads + 1)
+})
+
+test_that("clear_atlas_cache() deletes every saved download", {
+  calls <- local_request_cache()
+  .request_atlas(list(a = 1))
+  .request_atlas(list(a = 2))
+
+  expect_snapshot(deleted <- clear_atlas_cache())
+  expect_equal(deleted, 2)
+  expect_equal(dir.exists(.atlas_cache_dir()), FALSE)
+
+  .request_atlas(list(a = 1))
+  expect_equal(calls$n, 3)
+})
+
+test_that("clear_atlas_cache() says when there is nothing to delete", {
+  local_request_cache()
+  expect_snapshot(deleted <- clear_atlas_cache())
+  expect_equal(deleted, 0)
+})
+
+test_that("clear_atlas_cache() returns invisibly", {
+  local_request_cache()
+  expect_invisible(suppressMessages(clear_atlas_cache()))
 })
 
 test_that("get_atlas() checks `refresh`", {

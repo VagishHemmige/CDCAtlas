@@ -27,7 +27,6 @@ Imports:
     labelled,
     cachem (>= 1.0.0),
     memoise (>= 2.0.0),
-    digest,
     tibble,
     lifecycle (>= 0.2.0)
 Suggests:

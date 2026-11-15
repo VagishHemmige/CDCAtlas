@@ -16,6 +16,20 @@
       ! CDC AtlasPlus set-up data has no varvals code table.
       i CDC may have changed AtlasPlus.
 
+# clear_atlas_cache() deletes every saved download
+
+    Code
+      deleted <- clear_atlas_cache()
+    Message
+      Deleted 2 saved CDC downloads.
+
+# clear_atlas_cache() says when there is nothing to delete
+
+    Code
+      deleted <- clear_atlas_cache()
+    Message
+      No saved CDC downloads to delete.
+
 # get_atlas() checks `refresh`
 
     Code

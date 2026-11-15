@@ -30,7 +30,10 @@ Can be a single year (e.g., \code{2022}) or a sequence (e.g., \code{2018:2022}).
 supported. Use \code{\link[=impute_suppressed]{impute_suppressed()}} and then \code{\link[=extrapolate_from_county]{extrapolate_from_county()}}.}
 
 \item{refresh}{If \code{TRUE}, download the data again from CDC even if a saved
-copy is less than 30 days old, and save the new copy. Default \code{FALSE}.}
+copy is less than 30 days old, and save the new copy. For county data
+this also drops the saved state totals that \code{\link[=impute_suppressed]{impute_suppressed()}},
+\code{\link[=no_county_cases]{no_county_cases()}} and \code{\link[=extrapolate_from_county]{extrapolate_from_county()}} use with them, so
+those are downloaded again too. Default \code{FALSE}.}
 }
 \value{
 A tibble with the following columns:
@@ -125,8 +128,8 @@ Each response from CDC is saved in the folder given by
 \code{tools::R_user_dir("CDCAtlas", "cache")} and reused for 30 days, so the same
 request doesn't download the data again. After 30 days the data are
 downloaded again, which picks up any revisions CDC has made. Use
-\code{refresh = TRUE} to download them sooner. Deleting the folder removes every
-saved response.
+\code{refresh = TRUE} to download them sooner, or \code{\link[=clear_atlas_cache]{clear_atlas_cache()}} to delete
+every saved response.
 }
 }
 \examples{

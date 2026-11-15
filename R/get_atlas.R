@@ -63,7 +63,10 @@
 #' @param stratify_by Optional character vector. Zero, one, or two of
 #' `"age"`, `"race"`, `"sex"`. If `NULL`, totals (unstratified) are returned.
 #' @param refresh If `TRUE`, download the data again from CDC even if a saved
-#'   copy is less than 30 days old, and save the new copy. Default `FALSE`.
+#'   copy is less than 30 days old, and save the new copy. For county data
+#'   this also drops the saved state totals that [impute_suppressed()],
+#'   [no_county_cases()] and [extrapolate_from_county()] use with them, so
+#'   those are downloaded again too. Default `FALSE`.
 #'
 #' @return A tibble with the following columns:
 #' \describe{
@@ -100,8 +103,8 @@
 #' `tools::R_user_dir("CDCAtlas", "cache")` and reused for 30 days, so the same
 #' request doesn't download the data again. After 30 days the data are
 #' downloaded again, which picks up any revisions CDC has made. Use
-#' `refresh = TRUE` to download them sooner. Deleting the folder removes every
-#' saved response.
+#' `refresh = TRUE` to download them sooner, or [clear_atlas_cache()] to delete
+#' every saved response.
 #'
 #' @seealso [impute_suppressed()] and [extrapolate_from_county()] for tract
 #'   and block group estimates from county data.
@@ -169,6 +172,11 @@ payloads <- .build_payloads(
 
 if (refresh) {
   .forget_atlas_requests(payloads)
+  # The later pipeline steps compare county data with state totals
+  # (.fetch_state_totals()); refresh those too, so both are equally new.
+  if (geography == "county") {
+    .forget_atlas_requests(.state_totals_payloads(disease, year, stratify_by))
+  }
 }
 .request_atlas_all(payloads)
 }
