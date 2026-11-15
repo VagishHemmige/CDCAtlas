@@ -71,6 +71,13 @@ fake_acs_tract <- function(geoid, acs = fake_acs()) {
   rlang::set_names(one$estimate, one$variable)
 }
 
+# CDC's age groups for chlamydia, gonorrhea and syphilis, as get_atlas()
+# requests them.
+sti_age_groups <- c(
+  "0-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-54",
+  "55-64", "65+", "Unknown"
+)
+
 strata_for <- function(stratify_by, all_ages = "Ages 13 years and older") {
   all <- data.frame(
     race_ethnicity = "All races/ethnicities",
@@ -88,7 +95,11 @@ strata_for <- function(stratify_by, all_ages = "Ages 13 years and older") {
       "Hispanic/Latino", "Multiracial",
       "Native Hawaiian/Other Pacific Islander", "White"
     )),
-    age = list(age = c("13-24", "25-34", "35-44", "45-54", "55-64", "65+"))
+    age = list(age = if (all_ages == "All age groups") {
+      sti_age_groups
+    } else {
+      c("13-24", "25-34", "35-44", "45-54", "55-64", "65+")
+    })
   )
   out <- all[rep(1, length(values[[1]])), ]
   out[[names(values)]] <- values[[1]]

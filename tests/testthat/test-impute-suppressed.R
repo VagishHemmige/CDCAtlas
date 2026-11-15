@@ -226,19 +226,31 @@ test_that("population = 'acs' stops on two-way strata before any request", {
   )
 })
 
-test_that("population = 'acs' stops on age strata for diseases other than HIV", {
+test_that("population = 'acs' stops for congenital syphilis", {
   local_mocked_bindings(
     .request_atlas = function(payload) stop("CDC was called"),
     .check_census_ready = function(call) invisible(),
     .get_acs_areas = function(...) stop("the Census was called")
   )
-  chlamydia <- fake_county_atlas(
-    "age", suppressed = "01003", indicators = "Chlamydia"
+  congenital <- fake_county_atlas(
+    suppressed = "01003", indicators = "Congenital Syphilis"
   )
   expect_snapshot(
     error = TRUE,
-    impute_suppressed(chlamydia, population = "acs")
+    impute_suppressed(congenital, population = "acs")
   )
+})
+
+test_that("population = 'acs' works on age strata for chlamydia", {
+  chlamydia <- fake_county_atlas(
+    "age", suppressed = "01003", indicators = "Chlamydia"
+  )
+  local_fake_sources(
+    state = fake_state_atlas(stratify_by = "age", indicators = "Chlamydia")
+  )
+  out <- suppressWarnings(impute_suppressed(chlamydia, population = "acs"))
+  known <- out$fips == "01003" & out$age != "Unknown"
+  expect_equal(sum(is.na(out$cases[known])), 0)
 })
 
 test_that("two-way strata still work with CDC populations and with zeros", {
