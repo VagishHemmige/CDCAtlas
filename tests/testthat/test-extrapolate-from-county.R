@@ -390,6 +390,34 @@ test_that("remainders with no county to receive them are reported", {
   )
 })
 
+test_that("spread cases that reach no area are reported as not spread (#114)", {
+  # Two counties with 10 cases each and a state remainder of 20, spread by
+  # cases: 10 to each. County 01001 has no ACS population in the stratum and
+  # empty_strata = "none", so its 10 reach no tract.
+  x <- fake_county_atlas()[1, ]
+  x$cases <- 10
+  county <- .county_cases(transform(x, cases_source = "published"))
+  areas <- county[rep(1, 2), ]
+  areas$county_fips <- c("01001", "01003")
+  areas$county_cases <- c(10, 10)
+  areas$county_cases_unknown <- 0
+  areas$area_population_acs <- c(0, 100)
+  areas$area_total_population <- c(0, 100)
+  areas$geoid <- c("01001000100", "01003000100")
+  report <- data.frame(
+    state_fips = "01",
+    lapply(as.data.frame(x[.atlas_keys]), as.character),
+    no_county_cases = 20
+  )
+  report$year <- as.numeric(report$year)
+
+  out <- .allocate(.spread_no_county(areas, report, "none", "cases"), "none")
+  expect_equal(out$county_cases_spread, c(10, 10))
+  expect_equal(out$area_cases, c(NA_real_, 20))
+  expect_message(.announce_spread(out, report, "tract"), "could not be spread")
+  expect_snapshot(.announce_spread(out, report, "tract"))
+})
+
 test_that("age strata use 13+ total population whatever `ages` says", {
   default <- run_extrapolation("age", acs = acs_without_35_44())
   all_ages <- run_extrapolation("age", acs = acs_without_35_44(), ages = "all")

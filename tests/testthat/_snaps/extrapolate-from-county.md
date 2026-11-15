@@ -27,9 +27,17 @@
       i Counties: "County 02001" and "County 02003".
       i See `attr(x, "not_allocated")`.
     Message
-      i Cases with no county that could not be spread (no county with tracts in that state and stratum):
+      i Cases with no county that could not be spread (no county with tracts in that state and stratum, or no tracts with population there):
       * HIV diagnoses 2022: 321
       * HIV prevalence 2022: 421
+
+# spread cases that reach no area are reported as not spread (#114)
+
+    Code
+      .announce_spread(out, report, "tract")
+    Message
+      i Cases with no county that could not be spread (no county with tracts in that state and stratum, or no tracts with population there):
+      * HIV diagnoses 2022: 10
 
 # spreading stops when `x` lacks some of a state's counties (#54)
 
