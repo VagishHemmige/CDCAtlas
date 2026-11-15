@@ -31,6 +31,9 @@ Can be a single year (e.g., \code{2022}) or a sequence (e.g., \code{2018:2022}).
 Each disease has its own age groups, as AtlasPlus offers them: 13-24 to 65+
 for \code{"hiv"} and \code{"estimate"}; 0-14, 15-19 and so on to 65+ for the other
 diseases, plus "Unknown" for chlamydia, gonorrhea and adult syphilis.
+Race groups also differ: hepatitis has Asian/Pacific Islander and Other in
+place of Asian, Native Hawaiian/Other Pacific Islander and Multiracial;
+HIV and the HIV estimates have no Unknown group.
 Congenital syphilis can't be stratified.}
 
 \item{extrapolate_to_tract}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} No longer
