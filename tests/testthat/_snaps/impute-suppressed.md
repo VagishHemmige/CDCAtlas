@@ -1,3 +1,13 @@
+# a missing count that isn't suppression gets a warning naming its status
+
+    Code
+      out <- impute_suppressed(county, method = "zero")
+    Condition
+      Warning:
+      2 rows with no count are not marked "Data suppressed", so they are not filled in and left `NA`.
+      i Data status: "No reported cases".
+      i They are marked `cases_source = "not estimated"`.
+
 # rows marked 'Data not available' with no count are dropped
 
     Code

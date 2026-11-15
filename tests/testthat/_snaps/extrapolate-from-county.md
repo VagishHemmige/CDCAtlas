@@ -200,7 +200,7 @@
       * HIV diagnoses 2022: 21
       * HIV prevalence 2022: 121
         See `attr(x, "no_county_cases")` for each state.
-      i 2 suppressed rows that `impute_suppressed()` couldn't estimate were left out of the tract estimates and counted in the remainder with no county.
+      i 2 rows with no count that `impute_suppressed()` couldn't estimate were left out of the tract estimates and counted in the remainder with no county.
         County: "County 01003".
 
 # unestimated = 'error' refuses rows impute_suppressed() couldn't estimate
@@ -209,8 +209,8 @@
       extrapolate_from_county(county, unestimated = "error")
     Condition
       Error in `extrapolate_from_county()`:
-      ! `x` has 2 suppressed rows with no count.
-      i These are suppressed rows `impute_suppressed()` could not estimate (no state rate or county population).
+      ! `x` has 2 rows with no count.
+      i These are rows `impute_suppressed()` could not estimate (no state rate or county population, or not marked "Data suppressed").
       i Remove them, use `impute_suppressed(unestimated = "zero")`, or use `unestimated = "leave out"`.
 
 # ACS years before an area's first release are refused
