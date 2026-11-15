@@ -113,6 +113,10 @@ it offers. `get_atlas()` follows them.
 | `"msa"` | `"hiv"` only |
 | `"region"` | `"estimate"` only |
 
+County data for the HIV estimates (`"estimate"`) cover only the Ending the
+HIV Epidemic (EHE) counties, for selected years (AtlasPlus Technical Notes,
+1.1 and 1.4.1).
+
 For reported data such as HIV diagnoses, CDC's server doesn't return regions.
 The AtlasPlus web page asks for each region's states and adds them up in the
 browser. CDCAtlas doesn't do that yet (#83): suppressed state counts would
@@ -158,6 +162,10 @@ counties. The difference also includes any county left out of the data you
 pass in. `extrapolate_from_county()` leaves the remainder out by default
 (`no_county = "report"`). `no_county = "spread"` shares it across the state's
 counties; that treats it as cases with no county, which is an assumption.
+
+For the HIV estimates, the counties are EHE counties only, so most of the
+remainder is people in the state's other counties. `no_county_cases()` says
+so, and `no_county = "spread"` is refused for them.
 
 ## CDC's county map
 

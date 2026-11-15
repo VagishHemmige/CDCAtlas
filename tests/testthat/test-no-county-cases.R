@@ -110,3 +110,23 @@ test_that("kept 'Data not available' rows count towards the remainder", {
   expect_equal(kept, dropped)
   expect_equal(kept$no_county_cases, c(21, 121))
 })
+
+test_that("for HIV estimates the report says the remainder includes non-EHE counties (#109)", {
+  indicator <- "Estimated HIV incidence"
+  local_fake_sources(
+    state = fake_state_atlas(no_county = 70, indicators = indicator)
+  )
+  county <- impute_suppressed(
+    fake_county_atlas(indicators = indicator),
+    method = "zero"
+  )
+  expect_message(no_county_cases(county), "EHE")
+  expect_snapshot(report <- no_county_cases(county))
+  expect_equal(report$no_county_cases, 70)
+})
+
+test_that("reported data get no EHE message", {
+  local_fake_sources()
+  county <- impute_suppressed(fake_county_atlas(), method = "zero")
+  expect_no_message(no_county_cases(county))
+})

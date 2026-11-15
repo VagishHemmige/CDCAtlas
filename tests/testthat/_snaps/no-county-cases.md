@@ -25,3 +25,11 @@
       ! `x` must be county data.
       i Use `get_atlas(geography = "county")`.
 
+# for HIV estimates the report says the remainder includes non-EHE counties (#109)
+
+    Code
+      report <- no_county_cases(county)
+    Message
+      i CDC's county data for "Estimated HIV incidence" cover only Ending the HIV Epidemic (EHE) counties.
+        Their remainder is mostly people in counties outside EHE coverage, not cases with no county.
+
