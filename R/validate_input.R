@@ -83,7 +83,7 @@
       c(
         "{.code geography = \"region\"} is only available for {.code disease = \"estimate\"}.",
         "i" = "CDC doesn't return regions for reported data such as {.val {disease}}.",
-        "i" = "Use {.code geography = \"state\"} and add up the states you need."
+        "i" = "State data are available with {.code geography = \"state\"}; adding states up needs care with suppressed counts, and rates must be recomputed from cases and population."
       ),
       call = call
     )
