@@ -75,8 +75,9 @@ counts its cases in the remainder with no county, and
 \itemize{
 \item \code{"published"}: CDC's count.
 \item \code{"state_rate"} or \code{"zero"}: filled in by \code{method}.
-\item \code{"not estimated"}: \code{"state_rate"} couldn't estimate it; \code{NA}, or 0 with
-\code{unestimated = "zero"}.
+\item \code{"not estimated"}: \code{"state_rate"} couldn't estimate it (\code{NA}, or 0
+with \code{unestimated = "zero"}), or it had no count and wasn't marked
+"Data suppressed" (always \code{NA}).
 \item \code{"not available"}: kept with \code{not_available = "keep"}; \code{NA}.
 }
 
@@ -98,7 +99,10 @@ planning regions are marked "Data not available" but have counts.)
 from; \code{not_available} says whether it is dropped or kept. Either way its
 cases are still in the state total, so \code{\link[=no_county_cases]{no_county_cases()}} counts them in
 the remainder.
-\item Any other row with no count is suppressed and is filled in by \code{method}.
+\item A row marked "Data suppressed" with no count is filled in by \code{method}.
+\item A row with no count and any other status (or none), such as "No reported
+cases" or a code this version doesn't know, is not filled in: it stays
+\code{NA} and is marked \code{"not estimated"}, with a warning.
 }
 }
 \details{
