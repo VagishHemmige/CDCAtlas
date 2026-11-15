@@ -450,6 +450,27 @@ test_that("spreading stops when `x` lacks some of a state's counties (#54)", {
   )
 })
 
+test_that("spreading stops for HIV estimates, whose counties are EHE only (#109)", {
+  # State total 100; the EHE counties returned hold 30. The other 70 are
+  # partly in counties CDC doesn't estimate, so not simply cases with no county.
+  estimate <- fake_county_atlas(indicators = "Estimated HIV incidence")
+  local_mocked_bindings(
+    .request_atlas = function(payload) stop("CDC was called"),
+    .check_census_ready = function(call) invisible(),
+    .get_acs_areas = function(...) stop("the Census was called")
+  )
+  county <- impute_suppressed(estimate, method = "zero")
+
+  expect_error(
+    extrapolate_from_county(county, no_county = "spread"),
+    "EHE"
+  )
+  expect_snapshot(
+    error = TRUE,
+    extrapolate_from_county(county, no_county = "spread")
+  )
+})
+
 test_that("spreading works on whole states filtered from a larger table (#54)", {
   two <- two_state_atlas()
   state_02 <- two$county[substr(two$county$fips, 1, 2) == "02", ]

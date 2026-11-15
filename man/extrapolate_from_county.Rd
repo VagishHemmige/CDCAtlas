@@ -39,6 +39,10 @@ Areas that cross county lines, such as ZCTAs, are not supported yet.}
 \itemize{
 \item \code{"report"} (default): left out of the estimates, with a message giving
 the total. The report is kept in \code{attr(result, "no_county_cases")}.
+
+For CDC's HIV estimates, whose county data cover only the Ending the
+HIV Epidemic (EHE) counties, the remainder can include people in
+counties outside EHE coverage, and a message says so.
 \item \code{"spread"}: shared across the state's counties in \code{x} by their ACS
 population in the same stratum, then across areas as usual. \code{x} must
 hold every county CDC reports in each of its states, for each
@@ -49,7 +53,8 @@ filter the result. Checking needs CDC's county table, which comes from
 the cache when \code{x} was downloaded in this session. Negative
 remainders are not spread, nor are remainders in a state with no
 allocated county in that stratum; the message says how many cases
-could not be spread.
+could not be spread. Not available for CDC's HIV estimates (EHE
+counties only).
 }}
 
 \item{spread_by}{How \code{no_county = "spread"} shares a state's remainder
