@@ -19,6 +19,7 @@
 
   valid_geographies <- c(
     "national",
+    "region",
     "state",
     "county",
     "msa"
@@ -64,21 +65,25 @@
     )
   }
 
-  if (identical(geography, "region")) {
-    cli::cli_abort(
-      c(
-        "{.code geography = \"region\"} is not supported yet.",
-        "i" = "Use {.val national} or {.val state} instead."
-      ),
-      call = call
-    )
-  }
-
   if (!geography %in% valid_geographies) {
     cli::cli_abort(
       c(
         "{.arg geography} must be one of {.val {one_of(valid_geographies)}}.",
         "x" = "You supplied {.val {geography}}."
+      ),
+      call = call
+    )
+  }
+
+  # CDC's data endpoint returns regions only for the HIV estimates. For reported
+  # indicators AtlasPlus requests the member states and adds them up in the
+  # browser, and a region request returns no rows.
+  if (identical(geography, "region") && !identical(disease, "estimate")) {
+    cli::cli_abort(
+      c(
+        "{.code geography = \"region\"} is only available for {.code disease = \"estimate\"}.",
+        "i" = "CDC doesn't return regions for reported data such as {.val {disease}}.",
+        "i" = "State data are available with {.code geography = \"state\"}; adding states up needs care with suppressed counts, and rates must be recomputed from cases and population."
       ),
       call = call
     )

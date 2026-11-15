@@ -49,6 +49,34 @@ test_that("national requests use CDC's United States code, 5000", {
   expect_identical(varvals$name[varvals$id == 5000], "United States")
 })
 
+test_that("region requests use CDC's four Census regions and the territories", {
+  ids <- payload_ids(.build_payload("estimate", "region", 2022))
+  regions <- c(8453:8457)
+
+  expect_contains(ids, regions)
+  expect_equal(intersect(ids, c(5000, lookup[["state"]]$geo_id)), integer(0))
+  expect_identical(
+    varvals$name[match(regions, varvals$id)],
+    c(
+      "Northeast", "Midwest", "South", "West",
+      "U.S. territories and freely associated states"
+    )
+  )
+})
+
+test_that("get_atlas() accepts geography = \"region\" for HIV estimates", {
+  local_mocked_bindings(.request_atlas_all = function(payloads) payloads)
+  payloads <- get_atlas("estimate", "region", 2022)
+  expect_length(payloads, 1)
+})
+
+test_that("region requests for reported data stop before asking CDC", {
+  # CDC returns no region rows for reported indicators: AtlasPlus asks for
+  # the states and adds them up in the browser.
+  local_mocked_bindings(.request_atlas_all = function(payloads) stop("CDC was called"))
+  expect_snapshot(get_atlas("hiv", "region", 2022), error = TRUE)
+})
+
 test_that("other geographies are still sent as one payload", {
   for (geography in c("national", "state", "msa")) {
     payloads <- .build_payloads("hiv", geography, 2022)
@@ -114,6 +142,15 @@ test_that("the combined table keeps column types and labels", {
   expect_equal(unique(out$year), 2017)
   expect_identical(labelled::var_label(out$cases), "Number of reported cases")
   expect_identical(labelled::var_label(out$fips), "Census FIPS code for geographical merging with Census data")
+})
+
+test_that("get_atlas() returns a tibble, for one request or many (#17)", {
+  local_fake_cdc()
+  state <- get_atlas("hiv", "state", 2017)
+  county <- suppressMessages(get_atlas("hiv", "county", 2017))
+
+  expect_s3_class(state, "tbl_df")
+  expect_s3_class(county, "tbl_df")
 })
 
 test_that("combined factor levels follow CDC's lookup order, as a single request would", {

@@ -79,7 +79,7 @@ df <- as.data.frame(dat$sourcedata) |>
   )
 
 
-df <- .label_atlas_columns(df)
+df <- tibble::as_tibble(.label_atlas_columns(df))
 
 return(df)
 }
