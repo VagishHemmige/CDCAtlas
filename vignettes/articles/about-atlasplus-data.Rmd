@@ -185,8 +185,13 @@ tracts:
 2017 uses 2010 tracts and 2022 uses 2020 tracts. Tract estimates from 2017 and
 2022 can't be compared tract by tract.
 
-Until a crosswalk exists (#30), the 2017 Connecticut and Alaska rows above are
-left out of tract estimates and listed in `attr(result, "not_allocated")`.
+For ACS releases on 2010 tracts (2006–2010 to 2015–2019), a crosswalk assigns
+Connecticut's and Valdez-Cordova's 2010 tracts to the current counties (#30).
+ACS 2016–2020 and 2017–2021 use 2020 tracts but still code Connecticut by its
+old counties; planning regions first appear in 2018–2022. So Connecticut data
+for 2020 and 2021 is left out of tract estimates with a warning that says why
+(a recode is #121). Rows left out are listed in
+`attr(result, "not_allocated")`.
 
 ## Census denominators
 

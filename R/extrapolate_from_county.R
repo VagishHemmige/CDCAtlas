@@ -164,6 +164,21 @@
 #' regions is shared by land area. The crosswalk ships in
 #' `inst/extdata/tract-2010-crosswalk.csv`.
 #'
+#' Which ACS releases match CDC's county map:
+#' * ACS 2010 to 2019: every current county, Connecticut and Alaska through
+#'   the crosswalk.
+#' * ACS 2020 and 2021: everywhere except Connecticut, which these releases
+#'   still code by its old counties (#121).
+#' * ACS 2022 on: every current county.
+#' * ACS 2009 (2000 tracts): not Connecticut's planning regions or Chugach
+#'   and Copper River.
+#'
+#' Counties a release doesn't match are left out with a warning that says
+#' why. In 2010-2019 a block group follows its tract: the block groups of the
+#' one split tract (09013890201) are shared between Capitol and Northeastern
+#' Connecticut planning regions by the tract's land area, not by where each
+#' block group lies.
+#'
 #' Tract and block group boundaries change every ten years, so estimates from
 #' ACS years on different sides of a decennial census (2017 and 2022, say)
 #' can't be compared area by area.
@@ -278,12 +293,9 @@ extrapolate_from_county <- function(
         age_groups = unique(county$age[rows])
       )
       pop$acs_year <- acs
-      pieces[[length(pieces) + 1]] <- .join_areas(
-        county[rows, ],
-        pop,
-        stratify_by,
-        to
-      )
+      piece <- .join_areas(county[rows, ], pop, stratify_by, to)
+      piece$not_allocated$acs_year <- rep(acs, nrow(piece$not_allocated))
+      pieces[[length(pieces) + 1]] <- piece
     }
   }
   areas <- dplyr::bind_rows(lapply(pieces, `[[`, "areas"))
@@ -773,6 +785,29 @@ extrapolate_from_county <- function(
   out
 }
 
+# Why a current CDC county has no areas in an ACS release, for the known
+# cases (#112), or NA:
+# - Connecticut's planning regions (09110-09190) first appear in ACS 2022.
+#   ACS 2010-2019 (2010 tracts) reach them through the crosswalk; ACS 2020
+#   and 2021 (2020 tracts) still code Connecticut by its old counties, and
+#   ACS 2009 uses 2000 tracts.
+# - Chugach (02063) and Copper River (02066), split from Valdez-Cordova in
+#   2019, are reached through the crosswalk for ACS 2010-2019 and are in ACS
+#   2020 on; ACS 2009 uses 2000 tracts.
+# Recoding ACS 2020 and 2021 to the planning regions is #121.
+.acs_vintage_note <- function(county_fips, acs_year) {
+  connecticut <- county_fips %in%
+    sprintf("09%d0", 11:19) &
+    acs_year %in% c(2009, 2020, 2021)
+  alaska <- county_fips %in% c("02063", "02066") & acs_year == 2009
+  out <- dplyr::case_when(
+    connecticut ~ "Connecticut's planning regions",
+    alaska ~ "Chugach and Copper River, Alaska",
+    .default = NA_character_
+  )
+  rlang::set_names(out, county_fips)
+}
+
 # ACS 5-year releases on 2010 tracts and block groups (2006-2010 to 2015-2019).
 .acs_years_2010_tracts <- 2010:2019
 
@@ -1127,10 +1162,25 @@ extrapolate_from_county <- function(
   ]
   if (nrow(no_areas) > 0) {
     counties <- unique(no_areas$county_name)
+    notes <- unique(stats::na.omit(data.frame(
+      what = .acs_vintage_note(no_areas$county_fips, no_areas$acs_year),
+      acs_year = no_areas$acs_year
+    )))
+    notes <- sprintf(
+      "ACS %s doesn't have CDC's current codes for %s; use %s.",
+      notes$acs_year,
+      notes$what,
+      ifelse(
+        notes$what == "Connecticut's planning regions",
+        "ACS 2010-2019 or 2022 and later",
+        "ACS 2010 or later"
+      )
+    )
     cli::cli_warn(c(
       "{nrow(no_areas)} county row{?s} {?was/were} not allocated: no matching
        ACS {areas}.",
       "i" = "Counties: {.val {counties}}.",
+      rlang::set_names(notes, rep("i", length(notes))),
       "i" = "See {.code attr(x, \"not_allocated\")}."
     ))
   }

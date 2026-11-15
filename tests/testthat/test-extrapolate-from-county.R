@@ -988,6 +988,36 @@ test_that("the crosswalk isn't used with 2020 tracts", {
   )
 })
 
+test_that("Connecticut with ACS 2020 or 2021 says why it has no tracts (#112)", {
+  county <- fake_county_atlas()
+  county$fips[county$fips == "01003"] <- "09110"
+  county$geography <- factor(paste("County", county$fips))
+  for (acs in c(2020, 2021)) {
+    expect_warning(
+      run_extrapolation(county = county, acs_year = acs),
+      "planning regions"
+    )
+  }
+  expect_snapshot(
+    invisible(run_extrapolation(county = county, acs_year = 2021))
+  )
+})
+
+test_that("ACS 2009 says why current Connecticut and Alaska counties have no tracts (#112)", {
+  expect_equal(
+    .acs_vintage_note(c("09110", "02063", "02066", "01001"), 2009),
+    c(
+      "09110" = "Connecticut's planning regions",
+      "02063" = "Chugach and Copper River, Alaska",
+      "02066" = "Chugach and Copper River, Alaska",
+      "01001" = NA
+    )
+  )
+  expect_equal(unname(.acs_vintage_note("09110", 2022)), NA_character_)
+  expect_equal(unname(.acs_vintage_note("09110", 2015)), NA_character_)
+  expect_equal(unname(.acs_vintage_note("02063", 2020)), NA_character_)
+})
+
 test_that("the shipped crosswalk gives each 2010 tract shares that sum to 1", {
   crosswalk <- .tract_crosswalk()
   expect_equal(unique(nchar(crosswalk$tract_2010)), 11)

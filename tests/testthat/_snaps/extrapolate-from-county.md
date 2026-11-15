@@ -246,6 +246,17 @@
       * HIV diagnoses 2022: 10
       * HIV prevalence 2022: 10
 
+# Connecticut with ACS 2020 or 2021 says why it has no tracts (#112)
+
+    Code
+      invisible(run_extrapolation(county = county, acs_year = 2021))
+    Condition
+      Warning:
+      2 county rows were not allocated: no matching ACS tracts.
+      i Counties: "County 09110".
+      i ACS 2021 doesn't have CDC's current codes for Connecticut's planning regions; use ACS 2010-2019 or 2022 and later.
+      i See `attr(x, "not_allocated")`.
+
 # unknown_age is checked
 
     Code
