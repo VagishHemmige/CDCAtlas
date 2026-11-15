@@ -20,7 +20,9 @@ Multiple diseases are not currently supported in a single request.}
 \item{geography}{Character scalar. One of \code{"national"}, \code{"region"} (HIV
 estimates only), \code{"state"}, \code{"county"}, or \code{"msa"}.}
 
-\item{year}{Integer vector of years. Valid values are from 2000 to 2023.
+\item{year}{Integer vector of years, from 2000 to the latest year in the
+package's copy of CDC's code table (2025 in this version). CDC lists a year
+before every disease has data for it; such a request returns no data.
 Can be a single year (e.g., \code{2022}) or a sequence (e.g., \code{2018:2022}).}
 
 \item{stratify_by}{Optional character vector. Zero, one, or two of

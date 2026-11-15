@@ -58,7 +58,9 @@
 #' estimates only), `"state"`, `"county"`, or `"msa"`.
 #' @param extrapolate_to_tract `r lifecycle::badge("deprecated")` No longer
 #'   supported. Use [impute_suppressed()] and then [extrapolate_from_county()].
-#' @param year Integer vector of years. Valid values are from 2000 to 2023.
+#' @param year Integer vector of years, from 2000 to the latest year in the
+#' package's copy of CDC's code table (2025 in this version). CDC lists a year
+#' before every disease has data for it; such a request returns no data.
 #' Can be a single year (e.g., `2022`) or a sequence (e.g., `2018:2022`).
 #' @param stratify_by Optional character vector. Zero, one, or two of
 #' `"age"`, `"race"`, `"sex"`. If `NULL`, totals (unstratified) are returned.
