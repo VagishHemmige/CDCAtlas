@@ -231,10 +231,11 @@ client_rate <- ratelimitr::limit_rate(
 }
 
 # The memoised request function, made again if the cache folder has changed
-# (for example, R_USER_CACHE_DIR set after the first request).
+# (for example, R_USER_CACHE_DIR set after the first request) or has been
+# deleted: cachem refuses to use a cache whose folder is gone.
 .atlas_cached_request <- function() {
   dir <- .atlas_cache_dir()
-  if (!identical(.atlas_cache$dir, dir)) {
+  if (!identical(.atlas_cache$dir, dir) || !dir.exists(dir)) {
     .atlas_cache$request <- memoise::memoise(
       .request_atlas_download,
       cache = cachem::cache_disk(

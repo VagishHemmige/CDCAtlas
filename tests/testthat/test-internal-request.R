@@ -114,6 +114,18 @@ test_that("reading a cached response doesn't make it count as newer", {
   )
 })
 
+test_that("deleting the cache folder during a session starts a new cache", {
+  calls <- local_request_cache()
+  .request_atlas(list(a = 1))
+  unlink(.atlas_cache_dir(), recursive = TRUE)
+
+  .request_atlas(list(a = 1))
+  .request_atlas(list(a = 1))
+
+  expect_equal(calls$n, 2)
+  expect_length(cached_files(), 1)
+})
+
 test_that("get_atlas(refresh = TRUE) downloads again and updates the cache", {
   calls <- local_request_cache()
   local_mocked_bindings(.label_atlas_columns = function(df) df)

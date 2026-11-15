@@ -127,8 +127,8 @@ get_atlas <- function(
     geography,
     year,
     stratify_by=NULL,
-    refresh=FALSE,
-    extrapolate_to_tract=deprecated())
+    extrapolate_to_tract=deprecated(),
+    refresh=FALSE)
 {
 
   if (lifecycle::is_present(extrapolate_to_tract)) {
