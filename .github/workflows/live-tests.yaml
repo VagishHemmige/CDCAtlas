@@ -1,9 +1,16 @@
 # Runs the live tests (tests/testthat/test-live-*.R) against CDC AtlasPlus and
-# the Census API. They take about 35 minutes, so they run only on request:
+# the Census API, only on request:
 #
 # - add the `live-tests` label to a pull request (remove and re-add it to run
-#   again after more pushes), or
-# - Actions tab -> live-tests.yaml -> Run workflow, on any branch.
+#   again after more pushes): every live test, 35 to 45 minutes; or
+# - Actions tab -> live-tests.yaml -> Run workflow, on any branch, choosing
+#   which tests:
+#   - quick: test-live-cdc.R, a few small requests, about a minute;
+#   - pipeline: test-live-pipeline.R, county downloads and the full pipeline;
+#   - all: both.
+#
+# Run every live test when the download, imputation or extrapolation code
+# changes; a quick run when only a request, label or code-table check does.
 #
 # Needs the CENSUS_API_KEY repository secret. GitHub does not pass secrets to
 # pull requests from forks, so this works only for branches in this repository.
@@ -12,6 +19,12 @@ on:
   pull_request:
     types: [labeled]
   workflow_dispatch:
+    inputs:
+      tests:
+        description: "Which live tests to run"
+        type: choice
+        options: [all, quick, pipeline]
+        default: all
 
 name: live-tests.yaml
 
@@ -30,6 +43,8 @@ jobs:
       CENSUS_API_KEY: ${{ secrets.CENSUS_API_KEY }}
       CDCATLAS_LIVE_TESTS: "true"
       NOT_CRAN: "true"
+      # The label always runs every live test.
+      LIVE_TESTS: ${{ inputs.tests || 'all' }}
 
     steps:
       - name: Check the Census API key is set
@@ -52,8 +67,16 @@ jobs:
 
       - name: Run live tests
         run: |
+          filter <- switch(
+            Sys.getenv("LIVE_TESTS"),
+            all = "live",
+            quick = "live-cdc",
+            pipeline = "live-pipeline",
+            stop("Unknown choice of live tests: ", Sys.getenv("LIVE_TESTS"))
+          )
+          message("Running live tests matching '", filter, "'.")
           res <- as.data.frame(testthat::test_local(
-            filter = "live",
+            filter = filter,
             reporter = "progress",
             stop_on_failure = TRUE
           ))
