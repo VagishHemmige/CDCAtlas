@@ -31,10 +31,13 @@ test_that("the latest year comes from CDC's code table", {
 
 test_that("years up to the latest one in the code table are accepted", {
   payloads <- NULL
-  local_mocked_bindings(.request_atlas_all = function(p) {
-    payloads <<- p
-    fake_county_atlas()
-  })
+  local_mocked_bindings(
+    .request_atlas_all = function(p) {
+      payloads <<- p
+      fake_county_atlas()
+    },
+    .warn_missing_indicators = function(...) invisible()
+  )
   get_atlas("hiv", "state", .latest_atlas_year())
   ids <- as.numeric(strsplit(payloads[[1]]$VariableIDs, ",")[[1]])
   expect_contains(ids, .latest_atlas_year() - 1478)

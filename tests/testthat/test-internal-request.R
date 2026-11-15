@@ -60,6 +60,9 @@ local_request_cache <- function(env = parent.frame()) {
       calls$n <- calls$n + 1
       data.frame(cases = calls$n, fips = "01")
     },
+    # The stand-in rows have no indicator column; these tests are about the
+    # cache, not about which indicators CDC returned.
+    .warn_missing_indicators = function(...) invisible(),
     .env = env
   )
   calls
