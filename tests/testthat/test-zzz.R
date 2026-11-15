@@ -1,11 +1,12 @@
 # Loads CDCAtlas in a new R session (the installed package when the tests run
 # on an installed copy, the source otherwise), with its user cache folder in
-# `cache_home`, then runs `code` there.
+# `cache_home`, then runs `code` there. An installed package also has a
+# DESCRIPTION file (covr runs the tests inside one), so look for R source files.
 in_fresh_session <- function(cache_home, code = function() NULL) {
   skip_if_not_installed("callr")
   skip_if_not_installed("pkgload")
   source_dir <- test_path("../..")
-  path <- if (file.exists(file.path(source_dir, "DESCRIPTION"))) {
+  path <- if (file.exists(file.path(source_dir, "R", "get_atlas.R"))) {
     normalizePath(source_dir)
   }
   callr::r(
