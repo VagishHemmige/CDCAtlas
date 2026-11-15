@@ -140,6 +140,42 @@
       ! cases in `x` must be 0 or more and finite.
       x 1 row has a negative or infinite value, such as -10.
 
+---
+
+    Code
+      impute_suppressed(infinite)
+    Condition
+      Error in `impute_suppressed()`:
+      ! population in `x` must be 0 or more and finite.
+      x 1 row has a negative or infinite value, such as Inf.
+
+---
+
+    Code
+      impute_suppressed(text)
+    Condition
+      Error in `impute_suppressed()`:
+      ! cases in `x` must be numeric.
+      x It is a character vector.
+
+---
+
+    Code
+      no_county_cases(imputed)
+    Condition
+      Error in `no_county_cases()`:
+      ! cases in `x` must be 0 or more and finite.
+      x 4 rows have a negative or infinite value, such as -11.
+
+---
+
+    Code
+      extrapolate_from_county(imputed)
+    Condition
+      Error in `extrapolate_from_county()`:
+      ! cases in `x` must be 0 or more and finite.
+      x 4 rows have a negative or infinite value, such as -11.
+
 # state_rate is floored at `floor`
 
     Code
