@@ -201,9 +201,20 @@ The paths above describe the current layout. Update them when files move.
 Air adoption in [#42](https://github.com/VagishHemmige/CDCAtlas/issues/42)
 does not itself authorize unsolicited formatting.
 
-`.Rbuildignore` excludes AGENTS.md and REVIEWING.md from package builds,
-not from pkgdown. Both root Markdown files can become unlinked website pages,
-including search and sitemap entries.
+[reference/](reference/README.md) holds background on CDC AtlasPlus, Census
+geography and estimation methods. Read
+[reference/README.md](reference/README.md) before implementing or reviewing
+scientific logic, verify claims against the cited sources, and follow its
+placement and citation rules: code may cite a reference entry by its heading;
+reference entries never name package functions or issues.
+[PACKAGE_REVIEW.md](PACKAGE_REVIEW.md) is the protocol for a whole-package
+review, used only when the maintainer commissions one; `tools/audit/` holds that
+review's synthetic checks.
+
+`.Rbuildignore` excludes AGENTS.md, REVIEWING.md, PACKAGE_REVIEW.md,
+`reference/` and `tools/` from package builds, not from pkgdown. The three root
+Markdown files can become unlinked website pages, including search and sitemap
+entries; `reference/` and `tools/` are not published.
 [#40](https://github.com/VagishHemmige/CDCAtlas/issues/40) currently defers
 the publication fix. Do not claim these files are unpublished or private.
 A publishing change requires a separately reviewed build/deployment solution;
