@@ -8,45 +8,62 @@ skip_unless_census <- function() {
 }
 
 live_counties <- new.env()
+live_runs <- new.env()
+
+# Runs `code` once per `key` in `store`, keeping its value, its warnings, or
+# its error. Later calls get the same value and see the same warnings, or the
+# same error, without running `code` again, so a failed download is not
+# retried by every test that needs it.
+live_once <- function(store, key, code) {
+  if (is.null(store[[key]])) {
+    warnings <- character()
+    value <- tryCatch(
+      withCallingHandlers(
+        code,
+        warning = function(w) {
+          warnings <<- c(warnings, cli::ansi_strip(conditionMessage(w)))
+          invokeRestart("muffleWarning")
+        }
+      ),
+      error = function(e) e
+    )
+    store[[key]] <- list(value = value, warnings = warnings)
+  }
+  run <- store[[key]]
+  for (w in run$warnings) warning(w, call. = FALSE)
+  if (inherits(run$value, "error")) stop(run$value)
+  run$value
+}
 
 # get_atlas("hiv", "county", year, stratify_by), fresh from CDC (bypassing the
 # on-disk cache) the first time, then from memory.
 live_county <- function(year, stratify_by = NULL) {
-  key <- paste(year, stratify_by %||% "none")
-  if (is.null(live_counties[[key]])) {
-    local_mocked_bindings(.request_atlas = .request_atlas_internal)
-    live_counties[[key]] <- suppressMessages(
-      get_atlas("hiv", "county", year, stratify_by = stratify_by)
-    )
-  }
-  live_counties[[key]]
+  local_mocked_bindings(.request_atlas = .request_atlas_internal)
+  live_once(
+    live_counties,
+    paste(year, stratify_by %||% "none"),
+    suppressMessages(get_atlas("hiv", "county", year, stratify_by = stratify_by))
+  )
 }
 
-# Full default pipeline on real data: get_atlas() -> impute_suppressed() ->
+# Full default pipeline on real data: live_county() -> impute_suppressed() ->
 # extrapolate_from_county(), every option at its default, as HOPE runs it. Each
-# run is downloaded once and shared by the tests below.
-
-live_runs <- new.env()
-
+# run is made once and shared by the tests that use it. `warnings` includes
+# warnings from the county download, even if an earlier test made it.
 live_pipeline <- function(year, stratify_by = NULL, to = "tract") {
-  key <- paste(year, stratify_by %||% "none", to)
-  if (is.null(live_runs[[key]])) {
-    skip_unless_census()
-    local_mocked_bindings(.request_atlas = .request_atlas_internal)
-    warnings <- character()
-    keep_warning <- function(w) {
-      warnings <<- c(warnings, cli::ansi_strip(conditionMessage(w)))
-      invokeRestart("muffleWarning")
-    }
-    withCallingHandlers(
+  skip_unless_census()
+  local_mocked_bindings(.request_atlas = .request_atlas_internal)
+  run <- NULL
+  warnings <- capture_warnings(
+    run <- live_once(
+      live_runs,
+      paste(year, stratify_by %||% "none", to),
       suppressMessages({
         county <- live_county(year, stratify_by)
         imputed <- impute_suppressed(county)
-        areas <- extrapolate_from_county(imputed, to = to)
-      }),
-      warning = keep_warning
+        list(imputed = imputed, areas = extrapolate_from_county(imputed, to = to))
+      })
     )
-    live_runs[[key]] <- list(imputed = imputed, areas = areas, warnings = warnings)
-  }
-  live_runs[[key]]
+  )
+  c(run, list(warnings = cli::ansi_strip(warnings)))
 }
