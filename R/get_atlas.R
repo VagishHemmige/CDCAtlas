@@ -99,9 +99,11 @@
 #'
 #' ## Saved downloads
 #'
-#' Each response from CDC is saved in the folder given by
-#' `tools::R_user_dir("CDCAtlas", "cache")` and reused for 30 days, so the same
-#' request doesn't download the data again. After 30 days the data are
+#' Data are requested from CDC one disease and one year at a time (and for
+#' counties, one state at a time). Each response is saved in the folder given
+#' by `tools::R_user_dir("CDCAtlas", "cache")` and reused for 30 days, so data
+#' already downloaded, alone or as part of a larger request, aren't downloaded
+#' again. After 30 days the data are
 #' downloaded again, which picks up any revisions CDC has made. Use
 #' `refresh = TRUE` to download them sooner, or [clear_atlas_cache()] to delete
 #' every saved response.
@@ -175,7 +177,7 @@ if (refresh) {
   # The later pipeline steps compare county data with state totals
   # (.fetch_state_totals()); refresh those too, so both are equally new.
   if (geography == "county") {
-    .forget_atlas_requests(.state_totals_payloads(disease, year, stratify_by))
+    .forget_atlas_requests(.build_payloads(disease, "state", year, stratify_by))
   }
 }
 .request_atlas_all(payloads)

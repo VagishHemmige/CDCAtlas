@@ -124,9 +124,11 @@ and internal identifiers may change without notice. If the CDC modifies the
 backend schema, requests may fail. Please report issues via GitHub.
 \subsection{Saved downloads}{
 
-Each response from CDC is saved in the folder given by
-\code{tools::R_user_dir("CDCAtlas", "cache")} and reused for 30 days, so the same
-request doesn't download the data again. After 30 days the data are
+Data are requested from CDC one disease and one year at a time (and for
+counties, one state at a time). Each response is saved in the folder given
+by \code{tools::R_user_dir("CDCAtlas", "cache")} and reused for 30 days, so data
+already downloaded, alone or as part of a larger request, aren't downloaded
+again. After 30 days the data are
 downloaded again, which picks up any revisions CDC has made. Use
 \code{refresh = TRUE} to download them sooner, or \code{\link[=clear_atlas_cache]{clear_atlas_cache()}} to delete
 every saved response.

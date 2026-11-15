@@ -42,6 +42,29 @@ test_that("state payloads keep the same indicator, year and category codes", {
   }
 })
 
+test_that("requests are split into one per disease and year", {
+  payloads <- .build_payloads(c("hiv", "chlamydia"), "state", c(2022, 2017))
+  expected <- list(
+    .build_payload("hiv", "state", 2017),
+    .build_payload("hiv", "state", 2022),
+    .build_payload("chlamydia", "state", 2017),
+    .build_payload("chlamydia", "state", 2022)
+  )
+  expect_equal(payloads, expected)
+})
+
+test_that("county requests are split by disease, year and state", {
+  payloads <- .build_payloads("hiv", "county", 2017:2018)
+  expect_length(payloads, 2 * length(unique(county_states)))
+})
+
+test_that("the order and repeats of years don't change the requests", {
+  expect_identical(
+    .build_payloads("hiv", "county", c(2022, 2017, 2022)),
+    .build_payloads("hiv", "county", c(2017, 2022))
+  )
+})
+
 test_that("national requests use CDC's United States code, 5000", {
   ids <- payload_ids(.build_payload("hiv", "national", 2022))
   expect_contains(ids, 5000)

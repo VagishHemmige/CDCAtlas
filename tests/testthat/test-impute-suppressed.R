@@ -145,9 +145,11 @@ test_that("state totals are requested for the same disease, years and strata", {
   })
   .fetch_state_totals(fake_county_atlas("sex", years = 2021:2022))
 
-  expect_length(received, 1)
-  expected <- .build_payload("hiv", "state", 2021:2022, stratify_by = "sex")
-  expect_equal(received[[1]], expected)
+  expected <- list(
+    .build_payload("hiv", "state", 2021, stratify_by = "sex"),
+    .build_payload("hiv", "state", 2022, stratify_by = "sex")
+  )
+  expect_equal(received, expected)
 })
 
 test_that("state_rate is floored at `floor`", {

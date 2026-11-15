@@ -278,15 +278,12 @@
   if (length(stratify_by) == 0) {
     stratify_by <- NULL
   }
-  years <- sort(unique(as.numeric(as.character(x$year))))
+  years <- as.numeric(as.character(x$year))
   states <- unique(substr(as.character(x$fips), 1, 2))
-  payloads <- unlist(
-    lapply(.atlas_diseases(x), function(disease) {
-      .build_payloads(disease, "county", years, stratify_by)[states]
-    }),
-    recursive = FALSE
+  payloads <- .build_payloads(
+    .atlas_diseases(x), "county", years, stratify_by, states = states
   )
-  .request_atlas_all(unname(payloads[!vapply(payloads, is.null, logical(1))]))
+  .request_atlas_all(unname(payloads))
 }
 
 # The state rows matching county data `x`: same diseases, years and
@@ -297,18 +294,8 @@
     stratify_by <- NULL
   }
   years <- as.numeric(as.character(x$year))
-  payloads <- .state_totals_payloads(.atlas_diseases(x), years, stratify_by)
+  payloads <- .build_payloads(.atlas_diseases(x), "state", years, stratify_by)
   state <- .request_atlas_all(payloads)
   state$state_fips <- as.character(state$fips)
   state
-}
-
-# The state-total payloads: one per disease, because each disease has its own
-# payload codes. get_atlas(refresh = TRUE) drops the saved responses to these
-# same payloads, so both must build them here.
-.state_totals_payloads <- function(diseases, years, stratify_by) {
-  years <- sort(unique(as.numeric(years)))
-  lapply(diseases, function(disease) {
-    .build_payload(disease, "state", years, stratify_by)
-  })
 }

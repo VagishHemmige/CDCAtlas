@@ -272,7 +272,7 @@ return(df)
   }
 
   results <- vector("list", length(payloads))
-  for (i in cli::cli_progress_along(payloads, "Downloading county data by state")) {
+  for (i in cli::cli_progress_along(payloads, "Downloading from CDC AtlasPlus")) {
     results[[i]] <- .request_atlas(payloads[[i]])
   }
 
