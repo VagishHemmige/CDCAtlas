@@ -60,5 +60,7 @@ no_county_cases(county)
 
 }
 \seealso{
-\code{\link[=impute_suppressed]{impute_suppressed()}}, \code{\link[=extrapolate_from_county]{extrapolate_from_county()}}.
+\code{\link[=impute_suppressed]{impute_suppressed()}}, \code{\link[=extrapolate_from_county]{extrapolate_from_county()}}; the article
+\href{https://vagishhemmige.github.io/CDCAtlas/articles/about-atlasplus-data.html}{"About CDC AtlasPlus data"}
+on why state totals and county counts differ.
 }

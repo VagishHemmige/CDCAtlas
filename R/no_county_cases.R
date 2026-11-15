@@ -43,7 +43,9 @@
 #' filtering `x`, and suppressed rows [impute_suppressed()] couldn't estimate
 #' (marked `cases_source = "not estimated"`), which count as 0 imputed cases.
 #'
-#' @seealso [impute_suppressed()], [extrapolate_from_county()].
+#' @seealso [impute_suppressed()], [extrapolate_from_county()]; the article
+#'   ["About CDC AtlasPlus data"](https://vagishhemmige.github.io/CDCAtlas/articles/about-atlasplus-data.html)
+#'   on why state totals and county counts differ.
 #'
 #' @examples
 #' \dontrun{

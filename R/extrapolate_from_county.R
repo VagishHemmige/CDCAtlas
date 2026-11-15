@@ -157,7 +157,9 @@
 #' because CDC's age groups for other diseases aren't matched to Census ages
 #' yet.
 #'
-#' @seealso [impute_suppressed()], [no_county_cases()].
+#' @seealso [impute_suppressed()], [no_county_cases()]; the article
+#'   ["About CDC AtlasPlus data"](https://vagishhemmige.github.io/CDCAtlas/articles/about-atlasplus-data.html)
+#'   on CDC's county map and the Census denominators.
 #'
 #' @examples
 #' \dontrun{

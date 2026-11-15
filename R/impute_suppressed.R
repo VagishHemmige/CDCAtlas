@@ -72,7 +72,9 @@
 #' tract populations from the Census.
 #'
 #' @seealso [no_county_cases()] for cases in state totals that no county
-#'   accounts for; [extrapolate_from_county()] for the next step.
+#'   accounts for; [extrapolate_from_county()] for the next step; the article
+#'   ["About CDC AtlasPlus data"](https://vagishhemmige.github.io/CDCAtlas/articles/about-atlasplus-data.html)
+#'   for CDC's suppression rules.
 #'
 #' @examples
 #' \dontrun{
