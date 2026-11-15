@@ -38,9 +38,10 @@
 #'   HIV prevalence (people living with diagnosed HIV).
 #' - `"estimate"`: three modeled HIV indicators: estimated HIV incidence,
 #'   estimated HIV prevalence (diagnosed and undiagnosed), and Knowledge of
-#'   Status. Knowledge of Status is a percentage, not a count. CDC doesn't
-#'   release these estimates for every year or geography; check AtlasPlus for
-#'   what is available.
+#'   Status. Knowledge of Status is a percentage, not a count. AtlasPlus says
+#'   CDC has postponed release of estimates for HIV incidence and HIV
+#'   prevalence, so recent years may be missing; check AtlasPlus for what is
+#'   available.
 #' - `"hepatitis"`: three indicators: hepatitis A, acute hepatitis B and acute
 #'   hepatitis C.
 #'
