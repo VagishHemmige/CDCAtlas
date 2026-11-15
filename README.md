@@ -7,6 +7,7 @@
 surveillance data from the CDC’s **AtlasPlus** platform.
 
 <!-- badges: start -->
+[![R-CMD-check](https://github.com/VagishHemmige/CDCAtlas/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/VagishHemmige/CDCAtlas/actions/workflows/R-CMD-check.yaml)
 
 ![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)
