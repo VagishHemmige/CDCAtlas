@@ -185,32 +185,7 @@ extrapolate_from_county <- function(
     cli::cli_abort("{.arg weights} is not supported yet (#1).", call = call)
   }
 
-  stratify_by <- .atlas_stratify_by(x)
-  if (length(stratify_by) > 1) {
-    cli::cli_abort(
-      c(
-        "{.arg x} can have at most one stratification variable.",
-        "x" = "It is stratified by {.val {stratify_by}}."
-      ),
-      call = call
-    )
-  }
-  if (length(stratify_by) == 0) {
-    stratify_by <- NULL
-  }
-
-  diseases <- .atlas_diseases(x)
-  if (identical(stratify_by, "age") && !identical(diseases, "hiv")) {
-    cli::cli_abort(
-      c(
-        "Age-stratified estimates support only HIV diagnoses and prevalence.",
-        "x" = "{.arg x} has {.val {setdiff(diseases, 'hiv')}} data.",
-        "i" = "CDC's age groups for other diseases aren't matched to Census
-               ages yet."
-      ),
-      call = call
-    )
-  }
+  stratify_by <- .check_census_strata(x, call)
 
   years <- sort(unique(as.numeric(as.character(x$year))))
   if (!is.null(acs_year)) {

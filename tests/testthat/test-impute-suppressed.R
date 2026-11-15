@@ -202,6 +202,65 @@ test_that("population = 'acs' keeps HIV at ages 13+ beside another disease (#53)
   expect_equal(hiv$cases, hiv_alone$cases[hiv_alone$fips == "01003"])
 })
 
+# Strata the ACS populations can't match yet (#55) -------------------------------
+
+sex_by_age <- function(suppressed = "01003") {
+  young <- fake_county_atlas("sex", suppressed = suppressed)
+  older <- young
+  young$age <- factor("13-24")
+  older$age <- factor("25-34")
+  rbind(young, older)
+}
+
+test_that("population = 'acs' stops on two-way strata before any request", {
+  local_mocked_bindings(
+    .request_atlas = function(payload) stop("CDC was called"),
+    .check_census_ready = function(call) invisible(),
+    .get_acs_areas = function(...) stop("the Census was called")
+  )
+  expect_snapshot(
+    error = TRUE,
+    impute_suppressed(sex_by_age(), population = "acs")
+  )
+})
+
+test_that("population = 'acs' stops on age strata for diseases other than HIV", {
+  local_mocked_bindings(
+    .request_atlas = function(payload) stop("CDC was called"),
+    .check_census_ready = function(call) invisible(),
+    .get_acs_areas = function(...) stop("the Census was called")
+  )
+  chlamydia <- fake_county_atlas(
+    "age", suppressed = "01003", indicators = "Chlamydia"
+  )
+  expect_snapshot(
+    error = TRUE,
+    impute_suppressed(chlamydia, population = "acs")
+  )
+})
+
+test_that("two-way strata still work with CDC populations and with zeros", {
+  state <- fake_state_atlas(stratify_by = "sex")
+  state <- rbind(
+    transform(state, age = "13-24"),
+    transform(state, age = "25-34")
+  )
+  local_fake_sources(state = state)
+
+  cdc <- suppressWarnings(impute_suppressed(sex_by_age()))
+  zero <- impute_suppressed(sex_by_age(), method = "zero")
+
+  expect_equal(unique(cdc$cases_source[cdc$fips == "01003"]), "state_rate")
+  expect_equal(unique(zero$cases[zero$fips == "01003"]), 0)
+})
+
+test_that("unsupported strata don't matter when nothing is suppressed", {
+  local_fake_sources()
+  out <- impute_suppressed(sex_by_age(suppressed = character(0)),
+                           population = "acs")
+  expect_equal(unique(out$cases_source), "published")
+})
+
 test_that("population = 'acs' needs a Census key", {
   withr::local_envvar(CENSUS_API_KEY = "")
   local_mocked_bindings(.request_atlas = function(payload) stop("CDC was called"))

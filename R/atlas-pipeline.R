@@ -216,6 +216,42 @@
   ifelse(disease %in% c("hiv", "estimate"), "13+", "all")
 }
 
+# The strata that Census populations can be matched to: at most one
+# stratification variable, and age only for HIV until other diseases' age
+# groups are mapped (#10). Returns the stratification variable, or NULL.
+# Shared by extrapolate_from_county() and impute_suppressed(population =
+# "acs") so they accept the same input (#55).
+.check_census_strata <- function(x, call, hint = NULL) {
+  stratify_by <- .atlas_stratify_by(x)
+  if (length(stratify_by) > 1) {
+    cli::cli_abort(
+      c(
+        "{.arg x} can have at most one stratification variable.",
+        "x" = "It is stratified by {.val {stratify_by}}.",
+        hint
+      ),
+      call = call
+    )
+  }
+  if (length(stratify_by) == 0) {
+    return(NULL)
+  }
+  diseases <- .atlas_diseases(x)
+  if (identical(stratify_by, "age") && !identical(diseases, "hiv")) {
+    cli::cli_abort(
+      c(
+        "Age-stratified estimates support only HIV diagnoses and prevalence.",
+        "x" = "{.arg x} has {.val {setdiff(diseases, 'hiv')}} data.",
+        "i" = "CDC's age groups for other diseases aren't matched to Census
+               ages yet.",
+        hint
+      ),
+      call = call
+    )
+  }
+  stratify_by
+}
+
 # Each row's value of the stratification variable (NA when unstratified),
 # matching the `stratum` column of the Census populations.
 .row_stratum <- function(df, stratify_by) {
