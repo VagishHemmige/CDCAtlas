@@ -42,6 +42,16 @@
       i Their cases would be spread to the counties in `x` as if they had no county.
       i Run `extrapolate_from_county()` on whole states and filter the result, or use `no_county = "report"`.
 
+# spreading stops for HIV estimates, whose counties are EHE only (#109)
+
+    Code
+      extrapolate_from_county(county, no_county = "spread")
+    Condition
+      Error in `extrapolate_from_county()`:
+      ! `no_county = "spread"` doesn't work for "Estimated HIV incidence".
+      x CDC's county data for them cover only Ending the HIV Epidemic (EHE) counties, so the state remainder is mostly people in other counties, not cases with no county.
+      i Use `no_county = "report"`.
+
 # the no-county total is announced
 
     Code

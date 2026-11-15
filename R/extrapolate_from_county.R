@@ -29,6 +29,10 @@
 #'   [no_county_cases()]):
 #'   * `"report"` (default): left out of the estimates, with a message giving
 #'     the total. The report is kept in `attr(result, "no_county_cases")`.
+#'
+#'     For CDC's HIV estimates, whose county data cover only the Ending the
+#'     HIV Epidemic (EHE) counties, the remainder is mostly people in
+#'     counties outside EHE coverage, and a message says so.
 #'   * `"spread"`: shared across the state's counties in `x` by their ACS
 #'     population in the same stratum, then across areas as usual. `x` must
 #'     hold every county CDC reports in each of its states, for each
@@ -39,7 +43,8 @@
 #'     the cache when `x` was downloaded in this session. Negative
 #'     remainders are not spread, nor are remainders in a state with no
 #'     allocated county in that stratum; the message says how many cases
-#'     could not be spread.
+#'     could not be spread. Not available for CDC's HIV estimates (EHE
+#'     counties only).
 #' @param spread_by How `no_county = "spread"` shares a state's remainder
 #'   among its counties:
 #'   * `"population"` (default): by each county's ACS population in the
@@ -253,7 +258,22 @@ extrapolate_from_county <- function(
   .check_census_ready(call)
 
   if (no_county == "spread") {
+    ehe <- .ehe_only_indicators(x)
+    if (length(ehe) > 0) {
+      cli::cli_abort(
+        c(
+          "{.code no_county = \"spread\"} doesn't work for {.val {ehe}}.",
+          "x" = "CDC's county data for them cover only Ending the HIV Epidemic
+                 (EHE) counties, so the state remainder is mostly people in
+                 other counties, not cases with no county.",
+          "i" = "Use {.code no_county = \"report\"}."
+        ),
+        call = call
+      )
+    }
     .check_whole_states(x, call)
+  } else {
+    .inform_ehe_remainder(x)
   }
   report <- .no_county_cases(x, .fetch_state_totals(x))
 
