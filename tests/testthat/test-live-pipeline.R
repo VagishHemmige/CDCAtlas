@@ -64,7 +64,7 @@ test_that("imputation respects the cap and keeps published counts, 2022", {
 # County rows the default pipeline is known to leave out. Anything else in
 # attr(, "not_allocated") is new and fails the test below. Found by running
 # these tests on 30 October 2026.
-#   - Race "Unknown": no Census population for it.
+#   - Race or age "Unknown": no Census population for it.
 #   - CDC reports every year on its current county map. Since #30, 2010
 #     tracts are moved to the current counties by a crosswalk, so 2017
 #     Connecticut planning regions and Alaska's Chugach (02063) and Copper
@@ -77,12 +77,18 @@ test_that("imputation respects the cap and keeps published counts, 2022", {
 #     successors; it has no CDC population and no 2020 tracts.
 #   - Puerto Rico, by race: suppressed municipio rows can't be estimated
 #     (no state rate or municipio population by race from CDC).
+#   - Chlamydia 2022 by age (found 15 Nov 2026, #87):
+#     - suppressed rows of age "Unknown" have no CDC population, so can't be
+#       estimated;
+#     - CDC lists Connecticut's old counties (09001-09015) as "Data
+#       suppressed" with no population in every age group, beside the
+#       planning regions.
 no_area_or_estimate <- c(
   "suppressed, not estimated", "no ACS tracts for this county"
 )
 is_known_left_out <- function(left_out, year) {
   unknown_race <- left_out$reason == "no Census population for this stratum" &
-    left_out$race_ethnicity == "Unknown"
+    (left_out$race_ethnicity == "Unknown" | left_out$age == "Unknown")
   connecticut <- year == 2017 & left_out$reason == "suppressed, not estimated" &
     substr(left_out$county_fips, 1, 2) == "09"
   valdez_cordova_split <- left_out$reason %in% no_area_or_estimate &
@@ -90,14 +96,23 @@ is_known_left_out <- function(left_out, year) {
   puerto_rico_race <- left_out$reason == "suppressed, not estimated" &
     substr(left_out$county_fips, 1, 2) == "72" &
     left_out$race_ethnicity != "All races/ethnicities"
-  unknown_race | connecticut | valdez_cordova_split | puerto_rico_race
+  unknown_age_suppressed <- left_out$reason == "suppressed, not estimated" &
+    left_out$age == "Unknown"
+  old_connecticut <- year == 2022 &
+    left_out$reason == "suppressed, not estimated" &
+    left_out$county_fips %in% sprintf("090%02d", seq(1, 15, 2))
+  unknown_race | connecticut | valdez_cordova_split | puerto_rico_race |
+    unknown_age_suppressed | old_connecticut
 }
 
-# Warnings the default pipeline is known to give, by year.
+# Warnings the default pipeline is known to give, by year. Chlamydia by age
+# also warns that suppressed rows couldn't be estimated (unknown age and
+# Connecticut's old counties; the rows themselves are checked above).
 known_warnings <- c(
   "2017" = "no matching ACS tracts|Planning Region, CT|Valdez-Cordova|Municipio, PR",
   "2022" = "Valdez-Cordova Census Area, AK|no matching ACS tracts|Municipio, PR"
 )
+known_disease_warnings <- c(chlamydia = "suppressed rows? could not be estimated")
 
 county_groups <- c("county_fips", "indicator", "race_ethnicity", "sex", "age")
 
@@ -110,12 +125,31 @@ expect_none <- function(x, what) {
   )
 }
 
-for (year in c(2017, 2022)) {
-  for (strat in list(NULL, "sex", "age", "race")) {
-    label <- paste0(year, ", ", if (is.null(strat)) "unstratified" else paste("by", strat))
+# The default pipeline's runs: HIV for both years and every stratification,
+# and chlamydia by age, whose age groups differ from HIV's (#10).
+pipeline_runs <- c(
+  lapply(
+    list(
+      list(2017, NULL), list(2017, "sex"), list(2017, "age"), list(2017, "race"),
+      list(2022, NULL), list(2022, "sex"), list(2022, "age"), list(2022, "race")
+    ),
+    function(run) list(year = run[[1]], strat = run[[2]], disease = "hiv")
+  ),
+  list(list(year = 2022, strat = "age", disease = "chlamydia"))
+)
+
+for (pipeline_run in pipeline_runs) {
+  local({
+    year <- pipeline_run$year
+    strat <- pipeline_run$strat
+    disease <- pipeline_run$disease
+    label <- paste0(
+      if (disease == "hiv") "" else paste0(disease, " "),
+      year, ", ", if (is.null(strat)) "unstratified" else paste("by", strat)
+    )
 
     test_that(paste("tract estimates add up to the counts they share,", label), {
-      areas <- live_pipeline(year, strat)$areas
+      areas <- live_pipeline(year, strat, disease = disease)$areas
       check <- areas |>
         dplyr::summarize(
           county_values = dplyr::n_distinct(county_cases_allocated),
@@ -131,7 +165,7 @@ for (year in c(2017, 2022)) {
     })
 
     test_that(paste("every county row is allocated or listed as left out,", label), {
-      run <- live_pipeline(year, strat)
+      run <- live_pipeline(year, strat, disease = disease)
       county_rows <- .row_key(
         data.frame(
           county_fips = as.character(run$imputed$fips),
@@ -149,7 +183,7 @@ for (year in c(2017, 2022)) {
     })
 
     test_that(paste("only known county rows are left out,", label), {
-      left_out <- attr(live_pipeline(year, strat)$areas, "not_allocated")
+      left_out <- attr(live_pipeline(year, strat, disease = disease)$areas, "not_allocated")
       unexpected <- left_out[!is_known_left_out(left_out, year), ]
       expect_none(
         paste0(unexpected$county_fips, " ", unexpected$county_name, ": ",
@@ -159,13 +193,20 @@ for (year in c(2017, 2022)) {
     })
 
     test_that(paste("only known warnings are given,", label), {
-      warnings <- live_pipeline(year, strat)$warnings
+      warnings <- live_pipeline(year, strat, disease = disease)$warnings
       expect_none(
-        warnings[!grepl(known_warnings[[as.character(year)]], warnings)],
+        warnings[!grepl(
+          paste(
+            c(known_warnings[[as.character(year)]],
+              unname(known_disease_warnings[intersect(disease, names(known_disease_warnings))])),
+            collapse = "|"
+          ),
+          warnings
+        )],
         "warnings"
       )
     })
-  }
+  })
 }
 
 test_that("2017 allocates Connecticut's planning regions, Chugach and Copper River (#30)", {

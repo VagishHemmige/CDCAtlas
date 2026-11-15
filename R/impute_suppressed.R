@@ -37,9 +37,10 @@
 #'     ages, summed from its tracts as [extrapolate_from_county()] does. Needs
 #'     tidycensus and a Census API key.
 #'
-#'   `"acs"` accepts the same strata as [extrapolate_from_county()]: at most
-#'   one stratification variable, and age only for HIV. Other input stops
-#'   before anything is downloaded; use `"cdc"` for it.
+#'   `"acs"` accepts the same input as [extrapolate_from_county()]: at most
+#'   one stratification variable, and no congenital syphilis (whose rates are
+#'   per 100,000 live births). Other input stops before anything is
+#'   downloaded; use `"cdc"` for it.
 #'
 #'   CDC gives Connecticut's 2017 planning regions no population, so `"cdc"`
 #'   can't estimate them; `"acs"` can, from 2010 tracts assigned to the
@@ -217,12 +218,15 @@ impute_suppressed <- function(
   out <- rep(NA_real_, nrow(county))
   for (year in sort(unique(county$year))) {
     for (universe in unique(row_ages[county$year == year])) {
-      pop <- .area_population(year, states, stratify_by, universe) |>
+      rows <- county$year == year & row_ages == universe
+      pop <- .area_population(
+        year, states, stratify_by, universe,
+        age_groups = unique(county$age[rows])
+      ) |>
         dplyr::summarize(
           population = sum(.data$area_population_acs),
           .by = c("county_fips", "stratum")
         )
-      rows <- county$year == year & row_ages == universe
       out[rows] <- pop$population[match(
         .row_key(county[rows, ], c("county_fips", "stratum")),
         .row_key(pop, c("county_fips", "stratum"))

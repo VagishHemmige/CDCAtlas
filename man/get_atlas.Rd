@@ -26,7 +26,11 @@ before every disease has data for it; such a request returns no data.
 Can be a single year (e.g., \code{2022}) or a sequence (e.g., \code{2018:2022}).}
 
 \item{stratify_by}{Optional character vector. Zero, one, or two of
-\code{"age"}, \code{"race"}, \code{"sex"}. If \code{NULL}, totals (unstratified) are returned.}
+\code{"age"}, \code{"race"}, \code{"sex"}. If \code{NULL}, totals (unstratified) are returned.
+Each disease has its own age groups, as AtlasPlus offers them: 13-24 to 65+
+for \code{"hiv"} and \code{"estimate"}; 0-14, 15-19 and so on to 65+ for the other
+diseases, plus "Unknown" for chlamydia, gonorrhea and adult syphilis.
+Congenital syphilis can't be stratified.}
 
 \item{extrapolate_to_tract}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} No longer
 supported. Use \code{\link[=impute_suppressed]{impute_suppressed()}} and then \code{\link[=extrapolate_from_county]{extrapolate_from_county()}}.}

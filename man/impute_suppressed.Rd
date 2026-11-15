@@ -44,9 +44,10 @@ ages, summed from its tracts as \code{\link[=extrapolate_from_county]{extrapolat
 tidycensus and a Census API key.
 }
 
-\code{"acs"} accepts the same strata as \code{\link[=extrapolate_from_county]{extrapolate_from_county()}}: at most
-one stratification variable, and age only for HIV. Other input stops
-before anything is downloaded; use \code{"cdc"} for it.
+\code{"acs"} accepts the same input as \code{\link[=extrapolate_from_county]{extrapolate_from_county()}}: at most
+one stratification variable, and no congenital syphilis (whose rates are
+per 100,000 live births). Other input stops before anything is
+downloaded; use \code{"cdc"} for it.
 
 CDC gives Connecticut's 2017 planning regions no population, so \code{"cdc"}
 can't estimate them; \code{"acs"} can, from 2010 tracts assigned to the

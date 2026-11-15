@@ -35,14 +35,14 @@ live_once <- function(store, key, code) {
   run$value
 }
 
-# get_atlas("hiv", "county", year, stratify_by), fresh from CDC (bypassing the
-# on-disk cache) the first time, then from memory.
-live_county <- function(year, stratify_by = NULL) {
+# get_atlas(disease, "county", year, stratify_by), fresh from CDC (bypassing
+# the on-disk cache) the first time, then from memory.
+live_county <- function(year, stratify_by = NULL, disease = "hiv") {
   local_mocked_bindings(.request_atlas = .request_atlas_internal)
   live_once(
     live_counties,
-    paste(year, stratify_by %||% "none"),
-    suppressMessages(get_atlas("hiv", "county", year, stratify_by = stratify_by))
+    paste(disease, year, stratify_by %||% "none"),
+    suppressMessages(get_atlas(disease, "county", year, stratify_by = stratify_by))
   )
 }
 
@@ -50,16 +50,17 @@ live_county <- function(year, stratify_by = NULL) {
 # extrapolate_from_county(), every option at its default, as HOPE runs it. Each
 # run is made once and shared by the tests that use it. `warnings` includes
 # warnings from the county download, even if an earlier test made it.
-live_pipeline <- function(year, stratify_by = NULL, to = "tract") {
+live_pipeline <- function(year, stratify_by = NULL, to = "tract",
+                          disease = "hiv") {
   skip_unless_census()
   local_mocked_bindings(.request_atlas = .request_atlas_internal)
   run <- NULL
   warnings <- capture_warnings(
     run <- live_once(
       live_runs,
-      paste(year, stratify_by %||% "none", to),
+      paste(disease, year, stratify_by %||% "none", to),
       suppressMessages({
-        county <- live_county(year, stratify_by)
+        county <- live_county(year, stratify_by, disease)
         imputed <- impute_suppressed(county)
         list(imputed = imputed, areas = extrapolate_from_county(imputed, to = to))
       })

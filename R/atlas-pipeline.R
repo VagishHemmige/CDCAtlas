@@ -201,14 +201,12 @@
 }
 
 # Ages the Census populations cover, for each row of `df`: 13+ for HIV
-# indicators (and always for age strata, whose groups start at 13), all ages
-# otherwise. Decided by each row's indicator, so combining diseases doesn't
-# change one disease's ages (#53). `ages` other than "auto" sets every row.
+# indicators, all ages otherwise. Decided by each row's indicator, so
+# combining diseases doesn't change one disease's ages (#53). `ages` other
+# than "auto" sets every row, except for age strata, whose groups set the
+# ages: HIV groups start at 13, other diseases' groups cover all ages (#10).
 .row_ages <- function(df, stratify_by, ages = "auto") {
-  if (identical(stratify_by, "age")) {
-    return(rep("13+", nrow(df)))
-  }
-  if (ages != "auto") {
+  if (ages != "auto" && !identical(stratify_by, "age")) {
     return(rep(ages, nrow(df)))
   }
   lookup <- .disease_indicators()
@@ -217,11 +215,21 @@
 }
 
 # The strata that Census populations can be matched to: at most one
-# stratification variable, and age only for HIV until other diseases' age
-# groups are mapped (#10). Returns the stratification variable, or NULL.
-# Shared by extrapolate_from_county() and impute_suppressed(population =
-# "acs") so they accept the same input (#55).
+# stratification variable, and no congenital syphilis, whose rates are per
+# 100,000 live births rather than per 100,000 people (#10). Returns the
+# stratification variable, or NULL. Shared by extrapolate_from_county() and
+# impute_suppressed(population = "acs") so they accept the same input (#55).
 .check_census_strata <- function(x, call, hint = NULL) {
+  if ("congenital syphilis" %in% .atlas_diseases(x)) {
+    cli::cli_abort(
+      c(
+        "Census populations don't fit congenital syphilis.",
+        "x" = "Its rates are per 100,000 live births, not per 100,000 people.",
+        hint
+      ),
+      call = call
+    )
+  }
   stratify_by <- .atlas_stratify_by(x)
   if (length(stratify_by) > 1) {
     cli::cli_abort(
@@ -235,19 +243,6 @@
   }
   if (length(stratify_by) == 0) {
     return(NULL)
-  }
-  diseases <- .atlas_diseases(x)
-  if (identical(stratify_by, "age") && !identical(diseases, "hiv")) {
-    cli::cli_abort(
-      c(
-        "Age-stratified estimates support only HIV diagnoses and prevalence.",
-        "x" = "{.arg x} has {.val {setdiff(diseases, 'hiv')}} data.",
-        "i" = "CDC's age groups for other diseases aren't matched to Census
-               ages yet.",
-        hint
-      ),
-      call = call
-    )
   }
   stratify_by
 }
