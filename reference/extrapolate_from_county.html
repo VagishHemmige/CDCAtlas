@@ -66,6 +66,7 @@ area of a county within a stratum.</p>
 <span>  race_table <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"B03002"</span>, <span class="st">"B01001"</span><span class="op">)</span>,</span>
 <span>  unknown_race <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"redistribute"</span><span class="op">)</span>,</span>
 <span>  unestimated <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"leave out"</span>, <span class="st">"error"</span><span class="op">)</span>,</span>
+<span>  missing_population <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"leave out"</span>, <span class="st">"error"</span><span class="op">)</span>,</span>
 <span>  acs_year <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  weights <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -93,7 +94,13 @@ smaller areas have larger ACS margins of error.</p></li>
 <code><a href="no_county_cases.html">no_county_cases()</a></code>):</p><ul><li><p><code>"report"</code> (default): left out of the estimates, with a message giving
 the total. The report is kept in <code>attr(result, "no_county_cases")</code>.</p></li>
 <li><p><code>"spread"</code>: shared across the state's counties in <code>x</code> by their ACS
-population in the same stratum, then across areas as usual. Negative
+population in the same stratum, then across areas as usual. <code>x</code> must
+hold every county CDC reports in each of its states, for each
+indicator, year and stratum it has (rows CDC lists as "Data not
+available" with no count aside), or the counties left out would have
+their cases spread too; to study part of a state, spread first and
+filter the result. Checking needs CDC's county table, which comes from
+the cache when <code>x</code> was downloaded in this session. Negative
 remainders are not spread, nor are remainders in a state with no
 allocated county in that stratum; the message says how many cases
 could not be spread.</p></li>
@@ -161,6 +168,15 @@ and listed in <code>attr(result, "not_allocated")</code>. Their cases count towa
 the state's remainder with no county.</p></li>
 <li><p><code>"error"</code>: stop with an error.</p></li>
 </ul></dd>
+
+
+<dt id="arg-missing-population">missing_population<a class="anchor" aria-label="anchor" href="#arg-missing-population"></a></dt>
+<dd><p>What to do when the ACS population is missing
+(an <code>NA</code> estimate, or a variable the Census didn't return) for some
+area of a county:</p><ul><li><p><code>"leave out"</code> (default): leave that county stratum out, with a warning,
+and list it in <code>attr(result, "not_allocated")</code> with reason <code>"missing ACS population"</code>. Sharing over the other areas would move cases.</p></li>
+<li><p><code>"error"</code>: stop instead.</p></li>
+</ul><p>A population of 0 is not missing; see <code>empty_strata</code>.</p></dd>
 
 
 <dt id="arg-acs-year">acs_year<a class="anchor" aria-label="anchor" href="#arg-acs-year"></a></dt>

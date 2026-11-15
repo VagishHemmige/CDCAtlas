@@ -22,6 +22,7 @@ extrapolate_from_county(
   race_table = c("B03002", "B01001"),
   unknown_race = c("report", "redistribute"),
   unestimated = c("leave out", "error"),
+  missing_population = c("leave out", "error"),
   acs_year = NULL,
   weights = NULL
 )
@@ -59,7 +60,13 @@ extrapolate_from_county(
     `attr(result, "no_county_cases")`.
 
   - `"spread"`: shared across the state's counties in `x` by their ACS
-    population in the same stratum, then across areas as usual. Negative
+    population in the same stratum, then across areas as usual. `x` must
+    hold every county CDC reports in each of its states, for each
+    indicator, year and stratum it has (rows CDC lists as "Data not
+    available" with no count aside), or the counties left out would have
+    their cases spread too; to study part of a state, spread first and
+    filter the result. Checking needs CDC's county table, which comes
+    from the cache when `x` was downloaded in this session. Negative
     remainders are not spread, nor are remainders in a state with no
     allocated county in that stratum; the message says how many cases
     could not be spread.
@@ -143,6 +150,20 @@ extrapolate_from_county(
     count towards the state's remainder with no county.
 
   - `"error"`: stop with an error.
+
+- missing_population:
+
+  What to do when the ACS population is missing (an `NA` estimate, or a
+  variable the Census didn't return) for some area of a county:
+
+  - `"leave out"` (default): leave that county stratum out, with a
+    warning, and list it in `attr(result, "not_allocated")` with reason
+    `"missing ACS population"`. Sharing over the other areas would move
+    cases.
+
+  - `"error"`: stop instead.
+
+  A population of 0 is not missing; see `empty_strata`.
 
 - acs_year:
 
