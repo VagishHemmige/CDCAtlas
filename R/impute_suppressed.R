@@ -41,8 +41,9 @@
 #'   one stratification variable, and age only for HIV. Other input stops
 #'   before anything is downloaded; use `"cdc"` for it.
 #'
-#'   Neither covers Connecticut's 2017 planning regions: CDC gives them no
-#'   population, and 2017 ACS tracts belong to the old counties (#30).
+#'   CDC gives Connecticut's 2017 planning regions no population, so `"cdc"`
+#'   can't estimate them; `"acs"` can, from 2010 tracts assigned to the
+#'   planning regions (see [extrapolate_from_county()]).
 #' @param unestimated What to do with a suppressed row `"state_rate"` can't
 #'   estimate, because the state rate or county population is missing:
 #'   * `"na"` (default): leave it `NA`, with a warning. [no_county_cases()]

@@ -142,8 +142,15 @@
 #' other than CDC's HIV age groups, suppressed rows with no estimate (see
 #' `unestimated`), rows kept by
 #' `impute_suppressed(not_available = "keep")`, and counties with no ACS areas
-#' (such as Connecticut's planning regions with 2010 tracts, until #30 adds a
-#' crosswalk).
+#' (such as Valdez-Cordova, Alaska, which CDC still lists with no population).
+#'
+#' CDC reports every year on its current county map. ACS releases from
+#' 2006-2010 to 2015-2019 use 2010 tracts, so in Connecticut (now planning
+#' regions) and the old Valdez-Cordova Census Area, Alaska (now Chugach and
+#' Copper River), each 2010 tract and its block groups are assigned to the
+#' current county they fall in. The one 2010 tract split between two planning
+#' regions is shared by land area. The crosswalk ships in
+#' `inst/extdata/tract-2010-crosswalk.csv`.
 #'
 #' Tract and block group boundaries change every ten years, so estimates from
 #' ACS years on different sides of a decennial census (2017 and 2022, say)
@@ -612,10 +619,51 @@ extrapolate_from_county <- function(
     out$area_population_acs <- out$area_population_acs * share_13
   }
 
-  out[c(
+  out <- out[c(
     "geoid", "area_name", "county_fips", "stratum",
     "area_population_acs", "area_total_population"
   )]
+  if (year %in% .acs_years_2010_tracts) {
+    out <- .apply_tract_crosswalk(out)
+  }
+  out
+}
+
+# ACS 5-year releases on 2010 tracts and block groups (2006-2010 to 2015-2019).
+.acs_years_2010_tracts <- 2010:2019
+
+# CDC reports every year on its current county map (#30). For ACS releases on
+# 2010 tracts, areas in Connecticut (now planning regions) and in the old
+# Valdez-Cordova Census Area, Alaska (now Chugach and Copper River) are moved
+# to the current county, using inst/extdata/tract-2010-crosswalk.csv (built by
+# data-raw/tract-crosswalk.R). A block group follows its tract. An area split
+# between two current counties appears once in each, with its populations
+# multiplied by its share of the tract's land area.
+.apply_tract_crosswalk <- function(areas) {
+  crosswalk <- .tract_crosswalk()
+  tract <- substr(areas$geoid, 1, 11)
+  moved <- tract %in% crosswalk$tract_2010
+  if (!any(moved)) {
+    return(areas)
+  }
+  shifted <- dplyr::inner_join(
+    areas[moved, setdiff(names(areas), "county_fips")] |>
+      dplyr::mutate(tract_2010 = tract[moved]),
+    crosswalk,
+    by = "tract_2010",
+    relationship = "many-to-many"
+  )
+  shifted$area_population_acs <- shifted$area_population_acs * shifted$share
+  shifted$area_total_population <- shifted$area_total_population * shifted$share
+  dplyr::bind_rows(areas[!moved, ], shifted[names(areas)])
+}
+
+# The shipped crosswalk from 2010 tracts to CDC's current counties.
+.tract_crosswalk <- function() {
+  utils::read.csv(
+    system.file("extdata", "tract-2010-crosswalk.csv", package = "CDCAtlas"),
+    colClasses = c("character", "character", "numeric")
+  )
 }
 
 

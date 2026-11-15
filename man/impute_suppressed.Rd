@@ -48,8 +48,9 @@ tidycensus and a Census API key.
 one stratification variable, and age only for HIV. Other input stops
 before anything is downloaded; use \code{"cdc"} for it.
 
-Neither covers Connecticut's 2017 planning regions: CDC gives them no
-population, and 2017 ACS tracts belong to the old counties (#30).}
+CDC gives Connecticut's 2017 planning regions no population, so \code{"cdc"}
+can't estimate them; \code{"acs"} can, from 2010 tracts assigned to the
+planning regions (see \code{\link[=extrapolate_from_county]{extrapolate_from_county()}}).}
 
 \item{unestimated}{What to do with a suppressed row \code{"state_rate"} can't
 estimate, because the state rate or county population is missing:
