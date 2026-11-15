@@ -137,8 +137,9 @@ impute_suppressed <- function(
     cli::cli_inform(c(
       "i" = "Dropped {sum(unavailable)} row{?s} marked {.val Data not
              available} with no count.",
-      " " = "Their cases are still in the state totals; see
-             {.fn no_county_cases}."
+      " " = "Their cases are still in the state totals, and
+             {.fn no_county_cases} counts them in the remainder for any state
+             group that still has rows."
     ))
     unavailable <- rep(FALSE, nrow(x))
   }

@@ -4,7 +4,7 @@
       out <- impute_suppressed(county, method = "zero", not_available = "drop")
     Message
       i Dropped 2 rows marked "Data not available" with no count.
-        Their cases are still in the state totals; see `no_county_cases()`.
+        Their cases are still in the state totals, and `no_county_cases()` counts them in the remainder for any state group that still has rows.
 
 # suppressed rows with no county population stay NA, with a warning
 
