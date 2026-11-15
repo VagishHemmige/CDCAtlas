@@ -1157,16 +1157,20 @@ extrapolate_from_county <- function(
 }
 
 # How much of the positive remainder was spread, and how much could not be
-# (no allocated county in that state stratum, or rule "none").
+# (no allocated county in that state stratum, or rule "none"). A county's
+# share counts as spread only if it reached its areas: with empty_strata =
+# "none" a county can be given a share while all its area estimates are NA
+# (#114).
 .announce_spread <- function(areas, report, to) {
   state_keys <- c("state_fips", .atlas_keys)
-  spread <- unique(areas[c(
-    state_keys,
-    "county_fips",
-    "county_cases_spread"
-  )]) |>
+  spread <- areas |>
     dplyr::summarize(
-      spread = sum(.data$county_cases_spread),
+      county_cases_spread = dplyr::first(.data$county_cases_spread),
+      reached = !all(is.na(.data$area_cases)),
+      .by = dplyr::all_of(c(state_keys, "county_fips"))
+    ) |>
+    dplyr::summarize(
+      spread = sum(.data$county_cases_spread[.data$reached]),
       .by = dplyr::all_of(state_keys)
     )
   wanted <- report
@@ -1182,7 +1186,8 @@ extrapolate_from_county <- function(
     plural <- .area_plural(to)
     cli::cli_inform(c(
       "i" = "Cases with no county that could not be spread (no county with
-             {plural} in that state and stratum):",
+             {plural} in that state and stratum, or no {plural} with
+             population there):",
       .lines_by_indicator(wanted[wanted$unspread > 0, ], "unspread")
     ))
   }
