@@ -145,7 +145,10 @@ test_that("region requests use CDC's four Census regions and the territories", {
 })
 
 test_that("get_atlas() accepts geography = \"region\" for HIV estimates", {
-  local_mocked_bindings(.request_atlas_all = function(payloads) payloads)
+  local_mocked_bindings(
+    .request_atlas_all = function(payloads) payloads,
+    .warn_missing_indicators = function(...) invisible()
+  )
   payloads <- get_atlas("estimate", "region", 2022)
   expect_length(payloads, 1)
 })
