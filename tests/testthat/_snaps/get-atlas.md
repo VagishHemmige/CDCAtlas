@@ -18,3 +18,23 @@
       i Please use `extrapolate_from_county()` instead.
       i Run `impute_suppressed()` on county data first.
 
+# years outside the code table are refused, naming the range
+
+    Code
+      get_atlas("hiv", "state", 2026)
+    Condition
+      Error in `get_atlas()`:
+      ! `year` must contain years from 2000 through 2025.
+      x You supplied 2026.
+      i 2025 is the latest year in the package's copy of CDC's code table. A year CDC hasn't released for a disease returns no data.
+
+---
+
+    Code
+      get_atlas("hiv", "state", 1999)
+    Condition
+      Error in `get_atlas()`:
+      ! `year` must contain years from 2000 through 2025.
+      x You supplied 1999.
+      i 2025 is the latest year in the package's copy of CDC's code table. A year CDC hasn't released for a disease returns no data.
+

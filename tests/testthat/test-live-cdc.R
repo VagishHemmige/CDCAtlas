@@ -114,3 +114,12 @@ for (year in c(2017, 2022)) {
     }
   })
 }
+
+test_that("HIV has data for the latest year in the code table", {
+  # If this fails, CDC has listed a year before releasing HIV data for it, or
+  # the package's code table is out of date (data-raw/DATASET.R).
+  local_mocked_bindings(.request_atlas = .request_atlas_internal)
+  out <- get_atlas("hiv", "national", .latest_atlas_year())
+
+  expect_contains(as.character(out$indicator), "HIV diagnoses")
+})
