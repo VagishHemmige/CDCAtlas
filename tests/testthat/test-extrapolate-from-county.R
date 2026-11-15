@@ -812,6 +812,63 @@ test_that("unknown race stays unallocated in a county with no known cases", {
   expect_equal(sum(tracts$area_cases[tracts$county_fips == "01003"]), 0)
 })
 
+# CDC's current county map on 2010 tracts (#30) ---------------------------------
+
+# A made-up crosswalk: tract 01001000300 now lies in county 01003, and tract
+# 01001000200 is split evenly between the two counties.
+fake_crosswalk <- data.frame(
+  tract_2010 = c("01001000200", "01001000200", "01001000300"),
+  county_fips = c("01001", "01003", "01003"),
+  share = c(0.5, 0.5, 1)
+)
+
+run_2017 <- function(...) {
+  local_mocked_bindings(.tract_crosswalk = function() fake_crosswalk)
+  run_extrapolation(
+    county = fake_county_atlas(years = 2017),
+    state = fake_state_atlas(years = 2017),
+    ...
+  )
+}
+
+test_that("2010 tracts are moved to CDC's current counties by the crosswalk", {
+  tracts <- run_2017()
+  pop <- fake_acs_tract("01001000200")
+  total <- sum(pop[sprintf("B01001_%03d", c(6:25, 30:49))]) +
+    0.4 * (pop[["B01001_005"]] + pop[["B01001_029"]])
+
+  in_01003 <- unique(tracts[tracts$county_fips == "01003", c("geoid", "area_total_population")])
+  expect_setequal(in_01003$geoid, c("01001000200", "01001000300", "01003000100"))
+  expect_equal(
+    in_01003$area_total_population[in_01003$geoid == "01001000200"],
+    0.5 * total
+  )
+  in_01001 <- unique(tracts$geoid[tracts$county_fips == "01001"])
+  expect_setequal(in_01001, c("01001000100", "01001000200"))
+})
+
+test_that("crosswalked 2010 tracts still add up to county counts", {
+  check <- county_vs_areas(run_2017())
+  expect_equal(check$area_cases_sum, check$county_cases, tolerance = 1e-8)
+})
+
+test_that("the crosswalk isn't used with 2020 tracts", {
+  local_mocked_bindings(.tract_crosswalk = function() fake_crosswalk)
+  tracts <- run_extrapolation()
+  expect_setequal(
+    unique(tracts$geoid[tracts$county_fips == "01003"]),
+    "01003000100"
+  )
+})
+
+test_that("the shipped crosswalk gives each 2010 tract shares that sum to 1", {
+  crosswalk <- .tract_crosswalk()
+  expect_equal(unique(nchar(crosswalk$tract_2010)), 11)
+  expect_setequal(unique(substr(crosswalk$tract_2010, 1, 2)), c("02", "09"))
+  expect_contains(lookup[["counties"]]$fips, unique(crosswalk$county_fips))
+  totals <- tapply(crosswalk$share, crosswalk$tract_2010, sum)
+  expect_equal(as.vector(totals), rep(1, length(totals)), tolerance = 1e-5)
+})
 
 # Age groups (#10) ------------------------------------------------------------
 

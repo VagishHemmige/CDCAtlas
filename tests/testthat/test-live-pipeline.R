@@ -65,13 +65,14 @@ test_that("imputation respects the cap and keeps published counts, 2022", {
 # attr(, "not_allocated") is new and fails the test below. Found by running
 # these tests on 30 October 2026.
 #   - Race or age "Unknown": no Census population for it.
-#   - CDC reports every year on its current county map, so older years don't
-#     match their ACS tract vintage (#30):
-#     - 2017, Connecticut: planning regions have no 2010 tracts and no CDC
-#       population, so suppressed ones can't be estimated either.
-#     - 2017, Alaska: Chugach (02063) and Copper River (02066), created in
-#       2019, have counts but no 2010 tracts; Valdez-Cordova (02261), which
-#       the 2010 tracts belong to, has no CDC population.
+#   - CDC reports every year on its current county map. Since #30, 2010
+#     tracts are moved to the current counties by a crosswalk, so 2017
+#     Connecticut planning regions and Alaska's Chugach (02063) and Copper
+#     River (02066) are allocated. Still left out in 2017:
+#     - Connecticut: suppressed planning regions, which have no CDC
+#       population, so can't be estimated.
+#     - Alaska: Valdez-Cordova (02261), listed with no CDC population; its
+#       2010 tracts now belong to Chugach and Copper River.
 #   - 2022, Alaska: CDC still lists Valdez-Cordova (02261) beside its
 #     successors; it has no CDC population and no 2020 tracts.
 #   - Puerto Rico, by race: suppressed municipio rows can't be estimated
@@ -88,12 +89,10 @@ no_area_or_estimate <- c(
 is_known_left_out <- function(left_out, year) {
   unknown_race <- left_out$reason == "no Census population for this stratum" &
     (left_out$race_ethnicity == "Unknown" | left_out$age == "Unknown")
-  connecticut <- year == 2017 & left_out$reason %in% no_area_or_estimate &
+  connecticut <- year == 2017 & left_out$reason == "suppressed, not estimated" &
     substr(left_out$county_fips, 1, 2) == "09"
-  valdez_cordova_split <- left_out$reason %in% no_area_or_estimate & (
-    (year == 2017 & left_out$county_fips %in% c("02063", "02066", "02261")) |
-      (year == 2022 & left_out$county_fips == "02261")
-  )
+  valdez_cordova_split <- left_out$reason %in% no_area_or_estimate &
+    left_out$county_fips == "02261"
   puerto_rico_race <- left_out$reason == "suppressed, not estimated" &
     substr(left_out$county_fips, 1, 2) == "72" &
     left_out$race_ethnicity != "All races/ethnicities"
@@ -210,14 +209,15 @@ for (pipeline_run in pipeline_runs) {
   })
 }
 
-test_that("2017 leaves out Connecticut and the Valdez-Cordova split, and only them", {
-  left_out <- attr(live_pipeline(2017)$areas, "not_allocated")
-  no_tracts <- left_out[left_out$reason %in% no_area_or_estimate, ]
-  expect_setequal(unique(substr(no_tracts$county_fips, 1, 2)), c("02", "09"))
-  expect_setequal(
-    unique(no_tracts$county_fips[substr(no_tracts$county_fips, 1, 2) == "02"]),
-    c("02063", "02066", "02261")
-  )
+test_that("2017 allocates Connecticut's planning regions, Chugach and Copper River (#30)", {
+  run <- live_pipeline(2017)
+  planning_regions <- sprintf("091%d0", 1:9)
+  expect_contains(unique(run$areas$county_fips), c("02063", "02066"))
+  expect_gt(length(intersect(unique(run$areas$county_fips), planning_regions)), 0)
+
+  left_out <- attr(run$areas, "not_allocated")
+  no_tracts <- left_out$county_fips[left_out$reason == "no ACS tracts for this county"]
+  expect_none(setdiff(no_tracts, "02261"), "counties with no 2010 tracts")
 })
 
 test_that("2022 leaves out Valdez-Cordova (02261) and allocates its successors", {
