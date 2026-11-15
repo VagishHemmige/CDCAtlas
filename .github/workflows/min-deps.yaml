@@ -1,0 +1,72 @@
+# Installs the lowest version DESCRIPTION allows for every package with a
+# version floor (">=" in Imports or Suggests), then runs R CMD check with the
+# offline tests. Shows whether the floors are still true.
+#
+# Runs only when DESCRIPTION changes, or on request: old package versions
+# sometimes stop building, and then the floor or this job needs updating.
+on:
+  push:
+    branches: [main, master]
+    paths: [DESCRIPTION, .github/workflows/min-deps.yaml]
+  pull_request:
+    paths: [DESCRIPTION, .github/workflows/min-deps.yaml]
+  workflow_dispatch:
+
+name: min-deps.yaml
+
+permissions: read-all
+
+jobs:
+  min-deps:
+    runs-on: ubuntu-latest
+
+    name: minimum versions (R oldrel-1)
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'oldrel-1'
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::rcmdcheck, any::desc
+          needs: check
+
+      - name: Install the minimum versions in DESCRIPTION
+        shell: Rscript {0}
+        run: |
+          deps <- desc::desc_get_deps()
+          floors <- deps[
+            deps$type %in% c("Imports", "Suggests") &
+              deps$package != "R" &
+              startsWith(deps$version, ">="),
+          ]
+          floors$wanted <- trimws(sub("^>=", "", floors$version))
+          pak::pkg_install(
+            paste0(floors$package, "@", floors$wanted),
+            upgrade = FALSE
+          )
+          floors$installed <- vapply(
+            floors$package,
+            function(p) as.character(utils::packageVersion(p)),
+            character(1)
+          )
+          print(floors[c("type", "package", "wanted", "installed")], row.names = FALSE)
+          wrong <- floors$installed != floors$wanted
+          if (any(wrong)) {
+            stop("Not at the minimum version: ", toString(floors$package[wrong]))
+          }
+
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          upload-snapshots: true
+          build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'
