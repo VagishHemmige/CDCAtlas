@@ -59,7 +59,9 @@
 <li>
 <code>tests/testthat/</code>: synthetic tests and separately gated live checks.</li>
 <li>
-<code>vignettes/articles/getting-started.Rmd</code> and <code>vignettes/articles/extrapolation.Rmd</code>: website articles (not built with the package) on usage, assumptions and limitations; <code>docs/</code> contains generated site output.</li>
+<code>vignettes/articles/getting-started.Rmd</code> and <code>vignettes/articles/extrapolation.Rmd</code>: website articles (not built with the package) on usage, assumptions and limitations.</li>
+<li>
+<code>.github/workflows/pkgdown.yaml</code>: builds the site on GitHub Actions and publishes it from the <code>gh-pages</code> branch. <code>docs/</code> is local build output and is not committed.</li>
 </ul><p>Read the relevant source and documentation before advising or changing it. <a href="https://github.com/VagishHemmige/CDCAtlas/issues/29" class="external-link">Issue #29</a> records the pipeline design, but some proposed names and arguments differ from the implemented API. <a href="https://github.com/VagishHemmige/CDCAtlas/issues/23" class="external-link">#23</a> discusses validation layers; <a href="https://github.com/VagishHemmige/CDCAtlas/issues/27" class="external-link">#27</a> and <a href="https://github.com/VagishHemmige/CDCAtlas/issues/30" class="external-link">#30</a> record suppression/remainder and geography concerns. Recheck their current discussion and implementation rather than treating every proposal as adopted policy. <a href="https://github.com/VagishHemmige/CDCAtlas/issues/45" class="external-link">#45</a> proposes a source interpretation article; do not claim it exists until it is committed. <a href="https://github.com/VagishHemmige/CDCAtlas/issues/4" class="external-link">#4</a> tracks the currently uncommitted data-generation scripts. Do not invent their contents.</p>
 </div>
 <div class="section level2">
@@ -94,7 +96,7 @@
 </ul></div>
 <div class="section level2">
 <h2 id="documentation-maintenance-and-publication">Documentation maintenance and publication<a class="anchor" aria-label="anchor" href="#documentation-maintenance-and-publication"></a></h2>
-<p>The paths above describe the current layout. Update them when the cleanup in <a href="https://github.com/VagishHemmige/CDCAtlas/issues/20" class="external-link">#20</a> and <a href="https://github.com/VagishHemmige/CDCAtlas/issues/43" class="external-link">#43</a> lands. Air adoption in <a href="https://github.com/VagishHemmige/CDCAtlas/issues/42" class="external-link">#42</a> does not itself authorize unsolicited formatting.</p>
+<p>The paths above describe the current layout. Update them when files move. Air adoption in <a href="https://github.com/VagishHemmige/CDCAtlas/issues/42" class="external-link">#42</a> does not itself authorize unsolicited formatting.</p>
 <p><code>.Rbuildignore</code> excludes AGENTS.md and REVIEWING.md from package builds, not from pkgdown. Both root Markdown files can become unlinked website pages, including search and sitemap entries. <a href="https://github.com/VagishHemmige/CDCAtlas/issues/40" class="external-link">#40</a> currently defers the publication fix. Do not claim these files are unpublished or private. A publishing change requires a separately reviewed build/deployment solution; search exclusion alone does not remove the pages.</p>
 </div>
 </div>

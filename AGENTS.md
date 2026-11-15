@@ -47,8 +47,10 @@ AtlasPlus endpoints, with a separate modeled-estimation pipeline:
 - `tests/testthat/`: synthetic tests and separately gated live checks.
 - `vignettes/articles/getting-started.Rmd` and
   `vignettes/articles/extrapolation.Rmd`: website articles (not built
-  with the package) on usage, assumptions and limitations; `docs/`
-  contains generated site output.
+  with the package) on usage, assumptions and limitations.
+- `.github/workflows/pkgdown.yaml`: builds the site on GitHub Actions
+  and publishes it from the `gh-pages` branch. `docs/` is local build
+  output and is not committed.
 
 Read the relevant source and documentation before advising or changing
 it. [Issue \#29](https://github.com/VagishHemmige/CDCAtlas/issues/29)
@@ -218,10 +220,8 @@ technical standards.
 
 ## Documentation maintenance and publication
 
-The paths above describe the current layout. Update them when the
-cleanup in [\#20](https://github.com/VagishHemmige/CDCAtlas/issues/20)
-and [\#43](https://github.com/VagishHemmige/CDCAtlas/issues/43) lands.
-Air adoption in
+The paths above describe the current layout. Update them when files
+move. Air adoption in
 [\#42](https://github.com/VagishHemmige/CDCAtlas/issues/42) does not
 itself authorize unsolicited formatting.
 
