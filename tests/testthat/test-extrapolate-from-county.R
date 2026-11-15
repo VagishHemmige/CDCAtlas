@@ -424,6 +424,87 @@ test_that("the no-county total is announced", {
   expect_snapshot(invisible(extrapolate_from_county(county, no_county = "spread")))
 })
 
+# Missing ACS populations (#52) ------------------------------------------------
+# A missing estimate or variable row is not a zero: the county stratum it
+# belongs to is left out, not allocated over the remaining areas.
+
+acs_missing <- function(geoid, variables, drop = FALSE) {
+  acs <- fake_acs()
+  hit <- acs$GEOID %in% geoid & acs$variable %in% variables
+  if (drop) acs[!hit, ] else {
+    acs$estimate[hit] <- NA
+    acs
+  }
+}
+
+left_out_reasons <- function(tracts) {
+  na <- attr(tracts, "not_allocated")
+  unique(na[c("county_fips", "reason")])
+}
+
+test_that("a missing age band leaves its county out, with a warning", {
+  acs <- acs_missing("01001000100", "B01001_005")
+  expect_snapshot(tracts <- run_extrapolation(NULL, acs = acs))
+
+  expect_equal(unique(tracts$county_fips), "01003")
+  expect_equal(
+    left_out_reasons(tracts),
+    data.frame(county_fips = "01001", reason = "missing ACS population"),
+    ignore_attr = TRUE
+  )
+})
+
+test_that("an area with every band missing leaves its county out", {
+  bands <- sprintf("B01001_%03d", c(1:49))
+  acs <- acs_missing("01001000200", bands)
+  tracts <- suppressWarnings(run_extrapolation(NULL, acs = acs))
+
+  expect_equal(unique(tracts$county_fips), "01003")
+})
+
+test_that("a missing variable row leaves its county out", {
+  acs <- acs_missing("01003000100", "B01001_030", drop = TRUE)
+  tracts <- suppressWarnings(run_extrapolation(NULL, acs = acs))
+
+  expect_equal(unique(tracts$county_fips), "01001")
+  expect_equal(unique(left_out_reasons(tracts)$reason), "missing ACS population")
+})
+
+test_that("a real zero is still a zero, not missing", {
+  acs <- fake_acs()
+  acs$estimate[acs$GEOID == "01001000100" & acs$variable == "B01001_005"] <- 0
+
+  expect_no_warning(tracts <- run_extrapolation(NULL, acs = acs))
+  expect_setequal(unique(tracts$county_fips), c("01001", "01003"))
+})
+
+test_that("race scaling needs B01001_001", {
+  acs <- acs_missing("01001000100", "B01001_001")
+  tracts <- suppressWarnings(run_extrapolation("race", acs = acs))
+
+  expect_equal(unique(tracts$county_fips), "01003")
+})
+
+test_that("an empty result is still a result when every county is left out", {
+  acs <- acs_missing(fake_tracts$geoid, "B01001_005")
+  for (no_county in c("report", "spread")) {
+    tracts <- suppressWarnings(
+      run_extrapolation(NULL, acs = acs, no_county = no_county)
+    )
+    expect_equal(nrow(tracts), 0)
+    expect_true("area_cases" %in% names(tracts))
+    expect_setequal(attr(tracts, "not_allocated")$county_fips, c("01001", "01003"))
+  }
+})
+
+test_that("missing_population = 'error' stops instead", {
+  acs <- acs_missing("01001000100", "B01001_005")
+  expect_snapshot(
+    error = TRUE,
+    run_extrapolation(NULL, acs = acs, missing_population = "error")
+  )
+})
+
 # Rows that can't be allocated ---------------------------------------------------------
 
 test_that("county counts with no matching tracts are left out with a warning", {

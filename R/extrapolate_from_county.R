@@ -82,6 +82,15 @@
 #'     and listed in `attr(result, "not_allocated")`. Their cases count towards
 #'     the state's remainder with no county.
 #'   * `"error"`: stop with an error.
+#' @param missing_population What to do when the ACS population is missing
+#'   (an `NA` estimate, or a variable the Census didn't return) for some
+#'   area of a county:
+#'   * `"leave out"` (default): leave that county stratum out, with a warning,
+#'     and list it in `attr(result, "not_allocated")` with reason `"missing
+#'     ACS population"`. Sharing over the other areas would move cases.
+#'   * `"error"`: stop instead.
+#'
+#'   A population of 0 is not missing; see `empty_strata`.
 #' @param acs_year The last year of the ACS 5-year estimates. `NULL` (default)
 #'   uses each data year. A single year can be given only if `x` has one year.
 #' @param weights Not yet supported; for sub-county weights later (#1).
@@ -172,12 +181,14 @@ extrapolate_from_county <- function(
   race_table = c("B03002", "B01001"),
   unknown_race = c("report", "redistribute"),
   unestimated = c("leave out", "error"),
+  missing_population = c("leave out", "error"),
   acs_year = NULL,
   weights = NULL
 ) {
   call <- rlang::current_env()
   .check_county_data(x, arg = "x", call = call)
   unestimated <- rlang::arg_match(unestimated)
+  missing_population <- rlang::arg_match(missing_population)
   .check_imputed(x, arg = "x", call = call, unestimated = unestimated)
   to <- rlang::arg_match(to)
   no_county <- rlang::arg_match(no_county)
@@ -240,13 +251,18 @@ extrapolate_from_county <- function(
   }
   areas <- dplyr::bind_rows(lapply(pieces, `[[`, "areas"))
   not_allocated <- dplyr::bind_rows(lapply(pieces, `[[`, "not_allocated"))
+  missing_pop <- .leave_out_missing_population(
+    areas, missing_population, call
+  )
+  areas <- missing_pop$areas
+  not_allocated <- dplyr::bind_rows(not_allocated, missing_pop$not_allocated)
 
-  areas$county_cases_spread <- 0
+  areas$county_cases_spread <- rep(0, nrow(areas))
   if (no_county == "spread") {
     areas <- .spread_no_county(areas, report, empty_strata, spread_by)
   }
   areas <- .allocate(areas, empty_strata)
-  areas$area_type <- to
+  areas$area_type <- rep(to, nrow(areas))
 
   out <- tibble::as_tibble(areas[c(
     "year", "acs_year", "area_type", "geoid", "area_name", "county_fips",
@@ -537,22 +553,39 @@ extrapolate_from_county <- function(
     estimate = acs$estimate
   )
 
-  # Sum of each area's estimates for the variables in `table`, weighted.
+  # Sum of each area's estimates for the variables in `table`, weighted. A
+  # missing estimate, or a variable row the area lacks, makes the sum NA
+  # rather than an undercount (#52).
   weighted_sum <- function(table, by_stratum = FALSE) {
+    table <- table[table$weight != 0, ]
     rows <- match(acs$variable, table$variable)
     keep <- !is.na(rows)
-    data.frame(
+    needed <- table |>
+      dplyr::summarize(
+        n_needed = dplyr::n(),
+        .by = if (by_stratum) "stratum" else character()
+      )
+    sums <- data.frame(
       geoid = acs$geoid[keep],
       stratum = if (by_stratum) table$stratum[rows[keep]] else NA_character_,
       value = acs$estimate[keep] * table$weight[rows[keep]]
     ) |>
       dplyr::summarize(
-        value = sum(.data$value, na.rm = TRUE),
+        value = sum(.data$value),
+        n_found = dplyr::n(),
         .by = c("geoid", "stratum")
       )
+    n_needed <- if (by_stratum) {
+      needed$n_needed[match(sums$stratum, needed$stratum)]
+    } else {
+      needed$n_needed
+    }
+    sums$value[sums$n_found < n_needed] <- NA_real_
+    sums[c("geoid", "stratum", "value")]
   }
+  # An area with no rows at all for these variables has a missing value too.
   lookup_value <- function(sums, geoid) {
-    dplyr::coalesce(sums$value[match(geoid, sums$geoid)], 0)
+    sums$value[match(geoid, sums$geoid)]
   }
 
   areas <- unique(acs[c("geoid", "area_name")])
@@ -564,13 +597,10 @@ extrapolate_from_county <- function(
   in_stratum <- weighted_sum(denominators, by_stratum = TRUE)
   strata <- unique(denominators["stratum"])
   out <- merge(areas, strata, by = NULL)
-  out$area_population_acs <- dplyr::coalesce(
-    in_stratum$value[match(
-      .row_key(out, c("geoid", "stratum")),
-      .row_key(in_stratum, c("geoid", "stratum"))
-    )],
-    0
-  )
+  out$area_population_acs <- in_stratum$value[match(
+    .row_key(out, c("geoid", "stratum")),
+    .row_key(in_stratum, c("geoid", "stratum"))
+  )]
 
   if (identical(stratify_by, "race") && race_table == "B03002" &&
     ages == "13+") {
@@ -578,7 +608,7 @@ extrapolate_from_county <- function(
     all_ages <- acs[acs$variable == "B01001_001", c("geoid", "estimate")]
     names(all_ages)[2] <- "value"
     total_all <- lookup_value(all_ages, out$geoid)
-    share_13 <- ifelse(total_all > 0, total_13 / total_all, 0)
+    share_13 <- dplyr::if_else(total_all > 0, total_13 / total_all, 0)
     out$area_population_acs <- out$area_population_acs * share_13
   }
 
@@ -639,6 +669,48 @@ extrapolate_from_county <- function(
 }
 
 .county_groups <- c("county_fips", .atlas_keys)
+
+# A county stratum where any area's ACS population is missing (an NA
+# estimate or a missing variable row) can't be shared fairly: sharing over the
+# other areas would move cases. It is left out and listed, or stops the run
+# (#52). Real zeros are not missing.
+.leave_out_missing_population <- function(areas, missing_population, call) {
+  missing <- is.na(areas$area_population_acs) |
+    is.na(areas$area_total_population)
+  if (!any(missing)) {
+    return(list(areas = areas, not_allocated = NULL))
+  }
+  keys <- .row_key(areas, .county_groups)
+  affected <- keys %in% keys[missing]
+  rows <- areas[affected & !duplicated(keys), ]
+  counties <- unique(paste0(rows$county_name, " (", rows$county_fips, ")"))
+  if (missing_population == "error") {
+    cli::cli_abort(
+      c(
+        "The ACS population is missing for some areas of
+         {length(counties)} count{?y/ies}.",
+        "x" = "For example {.val {utils::head(counties, 3)}}.",
+        "i" = "Use {.code missing_population = \"leave out\"} to leave
+               those county strata out instead."
+      ),
+      call = call
+    )
+  }
+  cli::cli_warn(c(
+    "{nrow(rows)} county stratum row{?s} in {length(counties)}
+     count{?y/ies} left out: the ACS population is missing for some of
+     {?its/their} areas.",
+    "i" = "For example {.val {utils::head(counties, 3)}}.",
+    "i" = "See {.code attr(x, \"not_allocated\")}."
+  ))
+  pop_columns <- c(
+    "geoid", "area_name", "stratum", "area_population_acs",
+    "area_total_population", "acs_year"
+  )
+  not_allocated <- rows[setdiff(names(rows), pop_columns)]
+  not_allocated$reason <- "missing ACS population"
+  list(areas = areas[!affected, ], not_allocated = not_allocated)
+}
 
 # Share each county's race "Unknown" cases across its known race groups in
 # proportion to their counts, within indicator and year. Unknown rows that are
