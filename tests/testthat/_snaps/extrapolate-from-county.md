@@ -31,6 +31,17 @@
       * HIV diagnoses 2022: 321
       * HIV prevalence 2022: 421
 
+# spreading stops when `x` lacks some of a state's counties (#54)
+
+    Code
+      run_extrapolation(county = one_county, county_totals = full, no_county = "spread")
+    Condition
+      Error in `extrapolate_from_county()`:
+      ! `no_county = "spread"` needs every county CDC reports in each state of `x`.
+      x `x` is missing 1 county in state "01", for example "01003".
+      i Their cases would be spread to the counties in `x` as if they had no county.
+      i Run `extrapolate_from_county()` on whole states and filter the result, or use `no_county = "report"`.
+
 # the no-county total is announced
 
     Code
