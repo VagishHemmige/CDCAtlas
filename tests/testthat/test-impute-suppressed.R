@@ -52,6 +52,56 @@ test_that("zero fills suppressed counties with 0 and makes no request", {
   expect_equal(unique(out$cases_source[out$fips == "01003"]), "zero")
 })
 
+test_that("only rows marked 'Data suppressed' are filled in (#107)", {
+  local_fake_sources()
+  statuses <- list("Not Suppressed", "No reported cases", "CDC code 999", NA)
+  for (status in statuses) {
+    county <- fake_county_atlas(suppressed = "01003")
+    rows <- county$fips == "01003"
+    county$data_status <- factor(
+      ifelse(rows, status, as.character(county$data_status))
+    )
+    for (method in c("state_rate", "zero")) {
+      out <- suppressWarnings(impute_suppressed(county, method = method))
+      label <- paste(status, method)
+      expect_equal(
+        out$cases[out$fips == "01003"],
+        c(NA_real_, NA),
+        label = label
+      )
+      expect_equal(
+        unique(out$cases_source[out$fips == "01003"]),
+        "not estimated",
+        label = label
+      )
+      expect_equal(out$cases[out$fips == "01001"], c(11, 111), label = label)
+    }
+  }
+})
+
+test_that("a missing count that isn't suppression gets a warning naming its status", {
+  county <- fake_county_atlas(suppressed = "01003")
+  county$data_status <- factor(ifelse(
+    county$fips == "01003",
+    "No reported cases",
+    as.character(county$data_status)
+  ))
+  expect_snapshot(out <- impute_suppressed(county, method = "zero"))
+})
+
+test_that("a published zero stays zero whatever its status", {
+  county <- fake_county_atlas()
+  county$cases[county$fips == "01003"] <- 0
+  county$data_status <- factor(ifelse(
+    county$fips == "01003",
+    "No reported cases",
+    as.character(county$data_status)
+  ))
+  out <- impute_suppressed(county, method = "zero")
+  expect_equal(out$cases[out$fips == "01003"], c(0, 0))
+  expect_equal(unique(out$cases_source), "published")
+})
+
 test_that("rows marked 'Data not available' with no count are kept by default (#110)", {
   county <- fake_county_atlas()
   county$cases[county$fips == "01003"] <- NA

@@ -156,10 +156,10 @@
   if (unestimated == "error" && any(not_estimated)) {
     cli::cli_abort(
       c(
-        "{.arg {arg}} has {sum(not_estimated)} suppressed row{?s} with no
-         count.",
-        "i" = "These are suppressed rows {.fn impute_suppressed} could not
-               estimate (no state rate or county population).",
+        "{.arg {arg}} has {sum(not_estimated)} row{?s} with no count.",
+        "i" = "These are rows {.fn impute_suppressed} could not estimate (no
+               state rate or county population, or not marked {.val Data
+               suppressed}).",
         "i" = "Remove them, use {.code impute_suppressed(unestimated =
                \"zero\")}, or use {.code unestimated = \"leave out\"}."
       ),

@@ -750,6 +750,23 @@ test_that("suppressed rows impute_suppressed() couldn't estimate are left out", 
   expect_equal(check$area_cases_sum, check$county_cases, tolerance = 1e-8)
 })
 
+test_that("rows with no count that weren't suppressed are left out with their own reason (#107)", {
+  county <- fake_county_atlas(suppressed = "01003")
+  county$data_status <- factor(ifelse(
+    county$fips == "01003",
+    "No reported cases",
+    as.character(county$data_status)
+  ))
+  local_fake_sources()
+  county <- suppressWarnings(impute_suppressed(county))
+
+  tracts <- suppressMessages(extrapolate_from_county(county))
+  left_out <- attr(tracts, "not_allocated")
+  expect_equal(left_out$county_fips, c("01003", "01003"))
+  expect_equal(unique(left_out$reason), "no count, not marked suppressed")
+  expect_equal(unique(tracts$county_fips), "01001")
+})
+
 test_that("unestimated = 'error' refuses rows impute_suppressed() couldn't estimate", {
   county <- fake_county_atlas(suppressed = "01003")
   county$population[county$fips == "01003"] <- NA

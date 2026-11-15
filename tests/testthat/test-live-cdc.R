@@ -171,6 +171,24 @@ test_that("stored codes still match CDC's code table", {
   }
 })
 
+test_that("CDC has added no codes beyond the known ones (#118)", {
+  # A code CDC adds (a year, a data status, a jurisdiction) isn't in the
+  # stored table until data-raw/DATASET.R is rerun. Known additions, with why
+  # they aren't stored yet:
+  # - 548: 2026, held until 2027.
+  # - 414: "No reported cases", handled by a supplement in the code (#106).
+  # - 8471: Marshall Islands, no county data; for the next rebuild.
+  # Anything else is new and should be looked at.
+  known <- c(548, 414, 8471)
+  current <- .atlas_init_data()$varvals
+  added <- current[!current$id %in% c(varvals$id, known), ]
+  expect_equal(
+    paste(added$id, added$name, sep = " ", collapse = "; "),
+    "",
+    label = "codes CDC added"
+  )
+})
+
 # CDC's set-up data list, for each indicator, every combination of codes
 # AtlasPlus offers; `data_structure` names the variable type in each column
 # (7 is age, 50 is the location).
@@ -203,6 +221,32 @@ test_that("each disease's age codes are ones CDC offers for its indicators (#11)
     }
     for (id in indicator_ids(disease)) {
       expect_contains(offered$code[offered$indicator == id], codes)
+    }
+  }
+})
+
+test_that("each disease's race codes are exactly the ones CDC offers (#105)", {
+  # Both directions: every code sent is offered, and every race group CDC
+  # offers is sent, so a group can't be silently left out.
+  columns <- .atlas_init_data()$combo$data_structure
+  if (!"5" %in% columns) {
+    fail(paste("No race column (5) in combo; columns:", toString(columns)))
+  }
+  offered <- cdc_offered("5")
+  race_ids <- varvals$id[varvals$vtid == 5]
+  for (disease in setdiff(
+    unique(.disease_indicators()$disease),
+    "congenital syphilis"
+  )) {
+    sent <- strsplit(
+      .build_payload(disease, "state", 2022, stratify_by = "race")$VariableIDs,
+      ","
+    )[[1]]
+    sent <- intersect(as.integer(sent), race_ids)
+    for (id in indicator_ids(disease)) {
+      cdc <- setdiff(offered$code[offered$indicator == id], 551)
+      expect_equal(sort(sent), sort(cdc), label = paste(disease, id))
+      expect_contains(offered$code[offered$indicator == id], 551)
     }
   }
 })
