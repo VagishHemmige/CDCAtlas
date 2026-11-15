@@ -24,8 +24,9 @@
 #'     the total. The report is kept in `attr(result, "no_county_cases")`.
 #'   * `"spread"`: shared across the state's counties in `x` by their ACS
 #'     population in the same stratum, then across areas as usual. `x` must
-#'     hold every county CDC reports in each of its states (counties CDC lists
-#'     as "Data not available" aside), or the counties left out would have
+#'     hold every county CDC reports in each of its states, for each
+#'     indicator, year and stratum it has (rows CDC lists as "Data not
+#'     available" with no count aside), or the counties left out would have
 #'     their cases spread too; to study part of a state, spread first and
 #'     filter the result. Checking needs CDC's county table, which comes from
 #'     the cache when `x` was downloaded in this session. Negative
@@ -304,14 +305,21 @@ extrapolate_from_county <- function(
 # no_county = "spread" shares each state's remainder (state total minus the
 # counties in `x`) across the counties in `x`. If `x` leaves out counties CDC
 # reports, their own cases would be counted in the remainder and moved to the
-# counties kept (#54). Counties CDC lists as "Data not available" don't count.
+# counties kept (#54). Checked within each state, indicator, year and stratum
+# that `x` has; rows CDC lists as "Data not available" with no count don't
+# count, as impute_suppressed() drops those.
 .check_whole_states <- function(x, call) {
+  with_state <- function(df) {
+    df$state_fips <- substr(as.character(df$fips), 1, 2)
+    df
+  }
+  x <- with_state(x)
+  cdc <- with_state(.fetch_county_totals(x))
+  groups <- c("state_fips", .atlas_keys)
+  no_count <- is.na(cdc$cases) &
+    as.character(cdc$data_status) == "Data not available"
+  cdc <- cdc[!no_count & .row_key(cdc, groups) %in% .row_key(x, groups), ]
   keys <- c("fips", .atlas_keys)
-  cdc <- .fetch_county_totals(x)
-  x_states <- unique(substr(as.character(x$fips), 1, 2))
-  cdc <- cdc[substr(as.character(cdc$fips), 1, 2) %in% x_states &
-    as.character(cdc$data_status) != "Data not available", ]
-  cdc <- cdc[.row_key(cdc, .atlas_keys) %in% .row_key(x, .atlas_keys), ]
   missing <- cdc[!.row_key(cdc, keys) %in% .row_key(x, keys), ]
   if (nrow(missing) == 0) {
     return(invisible())

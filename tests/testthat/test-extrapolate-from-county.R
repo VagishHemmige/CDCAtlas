@@ -343,6 +343,41 @@ test_that("counties CDC lists as not available don't count as missing (#54)", {
   expect_setequal(unique(tracts$county_fips), c("01001", "01003"))
 })
 
+test_that("a 'Data not available' county with a count still counts (#54)", {
+  county <- fake_county_atlas()
+  labelled_unavailable <- county
+  labelled_unavailable$data_status[labelled_unavailable$fips == "01003"] <-
+    "Data not available"
+  one_county <- county[county$fips == "01001", ]
+
+  expect_error(
+    run_extrapolation(
+      county = one_county, county_totals = labelled_unavailable,
+      no_county = "spread"
+    ),
+    class = "rlang_error",
+    regexp = "01003"
+  )
+})
+
+test_that("each state is checked only for its own years (#54)", {
+  two <- two_state_atlas()
+  y2017 <- two$county
+  y2017$year <- 2017
+  both_years <- rbind(two$county, y2017)
+  state_both <- rbind(two$state, transform(two$state, year = 2017))
+  # State 01 in 2022 and state 02 in 2017, each complete.
+  x <- both_years[
+    (substr(both_years$fips, 1, 2) == "01" & both_years$year == 2022) |
+      (substr(both_years$fips, 1, 2) == "02" & both_years$year == 2017),
+  ]
+
+  expect_no_error(suppressWarnings(run_extrapolation(
+    county = x, state = state_both, acs = two$acs,
+    county_totals = both_years, no_county = "spread"
+  )))
+})
+
 test_that("the default report mode doesn't check for missing counties (#54)", {
   full <- fake_county_atlas()
   one_county <- full[full$fips == "01001", ]
