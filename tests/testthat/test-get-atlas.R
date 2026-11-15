@@ -31,10 +31,13 @@ test_that("the latest year comes from CDC's code table", {
 
 test_that("years up to the latest one in the code table are accepted", {
   payloads <- NULL
-  local_mocked_bindings(.request_atlas_all = function(p) {
-    payloads <<- p
-    fake_county_atlas()
-  })
+  local_mocked_bindings(
+    .request_atlas_all = function(p) {
+      payloads <<- p
+      fake_county_atlas()
+    },
+    .warn_missing_indicators = function(...) invisible()
+  )
   get_atlas("hiv", "state", .latest_atlas_year())
   ids <- as.numeric(strsplit(payloads[[1]]$VariableIDs, ",")[[1]])
   expect_contains(ids, .latest_atlas_year() - 1478)
@@ -71,10 +74,12 @@ test_that("geographies CDC reports for a disease are requested", {
     requested <<- requested + 1
     fake_county_atlas()
   })
-  get_atlas("hiv", "msa", 2022)
-  get_atlas("estimate", "county", 2022)
-  get_atlas("tuberculosis", "county", 2022)
-  get_atlas("hepatitis", "state", 2022)
+  suppressWarnings({
+    get_atlas("hiv", "msa", 2022)
+    get_atlas("estimate", "county", 2022)
+    get_atlas("tuberculosis", "county", 2022)
+    get_atlas("hepatitis", "state", 2022)
+  })
   expect_equal(requested, 4)
 })
 
@@ -88,4 +93,34 @@ test_that("congenital syphilis can't be stratified", {
     error = TRUE,
     get_atlas("congenital syphilis", "state", 2022, stratify_by = "sex")
   )
+})
+
+# Missing indicators (#116) -------------------------------------------------------
+
+test_that("a response missing a requested indicator warns, naming it", {
+  # Like HIV in 2025: CDC returned diagnoses but not prevalence.
+  local_mocked_bindings(
+    .request_atlas_all = function(payloads) {
+      fake_county_atlas(indicators = "HIV diagnoses", years = 2024:2025) |>
+        rbind(fake_county_atlas(indicators = "HIV prevalence", years = 2024))
+    }
+  )
+  expect_warning(get_atlas("hiv", "county", 2024:2025), "HIV prevalence")
+  expect_snapshot(out <- get_atlas("hiv", "county", 2024:2025))
+  expect_equal(nrow(out), 6)
+})
+
+test_that("a complete response doesn't warn", {
+  local_mocked_bindings(
+    .request_atlas_all = function(payloads) fake_county_atlas()
+  )
+  expect_no_warning(get_atlas("hiv", "county", 2022))
+})
+
+test_that("an indicator whose rows are all suppressed is not reported missing", {
+  # Its rows are there with no counts; that is suppression, not absence.
+  response <- fake_county_atlas(suppressed = c("01001", "01003"))
+  local_mocked_bindings(.request_atlas_all = function(payloads) response)
+  expect_no_warning(out <- get_atlas("hiv", "county", 2022))
+  expect_identical(out, response)
 })

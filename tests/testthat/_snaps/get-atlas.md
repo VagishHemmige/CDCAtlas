@@ -103,3 +103,13 @@
       ! CDC doesn't report congenital syphilis by race, sex or age.
       i Use `stratify_by = NULL`.
 
+# a response missing a requested indicator warns, naming it
+
+    Code
+      out <- get_atlas("hiv", "county", 2024:2025)
+    Condition
+      Warning:
+      CDC returned no rows for 1 requested indicator-year:
+      * HIV prevalence 2025
+      i CDC may not have released them yet, or may not offer them for this geography and stratification.
+
