@@ -46,3 +46,7 @@ articles:
     navbar: ~
     contents:
       - articles/extrapolation
+  - title: "About the data"
+    navbar: ~
+    contents:
+      - articles/about-atlasplus-data

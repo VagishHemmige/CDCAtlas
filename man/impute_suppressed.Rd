@@ -121,5 +121,7 @@ county_zero <- impute_suppressed(
 }
 \seealso{
 \code{\link[=no_county_cases]{no_county_cases()}} for cases in state totals that no county
-accounts for; \code{\link[=extrapolate_from_county]{extrapolate_from_county()}} for the next step.
+accounts for; \code{\link[=extrapolate_from_county]{extrapolate_from_county()}} for the next step; the article
+\href{https://vagishhemmige.github.io/CDCAtlas/articles/about-atlasplus-data.html}{"About CDC AtlasPlus data"}
+for CDC's suppression rules.
 }

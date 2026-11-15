@@ -175,7 +175,9 @@
 #' Congenital syphilis isn't supported: its rates are per 100,000 live
 #' births, so Census populations are the wrong denominator.
 #'
-#' @seealso [impute_suppressed()], [no_county_cases()].
+#' @seealso [impute_suppressed()], [no_county_cases()]; the article
+#'   ["About CDC AtlasPlus data"](https://vagishhemmige.github.io/CDCAtlas/articles/about-atlasplus-data.html)
+#'   on CDC's county map and the Census denominators.
 #'
 #' @examples
 #' \dontrun{

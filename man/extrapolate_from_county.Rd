@@ -239,5 +239,7 @@ attr(tracts, "no_county_cases")
 
 }
 \seealso{
-\code{\link[=impute_suppressed]{impute_suppressed()}}, \code{\link[=no_county_cases]{no_county_cases()}}.
+\code{\link[=impute_suppressed]{impute_suppressed()}}, \code{\link[=no_county_cases]{no_county_cases()}}; the article
+\href{https://vagishhemmige.github.io/CDCAtlas/articles/about-atlasplus-data.html}{"About CDC AtlasPlus data"}
+on CDC's county map and the Census denominators.
 }

@@ -18,8 +18,8 @@ A tibble with one row per state, indicator, year and stratum:
 \item{state_cases}{The state total published by CDC.}
 \item{published_cases}{Sum of the published county counts in \code{x}.}
 \item{unpublished_cases}{\code{state_cases - published_cases}: cases in
-suppressed counties and cases with no county together (the figures in
-#27).}
+suppressed counties together with the remainder no county accounts
+for (the figures in #27).}
 \item{imputed_cases}{Sum of the counts \code{\link[=impute_suppressed]{impute_suppressed()}} filled in;
 \code{NA} if \code{x} hasn't been imputed.}
 \item{no_county_cases}{\code{unpublished_cases - imputed_cases}. Can be
@@ -31,17 +31,20 @@ Every column computed from \code{state_cases} is \code{NA} if CDC suppressed the
 state total.
 }
 \description{
-A state's total in CDC AtlasPlus includes cases with no valid county of
-residence, so it is usually larger than the sum of its counties.
-\code{no_county_cases()} compares each state total with its counties. Run it
-after \code{\link[=impute_suppressed]{impute_suppressed()}} for the remainder with no county; on county data
-straight from \code{\link[=get_atlas]{get_atlas()}} it reports only the gap left by published
-counts.
+A state's total in CDC AtlasPlus is usually larger than the sum of its
+counties. \code{no_county_cases()} compares each state total with the county
+counts supplied. Run it after \code{\link[=impute_suppressed]{impute_suppressed()}} for the remainder that
+no county accounts for; on county data straight from \code{\link[=get_atlas]{get_atlas()}} it
+reports only the gap left by published counts.
 
-Most of the gap is cases with no county, not suppressed counties (#27), so
-it can't be used to fill in suppressed counties. \code{\link[=extrapolate_from_county]{extrapolate_from_county()}}
-leaves these cases out by default; \code{no_county = "spread"} shares them across
-the state's counties instead.
+The remainder is a difference, not a count of identified cases. One likely
+explanation is cases whose county of residence is unknown or not released,
+but CDC's documentation doesn't say so; it also includes any counties left
+out of \code{x}. In 2022 the gap was far larger than suppressed counties could
+hold at 1-4 cases each (#27), so it can't be used to fill them in.
+\code{\link[=extrapolate_from_county]{extrapolate_from_county()}} leaves the remainder out by default;
+\code{no_county = "spread"} shares it across the state's counties instead. See
+the "About CDC AtlasPlus data" article.
 }
 \details{
 Downloads the state data matching \code{x} (same diseases, years and
@@ -60,5 +63,7 @@ no_county_cases(county)
 
 }
 \seealso{
-\code{\link[=impute_suppressed]{impute_suppressed()}}, \code{\link[=extrapolate_from_county]{extrapolate_from_county()}}.
+\code{\link[=impute_suppressed]{impute_suppressed()}}, \code{\link[=extrapolate_from_county]{extrapolate_from_county()}}; the article
+\href{https://vagishhemmige.github.io/CDCAtlas/articles/about-atlasplus-data.html}{"About CDC AtlasPlus data"}
+on why state totals and county counts differ.
 }

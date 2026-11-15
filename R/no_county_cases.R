@@ -1,17 +1,20 @@
 #' Cases in state totals that no county accounts for
 #'
 #' @description
-#' A state's total in CDC AtlasPlus includes cases with no valid county of
-#' residence, so it is usually larger than the sum of its counties.
-#' `no_county_cases()` compares each state total with its counties. Run it
-#' after [impute_suppressed()] for the remainder with no county; on county data
-#' straight from [get_atlas()] it reports only the gap left by published
-#' counts.
+#' A state's total in CDC AtlasPlus is usually larger than the sum of its
+#' counties. `no_county_cases()` compares each state total with the county
+#' counts supplied. Run it after [impute_suppressed()] for the remainder that
+#' no county accounts for; on county data straight from [get_atlas()] it
+#' reports only the gap left by published counts.
 #'
-#' Most of the gap is cases with no county, not suppressed counties (#27), so
-#' it can't be used to fill in suppressed counties. [extrapolate_from_county()]
-#' leaves these cases out by default; `no_county = "spread"` shares them across
-#' the state's counties instead.
+#' The remainder is a difference, not a count of identified cases. One likely
+#' explanation is cases whose county of residence is unknown or not released,
+#' but CDC's documentation doesn't say so; it also includes any counties left
+#' out of `x`. In 2022 the gap was far larger than suppressed counties could
+#' hold at 1-4 cases each (#27), so it can't be used to fill them in.
+#' [extrapolate_from_county()] leaves the remainder out by default;
+#' `no_county = "spread"` shares it across the state's counties instead. See
+#' the "About CDC AtlasPlus data" article.
 #'
 #' @param x County data from `get_atlas(geography = "county")`, usually after
 #'   [impute_suppressed()].
@@ -23,8 +26,8 @@
 #'     \item{state_cases}{The state total published by CDC.}
 #'     \item{published_cases}{Sum of the published county counts in `x`.}
 #'     \item{unpublished_cases}{`state_cases - published_cases`: cases in
-#'       suppressed counties and cases with no county together (the figures in
-#'       #27).}
+#'       suppressed counties together with the remainder no county accounts
+#'       for (the figures in #27).}
 #'     \item{imputed_cases}{Sum of the counts [impute_suppressed()] filled in;
 #'       `NA` if `x` hasn't been imputed.}
 #'     \item{no_county_cases}{`unpublished_cases - imputed_cases`. Can be
@@ -43,7 +46,9 @@
 #' filtering `x`, and suppressed rows [impute_suppressed()] couldn't estimate
 #' (marked `cases_source = "not estimated"`), which count as 0 imputed cases.
 #'
-#' @seealso [impute_suppressed()], [extrapolate_from_county()].
+#' @seealso [impute_suppressed()], [extrapolate_from_county()]; the article
+#'   ["About CDC AtlasPlus data"](https://vagishhemmige.github.io/CDCAtlas/articles/about-atlasplus-data.html)
+#'   on why state totals and county counts differ.
 #'
 #' @examples
 #' \dontrun{
