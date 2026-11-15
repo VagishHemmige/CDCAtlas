@@ -18,7 +18,8 @@ get_atlas(
 Multiple diseases are not currently supported in a single request.}
 
 \item{geography}{Character scalar. One of \code{"national"}, \code{"region"} (HIV
-estimates only), \code{"state"}, \code{"county"}, or \code{"msa"}.}
+estimates only), \code{"state"}, \code{"county"} (not hepatitis or congenital
+syphilis), or \code{"msa"} (\code{"hiv"} only), as AtlasPlus offers them.}
 
 \item{year}{Integer vector of years, from 2000 to the latest year in the
 package's copy of CDC's code table (2025 in this version). CDC lists a year

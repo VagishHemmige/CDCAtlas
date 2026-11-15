@@ -155,25 +155,47 @@ test_that("stored codes still match CDC's code table", {
   }
 })
 
-test_that("each disease's age codes are ones CDC offers for its indicators (#11)", {
-  # CDC's set-up data list, for each indicator, every combination of codes
-  # AtlasPlus offers; `data_structure` names the variable type in each column.
+# CDC's set-up data list, for each indicator, every combination of codes
+# AtlasPlus offers; `data_structure` names the variable type in each column
+# (7 is age, 50 is the location).
+cdc_offered <- function(variable_type) {
   combo <- .atlas_init_data()$combo
-  age_column <- match("7", combo$data_structure)
-  offered <- do.call(rbind, lapply(combo$diseases$combinations, function(m) {
+  column <- match(variable_type, combo$data_structure)
+  do.call(rbind, lapply(combo$diseases$combinations, function(m) {
     m <- if (is.matrix(m)) m else do.call(rbind, m)
-    data.frame(indicator = m[, 1], age = m[, age_column])
+    data.frame(indicator = m[, 1], code = m[, column])
   }))
+}
+
+indicator_ids <- function(disease) {
   lookup <- .disease_indicators()
-  for (disease in unique(lookup$disease)) {
-    ids <- varvals$id[varvals$vtid == 1 &
-      varvals$name %in% lookup$indicator[lookup$disease == disease]]
+  varvals$id[varvals$vtid == 1 &
+    varvals$name %in% lookup$indicator[lookup$disease == disease]]
+}
+
+test_that("each disease's age codes are ones CDC offers for its indicators (#11)", {
+  offered <- cdc_offered("7")
+  for (disease in unique(.disease_indicators()$disease)) {
     codes <- .atlas_age_codes(disease, by_age = FALSE)
     if (disease != "congenital syphilis") {
       codes <- c(codes, .atlas_age_codes(disease, by_age = TRUE))
     }
-    for (id in ids) {
-      expect_contains(offered$age[offered$indicator == id], codes)
+    for (id in indicator_ids(disease)) {
+      expect_contains(offered$code[offered$indicator == id], codes)
+    }
+  }
+})
+
+test_that("each disease's geographies are the ones CDC offers for its indicators", {
+  offered <- cdc_offered("50")
+  geography <- c(
+    "1001" = "national", "1002" = "state", "1003" = "county",
+    "1004" = "msa", "1005" = "region"
+  )
+  for (disease in unique(.disease_indicators()$disease)) {
+    for (id in indicator_ids(disease)) {
+      cdc <- unname(geography[as.character(unique(offered$code[offered$indicator == id]))])
+      expect_setequal(.atlas_geographies(disease), cdc)
     }
   }
 })
