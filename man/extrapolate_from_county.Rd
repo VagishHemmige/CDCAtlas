@@ -215,6 +215,23 @@ current county they fall in. The one 2010 tract split between two planning
 regions is shared by land area. The crosswalk ships in
 \code{inst/extdata/tract-2010-crosswalk.csv}.
 
+Which ACS releases match CDC's county map:
+\itemize{
+\item ACS 2010 to 2019: every current county, Connecticut and Alaska through
+the crosswalk.
+\item ACS 2020 and 2021: everywhere except Connecticut, which these releases
+still code by its old counties (#121).
+\item ACS 2022 on: every current county.
+\item ACS 2009 (2000 tracts): not Connecticut's planning regions or Chugach
+and Copper River.
+}
+
+Counties a release doesn't match are left out with a warning that says
+why. In 2010-2019 a block group follows its tract: the block groups of the
+one split tract (09013890201) are shared between Capitol and Northeastern
+Connecticut planning regions by the tract's land area, not by where each
+block group lies.
+
 Tract and block group boundaries change every ten years, so estimates from
 ACS years on different sides of a decennial census (2017 and 2022, say)
 can't be compared area by area.
