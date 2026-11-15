@@ -116,3 +116,11 @@ test_that("a complete response doesn't warn", {
   )
   expect_no_warning(get_atlas("hiv", "county", 2022))
 })
+
+test_that("an indicator whose rows are all suppressed is not reported missing", {
+  # Its rows are there with no counts; that is suppression, not absence.
+  response <- fake_county_atlas(suppressed = c("01001", "01003"))
+  local_mocked_bindings(.request_atlas_all = function(payloads) response)
+  expect_no_warning(out <- get_atlas("hiv", "county", 2022))
+  expect_identical(out, response)
+})
