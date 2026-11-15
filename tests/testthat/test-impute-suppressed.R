@@ -189,6 +189,42 @@ test_that("impute_suppressed() rejects data it can't use", {
   expect_snapshot(error = TRUE, impute_suppressed(mixed))
 })
 
+test_that("negative, infinite or non-numeric counts stop before any request (#115)", {
+  local_mocked_bindings(.request_atlas = function(payload) {
+    stop("CDC was called")
+  })
+  county <- fake_county_atlas()
+
+  negative <- county
+  negative$cases[1] <- -10
+  expect_snapshot(error = TRUE, impute_suppressed(negative, method = "zero"))
+
+  infinite <- county
+  infinite$population[2] <- Inf
+  expect_error(impute_suppressed(infinite), "population")
+
+  text <- county
+  text$cases <- as.character(text$cases)
+  expect_error(impute_suppressed(text), "cases")
+
+  for (f in list(no_county_cases, extrapolate_from_county)) {
+    expect_error(
+      f(
+        impute_suppressed(county, method = "zero") |>
+          transform(cases = -cases)
+      ),
+      "negative"
+    )
+  }
+})
+
+test_that("NA, zero and fractional counts are allowed", {
+  county <- fake_county_atlas(suppressed = "01003")
+  county$cases[county$fips == "01001"] <- c(0, 2.5)
+  out <- impute_suppressed(county, method = "zero")
+  expect_equal(out$cases, c(0, 0, 2.5, 0))
+})
+
 test_that("state rates are matched within each state", {
   local_fake_sources(state = two_state_atlas()$state)
   out <- impute_suppressed(two_state_atlas()$county, cap = Inf)

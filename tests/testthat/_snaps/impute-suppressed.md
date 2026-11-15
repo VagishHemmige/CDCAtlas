@@ -131,6 +131,15 @@
       ! `x` mixes sex totals with sex strata.
       i Keep either the "Both sexes" rows or the stratified rows.
 
+# negative, infinite or non-numeric counts stop before any request (#115)
+
+    Code
+      impute_suppressed(negative, method = "zero")
+    Condition
+      Error in `impute_suppressed()`:
+      ! cases in `x` must be 0 or more and finite.
+      x 1 row has a negative or infinite value, such as -10.
+
 # state_rate is floored at `floor`
 
     Code
