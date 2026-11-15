@@ -20,7 +20,9 @@ test_that("county requests are split into one payload per state", {
 
 test_that("together the state payloads request every county exactly once", {
   payloads <- .build_payloads("hiv", "county", 2017)
-  requested <- unlist(lapply(payloads, function(p) intersect(payload_ids(p), county_ids)))
+  requested <- unlist(lapply(payloads, function(p) {
+    intersect(payload_ids(p), county_ids)
+  }))
 
   expect_setequal(requested, county_ids)
   expect_equal(anyDuplicated(requested), 0)
@@ -34,7 +36,12 @@ test_that("each state payload asks for that state's counties only", {
 })
 
 test_that("state payloads keep the same indicator, year and category codes", {
-  full <- payload_ids(.build_payload("hiv", "county", 2017, stratify_by = "sex"))
+  full <- payload_ids(.build_payload(
+    "hiv",
+    "county",
+    2017,
+    stratify_by = "sex"
+  ))
   non_geo <- setdiff(full, county_ids)
 
   payloads <- .build_payloads("hiv", "county", 2017, stratify_by = "sex")
@@ -85,16 +92,26 @@ test_that("age-stratified requests ask for each disease's own age groups (#11)",
     "hepatitis" = sti
   )
   for (disease in names(expected)) {
-    ids <- payload_ids(.build_payload(disease, "state", 2022, stratify_by = "age"))
+    ids <- payload_ids(.build_payload(
+      disease,
+      "state",
+      2022,
+      stratify_by = "age"
+    ))
     expect_setequal(intersect(ids, age_ids), expected[[disease]])
   }
 })
 
 test_that("unstratified requests ask for each disease's own age total", {
   expected <- c(
-    "hiv" = 650, "estimate" = 650, "chlamydia" = 651, "gonorrhea" = 651,
-    "adult syphilis" = 651, "congenital syphilis" = 651,
-    "tuberculosis" = 651, "hepatitis" = 651
+    "hiv" = 650,
+    "estimate" = 650,
+    "chlamydia" = 651,
+    "gonorrhea" = 651,
+    "adult syphilis" = 651,
+    "congenital syphilis" = 651,
+    "tuberculosis" = 651,
+    "hepatitis" = 651
   )
   for (disease in names(expected)) {
     ids <- payload_ids(.build_payload(disease, "state", 2022))
@@ -118,7 +135,10 @@ test_that("region requests use CDC's four Census regions and the territories", {
   expect_identical(
     varvals$name[match(regions, varvals$id)],
     c(
-      "Northeast", "Midwest", "South", "West",
+      "Northeast",
+      "Midwest",
+      "South",
+      "West",
       "U.S. territories and freely associated states"
     )
   )
@@ -133,7 +153,9 @@ test_that("get_atlas() accepts geography = \"region\" for HIV estimates", {
 test_that("region requests for reported data stop before asking CDC", {
   # CDC returns no region rows for reported indicators: AtlasPlus asks for
   # the states and adds them up in the browser.
-  local_mocked_bindings(.request_atlas_all = function(payloads) stop("CDC was called"))
+  local_mocked_bindings(.request_atlas_all = function(payloads) {
+    stop("CDC was called")
+  })
   expect_snapshot(get_atlas("hiv", "region", 2022), error = TRUE)
 })
 
@@ -154,7 +176,12 @@ test_that("other geographies are still sent as one payload", {
 # A made-up CDC response: one row per geography code, indicator and year in
 # the payload, in CDC's format (16 columns, coded values). The year comes from
 # the payload, so tests of the year check what was requested.
-all_geo_ids <- c(5000, lookup[["state"]]$geo_id, county_ids, lookup[["msa"]]$geo_id)
+all_geo_ids <- c(
+  5000,
+  lookup[["state"]]$geo_id,
+  county_ids,
+  lookup[["msa"]]$geo_id
+)
 year_ids <- varvals$id[varvals$vtid == 2]
 
 fake_cdc_response <- function(payload) {
@@ -164,8 +191,22 @@ fake_cdc_response <- function(payload) {
   years <- intersect(ids, year_ids)
   rows <- expand.grid(geo = geos, indicator = indicators, year = years)
   sourcedata <- cbind(
-    rows$indicator, rows$year, rows$geo, 400, 551, 601, 650, 801,
-    12.5, 10, 80000, NA, NA, NA, NA, NA
+    rows$indicator,
+    rows$year,
+    rows$geo,
+    400,
+    551,
+    601,
+    650,
+    801,
+    12.5,
+    10,
+    80000,
+    NA,
+    NA,
+    NA,
+    NA,
+    NA
   )
   jsonlite::toJSON(list(sourcedata = sourcedata), na = "null")
 }
@@ -208,7 +249,10 @@ test_that("the combined table keeps column types and labels", {
   expect_setequal(levels(out$indicator), c("HIV diagnoses", "HIV prevalence"))
   expect_equal(unique(out$year), 2017)
   expect_identical(labelled::var_label(out$cases), "Number of reported cases")
-  expect_identical(labelled::var_label(out$fips), "Census FIPS code for geographical merging with Census data")
+  expect_identical(
+    labelled::var_label(out$fips),
+    "Census FIPS code for geographical merging with Census data"
+  )
 })
 
 test_that("get_atlas() returns a tibble, for one request or many (#17)", {
@@ -228,8 +272,14 @@ test_that("rate labels fit every indicator, not only incidence", {
     labelled::var_label(out$rate100000),
     "Rate per 100,000 population (percentage for Knowledge of Status; see ?get_atlas for denominators)"
   )
-  expect_identical(labelled::var_label(out$lowerci_rate), "Lower 95% confidence interval of rate")
-  expect_identical(labelled::var_label(out$upperci_rate), "Upper 95% confidence interval of rate")
+  expect_identical(
+    labelled::var_label(out$lowerci_rate),
+    "Lower 95% confidence interval of rate"
+  )
+  expect_identical(
+    labelled::var_label(out$upperci_rate),
+    "Upper 95% confidence interval of rate"
+  )
 })
 
 test_that("combined factor levels follow CDC's lookup order, as a single request would", {
@@ -260,11 +310,13 @@ test_that("a failed request passes on CDC's message without the server trace", {
   local_mocked_bindings(
     POST = function(...) structure(list(), class = "fake_response"),
     status_code = function(res) 400L,
-    content = function(res, ...) paste0(
-      '{"success":false,"message":"Execution Timeout Expired.  The timeout period elapsed ',
-      'prior to completion of the operation or the server is not responding.    at ',
-      'Microsoft.Data.SqlClient.SqlConnection.OnError(SqlException exception)"}'
-    ),
+    content = function(res, ...) {
+      paste0(
+        '{"success":false,"message":"Execution Timeout Expired.  The timeout period elapsed ',
+        'prior to completion of the operation or the server is not responding.    at ',
+        'Microsoft.Data.SqlClient.SqlConnection.OnError(SqlException exception)"}'
+      )
+    },
     .package = "httr"
   )
   expect_snapshot(error = TRUE, get_atlas("hiv", "state", 2017))
@@ -353,13 +405,20 @@ test_that("an empty response says what may be wrong", {
 # Made-up outcomes for one request: a response, or a failure to reach CDC.
 cdc_ok <- function(body) list(status = 200L, text = fake_cdc_response(body))
 cdc_timeout <- function(body) {
-  list(status = 400L, text = paste0(
-    '{"success":false,"message":"Execution Timeout Expired.  The timeout period ',
-    'elapsed prior to completion of the operation or the server is not responding."}'
-  ))
+  list(
+    status = 400L,
+    text = paste0(
+      '{"success":false,"message":"Execution Timeout Expired.  The timeout period ',
+      'elapsed prior to completion of the operation or the server is not responding."}'
+    )
+  )
 }
-cdc_not_found <- function(body) list(status = 404L, text = "<html>Not Found</html>")
-network_timeout <- function(body) stop("Timeout was reached: Operation timed out")
+cdc_not_found <- function(body) {
+  list(status = 404L, text = "<html>Not Found</html>")
+}
+network_timeout <- function(body) {
+  stop("Timeout was reached: Operation timed out")
+}
 no_host <- function(body) stop("Could not resolve host: gis.cdc.gov")
 
 # Replace CDC with `outcomes`, one per request (the last one repeats), and

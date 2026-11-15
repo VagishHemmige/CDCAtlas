@@ -36,7 +36,9 @@ test_that("no-county remainders match #27 (Pennsylvania HIV prevalence)", {
   for (year in names(expected)) {
     county <- live_county(as.numeric(year))
     report <- no_county_cases(county)
-    pa <- report[report$state_fips == "42" & report$indicator == "HIV prevalence", ]
+    pa <- report[
+      report$state_fips == "42" & report$indicator == "HIV prevalence",
+    ]
     expect_equal(pa$unpublished_cases, expected[[year]])
   }
 })
@@ -45,7 +47,10 @@ test_that("imputation respects the cap and keeps published counts, 2022", {
   local_mocked_bindings(.request_atlas = .request_atlas_internal)
   county <- live_county(2022, "sex")
   # Valdez-Cordova (02261) has no CDC population in 2022 (see below).
-  expect_warning(imputed <- impute_suppressed(county, cap = 2), "Valdez-Cordova")
+  expect_warning(
+    imputed <- impute_suppressed(county, cap = 2),
+    "Valdez-Cordova"
+  )
 
   estimated <- imputed$cases[imputed$cases_source == "state_rate"]
   expect_gt(length(estimated), 0)
@@ -84,14 +89,17 @@ test_that("imputation respects the cap and keeps published counts, 2022", {
 #       suppressed" with no population in every age group, beside the
 #       planning regions.
 no_area_or_estimate <- c(
-  "suppressed, not estimated", "no ACS tracts for this county"
+  "suppressed, not estimated",
+  "no ACS tracts for this county"
 )
 is_known_left_out <- function(left_out, year) {
   unknown_race <- left_out$reason == "no Census population for this stratum" &
     (left_out$race_ethnicity == "Unknown" | left_out$age == "Unknown")
-  connecticut <- year == 2017 & left_out$reason == "suppressed, not estimated" &
+  connecticut <- year == 2017 &
+    left_out$reason == "suppressed, not estimated" &
     substr(left_out$county_fips, 1, 2) == "09"
-  valdez_cordova_split <- left_out$reason %in% no_area_or_estimate &
+  valdez_cordova_split <- left_out$reason %in%
+    no_area_or_estimate &
     left_out$county_fips == "02261"
   puerto_rico_race <- left_out$reason == "suppressed, not estimated" &
     substr(left_out$county_fips, 1, 2) == "72" &
@@ -101,8 +109,12 @@ is_known_left_out <- function(left_out, year) {
   old_connecticut <- year == 2022 &
     left_out$reason == "suppressed, not estimated" &
     left_out$county_fips %in% sprintf("090%02d", seq(1, 15, 2))
-  unknown_race | connecticut | valdez_cordova_split | puerto_rico_race |
-    unknown_age_suppressed | old_connecticut
+  unknown_race |
+    connecticut |
+    valdez_cordova_split |
+    puerto_rico_race |
+    unknown_age_suppressed |
+    old_connecticut
 }
 
 # Warnings the default pipeline is known to give, by year. Chlamydia by age
@@ -112,7 +124,9 @@ known_warnings <- c(
   "2017" = "no matching ACS tracts|Planning Region, CT|Valdez-Cordova|Municipio, PR",
   "2022" = "Valdez-Cordova Census Area, AK|no matching ACS tracts|Municipio, PR"
 )
-known_disease_warnings <- c(chlamydia = "suppressed rows? could not be estimated")
+known_disease_warnings <- c(
+  chlamydia = "suppressed rows? could not be estimated"
+)
 
 county_groups <- c("county_fips", "indicator", "race_ethnicity", "sex", "age")
 
@@ -121,7 +135,13 @@ expect_none <- function(x, what) {
   x <- unique(x)
   expect(
     length(x) == 0,
-    paste0(length(x), " unexpected ", what, ":\n", paste("*", x, collapse = "\n"))
+    paste0(
+      length(x),
+      " unexpected ",
+      what,
+      ":\n",
+      paste("*", x, collapse = "\n")
+    )
   )
 }
 
@@ -130,8 +150,14 @@ expect_none <- function(x, what) {
 pipeline_runs <- c(
   lapply(
     list(
-      list(2017, NULL), list(2017, "sex"), list(2017, "age"), list(2017, "race"),
-      list(2022, NULL), list(2022, "sex"), list(2022, "age"), list(2022, "race")
+      list(2017, NULL),
+      list(2017, "sex"),
+      list(2017, "age"),
+      list(2017, "race"),
+      list(2022, NULL),
+      list(2022, "sex"),
+      list(2022, "age"),
+      list(2022, "race")
     ),
     function(run) list(year = run[[1]], strat = run[[2]], disease = "hiv")
   ),
@@ -145,49 +171,75 @@ for (pipeline_run in pipeline_runs) {
     disease <- pipeline_run$disease
     label <- paste0(
       if (disease == "hiv") "" else paste0(disease, " "),
-      year, ", ", if (is.null(strat)) "unstratified" else paste("by", strat)
+      year,
+      ", ",
+      if (is.null(strat)) "unstratified" else paste("by", strat)
     )
 
-    test_that(paste("tract estimates add up to the counts they share,", label), {
-      areas <- live_pipeline(year, strat, disease = disease)$areas
-      check <- areas |>
-        dplyr::summarize(
-          county_values = dplyr::n_distinct(county_cases_allocated),
-          county_cases = dplyr::first(county_cases_allocated),
-          area_cases_sum = sum(area_cases),
-          .by = dplyr::all_of(county_groups)
+    test_that(
+      paste("tract estimates add up to the counts they share,", label),
+      {
+        areas <- live_pipeline(year, strat, disease = disease)$areas
+        check <- areas |>
+          dplyr::summarize(
+            county_values = dplyr::n_distinct(county_cases_allocated),
+            county_cases = dplyr::first(county_cases_allocated),
+            area_cases_sum = sum(area_cases),
+            .by = dplyr::all_of(county_groups)
+          )
+        expect_equal(check$county_values, rep(1, nrow(check)))
+        expect_equal(check$area_cases_sum, check$county_cases, tolerance = 1e-6)
+        expect_equal(sum(is.na(areas$area_cases)), 0)
+        expect_gte(min(areas$area_cases), 0)
+        expect_equal(sum(duplicated(areas[c("geoid", county_groups[-1])])), 0)
+      }
+    )
+
+    test_that(
+      paste("every county row is allocated or listed as left out,", label),
+      {
+        run <- live_pipeline(year, strat, disease = disease)
+        county_rows <- .row_key(
+          data.frame(
+            county_fips = as.character(run$imputed$fips),
+            lapply(as.data.frame(run$imputed[county_groups[-1]]), as.character)
+          ),
+          county_groups
         )
-      expect_equal(check$county_values, rep(1, nrow(check)))
-      expect_equal(check$area_cases_sum, check$county_cases, tolerance = 1e-6)
-      expect_equal(sum(is.na(areas$area_cases)), 0)
-      expect_gte(min(areas$area_cases), 0)
-      expect_equal(sum(duplicated(areas[c("geoid", county_groups[-1])])), 0)
-    })
+        allocated <- unique(.row_key(run$areas, county_groups))
+        left_out <- .row_key(attr(run$areas, "not_allocated"), county_groups)
 
-    test_that(paste("every county row is allocated or listed as left out,", label), {
-      run <- live_pipeline(year, strat, disease = disease)
-      county_rows <- .row_key(
-        data.frame(
-          county_fips = as.character(run$imputed$fips),
-          lapply(as.data.frame(run$imputed[county_groups[-1]]), as.character)
-        ),
-        county_groups
-      )
-      allocated <- unique(.row_key(run$areas, county_groups))
-      left_out <- .row_key(attr(run$areas, "not_allocated"), county_groups)
-
-      readable <- function(keys) gsub("\r", " | ", keys)
-      expect_none(readable(intersect(allocated, left_out)), "rows both allocated and left out")
-      expect_none(readable(setdiff(county_rows, c(allocated, left_out))), "county rows missing")
-      expect_none(readable(setdiff(c(allocated, left_out), county_rows)), "rows not in the county data")
-    })
+        readable <- function(keys) gsub("\r", " | ", keys)
+        expect_none(
+          readable(intersect(allocated, left_out)),
+          "rows both allocated and left out"
+        )
+        expect_none(
+          readable(setdiff(county_rows, c(allocated, left_out))),
+          "county rows missing"
+        )
+        expect_none(
+          readable(setdiff(c(allocated, left_out), county_rows)),
+          "rows not in the county data"
+        )
+      }
+    )
 
     test_that(paste("only known county rows are left out,", label), {
-      left_out <- attr(live_pipeline(year, strat, disease = disease)$areas, "not_allocated")
+      left_out <- attr(
+        live_pipeline(year, strat, disease = disease)$areas,
+        "not_allocated"
+      )
       unexpected <- left_out[!is_known_left_out(left_out, year), ]
       expect_none(
-        paste0(unexpected$county_fips, " ", unexpected$county_name, ": ",
-               unexpected$reason, recycle0 = TRUE),
+        paste0(
+          unexpected$county_fips,
+          " ",
+          unexpected$county_name,
+          ": ",
+          unexpected$reason,
+          recycle0 = TRUE
+        ),
         "county rows left out"
       )
     })
@@ -195,14 +247,21 @@ for (pipeline_run in pipeline_runs) {
     test_that(paste("only known warnings are given,", label), {
       warnings <- live_pipeline(year, strat, disease = disease)$warnings
       expect_none(
-        warnings[!grepl(
-          paste(
-            c(known_warnings[[as.character(year)]],
-              unname(known_disease_warnings[intersect(disease, names(known_disease_warnings))])),
-            collapse = "|"
-          ),
-          warnings
-        )],
+        warnings[
+          !grepl(
+            paste(
+              c(
+                known_warnings[[as.character(year)]],
+                unname(known_disease_warnings[intersect(
+                  disease,
+                  names(known_disease_warnings)
+                )])
+              ),
+              collapse = "|"
+            ),
+            warnings
+          )
+        ],
         "warnings"
       )
     })
@@ -213,10 +272,15 @@ test_that("2017 allocates Connecticut's planning regions, Chugach and Copper Riv
   run <- live_pipeline(2017)
   planning_regions <- sprintf("091%d0", 1:9)
   expect_contains(unique(run$areas$county_fips), c("02063", "02066"))
-  expect_gt(length(intersect(unique(run$areas$county_fips), planning_regions)), 0)
+  expect_gt(
+    length(intersect(unique(run$areas$county_fips), planning_regions)),
+    0
+  )
 
   left_out <- attr(run$areas, "not_allocated")
-  no_tracts <- left_out$county_fips[left_out$reason == "no ACS tracts for this county"]
+  no_tracts <- left_out$county_fips[
+    left_out$reason == "no ACS tracts for this county"
+  ]
   expect_none(setdiff(no_tracts, "02261"), "counties with no 2010 tracts")
 })
 

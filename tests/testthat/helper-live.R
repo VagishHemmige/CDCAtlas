@@ -4,7 +4,10 @@
 
 skip_unless_census <- function() {
   skip_if_not_installed("tidycensus")
-  skip_if(Sys.getenv("CENSUS_API_KEY") == "", "No Census API key (CENSUS_API_KEY).")
+  skip_if(
+    Sys.getenv("CENSUS_API_KEY") == "",
+    "No Census API key (CENSUS_API_KEY)."
+  )
 }
 
 live_counties <- new.env()
@@ -30,8 +33,12 @@ live_once <- function(store, key, code) {
     store[[key]] <- list(value = value, warnings = warnings)
   }
   run <- store[[key]]
-  for (w in run$warnings) warning(w, call. = FALSE)
-  if (inherits(run$value, "error")) stop(run$value)
+  for (w in run$warnings) {
+    warning(w, call. = FALSE)
+  }
+  if (inherits(run$value, "error")) {
+    stop(run$value)
+  }
   run$value
 }
 
@@ -42,7 +49,12 @@ live_county <- function(year, stratify_by = NULL, disease = "hiv") {
   live_once(
     live_counties,
     paste(disease, year, stratify_by %||% "none"),
-    suppressMessages(get_atlas(disease, "county", year, stratify_by = stratify_by))
+    suppressMessages(get_atlas(
+      disease,
+      "county",
+      year,
+      stratify_by = stratify_by
+    ))
   )
 }
 
@@ -50,8 +62,12 @@ live_county <- function(year, stratify_by = NULL, disease = "hiv") {
 # extrapolate_from_county(), every option at its default, as HOPE runs it. Each
 # run is made once and shared by the tests that use it. `warnings` includes
 # warnings from the county download, even if an earlier test made it.
-live_pipeline <- function(year, stratify_by = NULL, to = "tract",
-                          disease = "hiv") {
+live_pipeline <- function(
+  year,
+  stratify_by = NULL,
+  to = "tract",
+  disease = "hiv"
+) {
   skip_unless_census()
   local_mocked_bindings(.request_atlas = .request_atlas_internal)
   run <- NULL
@@ -62,7 +78,10 @@ live_pipeline <- function(year, stratify_by = NULL, to = "tract",
       suppressMessages({
         county <- live_county(year, stratify_by, disease)
         imputed <- impute_suppressed(county)
-        list(imputed = imputed, areas = extrapolate_from_county(imputed, to = to))
+        list(
+          imputed = imputed,
+          areas = extrapolate_from_county(imputed, to = to)
+        )
       })
     )
   )

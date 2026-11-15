@@ -151,7 +151,8 @@ impute_suppressed <- function(
 
   if (population == "acs") {
     .check_census_strata(
-      x, call,
+      x,
+      call,
       hint = c("i" = "{.code population = \"cdc\"} works for any strata.")
     )
     .check_census_ready(call)
@@ -222,7 +223,10 @@ impute_suppressed <- function(
     for (universe in unique(row_ages[county$year == year])) {
       rows <- county$year == year & row_ages == universe
       pop <- .area_population(
-        year, states, stratify_by, universe,
+        year,
+        states,
+        stratify_by,
+        universe,
         age_groups = unique(county$age[rows])
       ) |>
         dplyr::summarize(

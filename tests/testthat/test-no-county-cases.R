@@ -31,11 +31,23 @@ test_that("the report has one row per state, indicator, year and stratum", {
 
   expect_equal(nrow(report), 2 * 2 * 7)
   expect_equal(report$no_county_cases, rep(0, nrow(report)))
-  expect_named(report, c(
-    "state_fips", "state", "indicator", "year", "race_ethnicity", "sex",
-    "age", "state_cases", "published_cases", "unpublished_cases",
-    "imputed_cases", "no_county_cases"
-  ))
+  expect_named(
+    report,
+    c(
+      "state_fips",
+      "state",
+      "indicator",
+      "year",
+      "race_ethnicity",
+      "sex",
+      "age",
+      "state_cases",
+      "published_cases",
+      "unpublished_cases",
+      "imputed_cases",
+      "no_county_cases"
+    )
+  )
 })
 
 test_that("a suppressed state total gives NA", {

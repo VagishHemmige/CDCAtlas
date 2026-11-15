@@ -34,9 +34,15 @@ read_census <- function(url) {
 }
 
 rel <- "https://www2.census.gov/geo/docs/maps-data/data"
-ct <- read_census(file.path(rel, "rel2020/tract/tab20_tract20_tract10_st09.txt"))
+ct <- read_census(file.path(
+  rel,
+  "rel2020/tract/tab20_tract20_tract10_st09.txt"
+))
 ct22 <- read_census(file.path(rel, "rel2022/acs22_cousub22_tract22_st09.txt"))
-ak <- read_census(file.path(rel, "rel2020/tract/tab20_tract20_tract10_st02.txt"))
+ak <- read_census(file.path(
+  rel,
+  "rel2020/tract/tab20_tract20_tract10_st02.txt"
+))
 
 # Each Connecticut 2020 tract's 2022 tract: same tract code, and the closest
 # land area where a code repeats.
@@ -44,8 +50,15 @@ tracts_22 <- distinct(ct22, GEOID_TRACT_22, AREALAND_TRACT_22) |>
   mutate(code = substr(GEOID_TRACT_22, 6, 11))
 tracts_20 <- distinct(ct, GEOID_TRACT_20, AREALAND_TRACT_20) |>
   mutate(code = substr(GEOID_TRACT_20, 6, 11))
-to_22 <- inner_join(tracts_20, tracts_22, by = "code", relationship = "many-to-many") |>
-  mutate(gap = abs(as.numeric(AREALAND_TRACT_20) - as.numeric(AREALAND_TRACT_22))) |>
+to_22 <- inner_join(
+  tracts_20,
+  tracts_22,
+  by = "code",
+  relationship = "many-to-many"
+) |>
+  mutate(
+    gap = abs(as.numeric(AREALAND_TRACT_20) - as.numeric(AREALAND_TRACT_22))
+  ) |>
   slice_min(gap, n = 1, with_ties = FALSE, by = GEOID_TRACT_20) |>
   select(GEOID_TRACT_20, GEOID_TRACT_22)
 stopifnot(nrow(to_22) == nrow(tracts_20))

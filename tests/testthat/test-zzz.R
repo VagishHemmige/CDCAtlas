@@ -46,7 +46,10 @@ cached_request_in_session <- function() {
 test_that("loading the package writes nothing to the user's cache folder", {
   cache_home <- withr::local_tempdir()
   in_fresh_session(cache_home)
-  expect_equal(list.files(cache_home, recursive = TRUE, include.dirs = TRUE), character())
+  expect_equal(
+    list.files(cache_home, recursive = TRUE, include.dirs = TRUE),
+    character()
+  )
 })
 
 test_that("the first request makes the cache folder, even with no parent folder", {

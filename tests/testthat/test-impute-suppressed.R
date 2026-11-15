@@ -87,7 +87,9 @@ test_that("suppressed rows with no state rate stay NA, with a warning", {
   state$population <- NA
   local_fake_sources(state = state)
 
-  expect_snapshot(out <- impute_suppressed(fake_county_atlas(suppressed = "01003")))
+  expect_snapshot(
+    out <- impute_suppressed(fake_county_atlas(suppressed = "01003"))
+  )
   expect_equal(sum(is.na(out$cases)), 2)
 })
 
@@ -128,8 +130,10 @@ test_that("impute_suppressed() rejects data it can't use", {
 test_that("state rates are matched within each state", {
   local_fake_sources(state = two_state_atlas()$state)
   out <- impute_suppressed(two_state_atlas()$county, cap = Inf)
-  filled <- out[out$cases_source == "state_rate" &
-    out$indicator == "HIV diagnoses", ]
+  filled <- out[
+    out$cases_source == "state_rate" &
+      out$indicator == "HIV diagnoses",
+  ]
 
   # State 01: 32 per 1e6; state 02: (32 + 300) per 2e6. County population
   # 50,000.
@@ -167,8 +171,9 @@ test_that("population = 'acs' uses the county's tracts in the same stratum", {
   local_fake_sources(state = fake_state_atlas(stratify_by = "sex"))
   county <- fake_county_atlas("sex", suppressed = "01003")
   out <- impute_suppressed(county, cap = Inf, population = "acs")
-  male <- out[out$fips == "01003" & out$sex == "Male" &
-    out$indicator == "HIV diagnoses", ]
+  male <- out[
+    out$fips == "01003" & out$sex == "Male" & out$indicator == "HIV diagnoses",
+  ]
 
   pop <- fake_acs_tract("01003000100")
   male_13 <- sum(pop[sprintf("B01001_%03d", 6:25)]) + 0.4 * pop[["B01001_005"]]
@@ -199,8 +204,10 @@ test_that("population = 'acs' keeps HIV at ages 13+ beside another disease (#53)
     population = "acs"
   )
 
-  hiv <- combined[combined$indicator == "HIV prevalence" &
-    combined$fips == "01003", ]
+  hiv <- combined[
+    combined$indicator == "HIV prevalence" &
+      combined$fips == "01003",
+  ]
   expect_equal(hiv$cases, hiv_alone$cases[hiv_alone$fips == "01003"])
 })
 
@@ -233,7 +240,8 @@ test_that("population = 'acs' stops for congenital syphilis", {
     .get_acs_areas = function(...) stop("the Census was called")
   )
   congenital <- fake_county_atlas(
-    suppressed = "01003", indicators = "Congenital Syphilis"
+    suppressed = "01003",
+    indicators = "Congenital Syphilis"
   )
   expect_snapshot(
     error = TRUE,
@@ -243,7 +251,9 @@ test_that("population = 'acs' stops for congenital syphilis", {
 
 test_that("population = 'acs' works on age strata for chlamydia", {
   chlamydia <- fake_county_atlas(
-    "age", suppressed = "01003", indicators = "Chlamydia"
+    "age",
+    suppressed = "01003",
+    indicators = "Chlamydia"
   )
   local_fake_sources(
     state = fake_state_atlas(stratify_by = "age", indicators = "Chlamydia")
@@ -270,14 +280,18 @@ test_that("two-way strata still work with CDC populations and with zeros", {
 
 test_that("unsupported strata don't matter when nothing is suppressed", {
   local_fake_sources()
-  out <- impute_suppressed(sex_by_age(suppressed = character(0)),
-                           population = "acs")
+  out <- impute_suppressed(
+    sex_by_age(suppressed = character(0)),
+    population = "acs"
+  )
   expect_equal(unique(out$cases_source), "published")
 })
 
 test_that("population = 'acs' needs a Census key", {
   withr::local_envvar(CENSUS_API_KEY = "")
-  local_mocked_bindings(.request_atlas = function(payload) stop("CDC was called"))
+  local_mocked_bindings(.request_atlas = function(payload) {
+    stop("CDC was called")
+  })
   county <- fake_county_atlas(suppressed = "01003")
 
   expect_snapshot(error = TRUE, impute_suppressed(county, population = "acs"))
@@ -300,7 +314,11 @@ test_that("population = 'acs' doesn't treat a missing population as 0 (#52)", {
   local_fake_sources(acs = acs)
   county <- fake_county_atlas(suppressed = "01003")
 
-  out <- suppressWarnings(impute_suppressed(county, cap = Inf, population = "acs"))
+  out <- suppressWarnings(impute_suppressed(
+    county,
+    cap = Inf,
+    population = "acs"
+  ))
   suppressed <- out[out$fips == "01003", ]
 
   expect_equal(suppressed$cases, c(NA_real_, NA_real_))

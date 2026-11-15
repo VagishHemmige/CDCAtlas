@@ -47,7 +47,11 @@ test_that(".atlas_init_data() errors when the code table is missing", {
 # A throwaway user cache folder that doesn't exist yet, and a stand-in for the
 # download that counts how often CDC would be asked.
 local_request_cache <- function(env = parent.frame()) {
-  cache_home <- file.path(withr::local_tempdir(.local_envir = env), "new", "folder")
+  cache_home <- file.path(
+    withr::local_tempdir(.local_envir = env),
+    "new",
+    "folder"
+  )
   withr::local_envvar(R_USER_CACHE_DIR = cache_home, .local_envir = env)
   calls <- new.env()
   calls$n <- 0
@@ -157,7 +161,13 @@ test_that("get_atlas(refresh = TRUE) for counties also refreshes the state total
   expect_equal(calls$n, 2) # one per year
 
   suppressMessages(
-    get_atlas("hiv", "county", c(2022, 2017), stratify_by = "sex", refresh = TRUE)
+    get_atlas(
+      "hiv",
+      "county",
+      c(2022, 2017),
+      stratify_by = "sex",
+      refresh = TRUE
+    )
   )
   downloads <- calls$n
   .fetch_state_totals(county)
@@ -180,7 +190,13 @@ test_that("refreshing several years refreshes each year's saved state totals", {
   .fetch_state_totals(fake_county_by_sex(2022))
 
   suppressMessages(
-    get_atlas("hiv", "county", c(2017, 2022), stratify_by = "sex", refresh = TRUE)
+    get_atlas(
+      "hiv",
+      "county",
+      c(2017, 2022),
+      stratify_by = "sex",
+      refresh = TRUE
+    )
   )
   downloads <- calls$n
   .fetch_state_totals(fake_county_by_sex(2022))
@@ -236,5 +252,8 @@ test_that("clear_atlas_cache() returns invisibly", {
 })
 
 test_that("get_atlas() checks `refresh`", {
-  expect_snapshot(get_atlas("hiv", "national", 2020, refresh = NA), error = TRUE)
+  expect_snapshot(
+    get_atlas("hiv", "national", 2020, refresh = NA),
+    error = TRUE
+  )
 })

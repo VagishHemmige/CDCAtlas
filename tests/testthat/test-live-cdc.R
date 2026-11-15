@@ -21,7 +21,10 @@ for (year in c(2017, 2022)) {
     local_mocked_bindings(.request_atlas = .request_atlas_internal)
     out <- get_atlas("hiv", "state", year)
 
-    expect_setequal(as.character(unique(out$indicator)), c("HIV diagnoses", "HIV prevalence"))
+    expect_setequal(
+      as.character(unique(out$indicator)),
+      c("HIV diagnoses", "HIV prevalence")
+    )
     states_and_dc <- c(sprintf("%02d", c(1:2, 4:6, 8:13, 15:42, 44:51, 53:56)))
     expect_contains(out$fips, states_and_dc)
     expect_equal(sum(duplicated(out[c("fips", "indicator")])), 0)
@@ -64,7 +67,9 @@ test_that("region HIV estimates return the four regions and the territories, 202
       label = paste("indicators for", region)
     )
   }
-  northeast <- out[out$geography == "Northeast" & out$indicator == "Estimated HIV incidence", ]
+  northeast <- out[
+    out$geography == "Northeast" & out$indicator == "Estimated HIV incidence",
+  ]
   expect_equal(northeast$cases, 4100, ignore_attr = "label")
 })
 
@@ -72,7 +77,10 @@ test_that("national HIV request returns both indicators, 2017", {
   local_mocked_bindings(.request_atlas = .request_atlas_internal)
   out <- get_atlas("hiv", "national", 2017)
 
-  expect_setequal(as.character(out$indicator), c("HIV diagnoses", "HIV prevalence"))
+  expect_setequal(
+    as.character(out$indicator),
+    c("HIV diagnoses", "HIV prevalence")
+  )
   expect_gt(out$cases[out$indicator == "HIV prevalence"], 900000)
 })
 
@@ -114,7 +122,10 @@ test_that("reported counts have no confidence intervals and estimates do, 2021",
     )
   )
   counts <- estimated[estimated$indicator != "Knowledge of Status", ]
-  expect_equal(sum(is.na(as.matrix(counts[c("lowerci_cases", "upperci_cases")]))), 0)
+  expect_equal(
+    sum(is.na(as.matrix(counts[c("lowerci_cases", "upperci_cases")]))),
+    0
+  )
   expect_equal(unique(estimated$year), 2021)
   expect_equal(as.character(unique(estimated$geography)), "United States")
 
@@ -127,7 +138,11 @@ test_that("reported counts have no confidence intervals and estimates do, 2021",
   expect_lte(status$rate100000, 100)
   expect_lt(status$lowerci_rate, status$rate100000)
   expect_gt(status$upperci_rate, status$rate100000)
-  expect_equal(status$rate100000, 100 * status$cases / status$population, tolerance = 0.01)
+  expect_equal(
+    status$rate100000,
+    100 * status$cases / status$population,
+    tolerance = 0.01
+  )
   expect_equal(sum(!is.na(c(status$lowerci_cases, status$upperci_cases))), 0)
 })
 
@@ -161,16 +176,21 @@ test_that("stored codes still match CDC's code table", {
 cdc_offered <- function(variable_type) {
   combo <- .atlas_init_data()$combo
   column <- match(variable_type, combo$data_structure)
-  do.call(rbind, lapply(combo$diseases$combinations, function(m) {
-    m <- if (is.matrix(m)) m else do.call(rbind, m)
-    data.frame(indicator = m[, 1], code = m[, column])
-  }))
+  do.call(
+    rbind,
+    lapply(combo$diseases$combinations, function(m) {
+      m <- if (is.matrix(m)) m else do.call(rbind, m)
+      data.frame(indicator = m[, 1], code = m[, column])
+    })
+  )
 }
 
 indicator_ids <- function(disease) {
   lookup <- .disease_indicators()
-  varvals$id[varvals$vtid == 1 &
-    varvals$name %in% lookup$indicator[lookup$disease == disease]]
+  varvals$id[
+    varvals$vtid == 1 &
+      varvals$name %in% lookup$indicator[lookup$disease == disease]
+  ]
 }
 
 test_that("each disease's age codes are ones CDC offers for its indicators (#11)", {
@@ -189,12 +209,17 @@ test_that("each disease's age codes are ones CDC offers for its indicators (#11)
 test_that("each disease's geographies are the ones CDC offers for its indicators", {
   offered <- cdc_offered("50")
   geography <- c(
-    "1001" = "national", "1002" = "state", "1003" = "county",
-    "1004" = "msa", "1005" = "region"
+    "1001" = "national",
+    "1002" = "state",
+    "1003" = "county",
+    "1004" = "msa",
+    "1005" = "region"
   )
   for (disease in unique(.disease_indicators()$disease)) {
     for (id in indicator_ids(disease)) {
-      cdc <- unname(geography[as.character(unique(offered$code[offered$indicator == id]))])
+      cdc <- unname(geography[as.character(unique(offered$code[
+        offered$indicator == id
+      ]))])
       expect_setequal(.atlas_geographies(disease), cdc)
     }
   }
@@ -220,7 +245,10 @@ for (year in c(2017, 2022)) {
     expect_equal(label_of("B01001_001"), "Estimate!!Total")
 
     race <- .acs_race_variables()
-    expect_equal(label_of(race$variable), paste0("Estimate!!Total!!", race$label))
+    expect_equal(
+      label_of(race$variable),
+      paste0("Estimate!!Total!!", race$label)
+    )
 
     tables <- .acs_race_age_tables()
     race_bands <- .acs_race_age_bands()
