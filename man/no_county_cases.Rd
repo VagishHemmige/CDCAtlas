@@ -38,8 +38,9 @@ no county accounts for; on county data straight from \code{\link[=get_atlas]{get
 reports only the gap left by published counts.
 
 For CDC's HIV estimates (\code{get_atlas("estimate")}), county data cover only
-the Ending the HIV Epidemic (EHE) counties, so the remainder is mostly
-people in counties outside EHE coverage; a message says so.
+the Ending the HIV Epidemic (EHE) counties, so the remainder can include
+people in counties outside EHE coverage and isn't cases with no county; a
+message says so.
 
 The remainder is a difference, not a count of identified cases. One likely
 explanation is cases whose county of residence is unknown or not released,

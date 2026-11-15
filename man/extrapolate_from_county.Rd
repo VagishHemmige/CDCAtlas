@@ -41,7 +41,7 @@ Areas that cross county lines, such as ZCTAs, are not supported yet.}
 the total. The report is kept in \code{attr(result, "no_county_cases")}.
 
 For CDC's HIV estimates, whose county data cover only the Ending the
-HIV Epidemic (EHE) counties, the remainder is mostly people in
+HIV Epidemic (EHE) counties, the remainder can include people in
 counties outside EHE coverage, and a message says so.
 \item \code{"spread"}: shared across the state's counties in \code{x} by their ACS
 population in the same stratum, then across areas as usual. \code{x} must
