@@ -9,7 +9,7 @@
 #'
 #' For CDC's HIV estimates (`get_atlas("estimate")`), county data cover only
 #' the Ending the HIV Epidemic (EHE) counties, so the remainder can include
-#' people in counties outside EHE coverage and isn't cases with no county; a
+#' people in counties outside EHE coverage and isn't necessarily cases with no county; a
 #' message says so.
 #'
 #' The remainder is a difference, not a count of identified cases. One likely

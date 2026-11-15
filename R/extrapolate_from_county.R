@@ -258,7 +258,7 @@ extrapolate_from_county <- function(
           "{.code no_county = \"spread\"} doesn't work for {.val {ehe}}.",
           "x" = "CDC's county data for them cover only Ending the HIV Epidemic
                  (EHE) counties, so the state remainder can include people
-                 in other counties and isn't cases with no county.",
+                 in other counties and isn't necessarily cases with no county.",
           "i" = "Use {.code no_county = \"report\"}."
         ),
         call = call
