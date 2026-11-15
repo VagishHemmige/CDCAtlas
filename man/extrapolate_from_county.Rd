@@ -14,6 +14,7 @@ extrapolate_from_county(
   race_table = c("B03002", "B01001"),
   unknown_race = c("report", "redistribute"),
   unestimated = c("leave out", "error"),
+  missing_population = c("leave out", "error"),
   acs_year = NULL,
   weights = NULL
 )
@@ -38,7 +39,13 @@ Areas that cross county lines, such as ZCTAs, are not supported yet.}
 \item \code{"report"} (default): left out of the estimates, with a message giving
 the total. The report is kept in \code{attr(result, "no_county_cases")}.
 \item \code{"spread"}: shared across the state's counties in \code{x} by their ACS
-population in the same stratum, then across areas as usual. Negative
+population in the same stratum, then across areas as usual. \code{x} must
+hold every county CDC reports in each of its states, for each
+indicator, year and stratum it has (rows CDC lists as "Data not
+available" with no count aside), or the counties left out would have
+their cases spread too; to study part of a state, spread first and
+filter the result. Checking needs CDC's county table, which comes from
+the cache when \code{x} was downloaded in this session. Negative
 remainders are not spread, nor are remainders in a state with no
 allocated county in that stratum; the message says how many cases
 could not be spread.
@@ -110,6 +117,17 @@ and listed in \code{attr(result, "not_allocated")}. Their cases count towards
 the state's remainder with no county.
 \item \code{"error"}: stop with an error.
 }}
+
+\item{missing_population}{What to do when the ACS population is missing
+(an \code{NA} estimate, or a variable the Census didn't return) for some
+area of a county:
+\itemize{
+\item \code{"leave out"} (default): leave that county stratum out, with a warning,
+and list it in \code{attr(result, "not_allocated")} with reason \code{"missing ACS population"}. Sharing over the other areas would move cases.
+\item \code{"error"}: stop instead.
+}
+
+A population of 0 is not missing; see \code{empty_strata}.}
 
 \item{acs_year}{The last year of the ACS 5-year estimates. \code{NULL} (default)
 uses each data year. A single year can be given only if \code{x} has one year.}

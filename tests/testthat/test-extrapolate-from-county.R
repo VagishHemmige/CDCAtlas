@@ -6,10 +6,13 @@ run_extrapolation <- function(
   county = fake_county_atlas(stratify_by),
   state = fake_state_atlas(stratify_by = stratify_by),
   acs = fake_acs(),
+  county_totals = NULL,
   ...,
   env = parent.frame()
 ) {
-  local_fake_sources(state = state, acs = acs, env = env)
+  local_fake_sources(
+    state = state, acs = acs, county_totals = county_totals, env = env
+  )
   if (!"cases_source" %in% names(county)) {
     county <- impute_suppressed(county)
   }
@@ -327,12 +330,179 @@ test_that("negative remainders are not spread", {
   expect_equal(unique(tracts$county_cases_spread), 0)
 })
 
+test_that("spreading stops when `x` lacks some of a state's counties (#54)", {
+  full <- fake_county_atlas()
+  one_county <- full[full$fips == "01001", ]
+
+  expect_snapshot(
+    error = TRUE,
+    run_extrapolation(
+      county = one_county, county_totals = full, no_county = "spread"
+    )
+  )
+})
+
+test_that("spreading works on whole states filtered from a larger table (#54)", {
+  two <- two_state_atlas()
+  state_02 <- two$county[substr(two$county$fips, 1, 2) == "02", ]
+
+  tracts <- run_extrapolation(
+    county = state_02, state = two$state, acs = two$acs,
+    county_totals = two$county, no_county = "spread"
+  )
+
+  expect_equal(unique(tracts$state_fips), "02")
+  expect_gt(sum(tracts$county_cases_spread), 0)
+})
+
+test_that("counties CDC lists as not available don't count as missing (#54)", {
+  county <- fake_county_atlas()
+  unavailable <- county[county$fips == "01003", ]
+  unavailable$fips <- "01005"
+  unavailable$geography <- factor("County 01005")
+  unavailable$cases <- NA_real_
+  unavailable$data_status[] <- "Data not available"
+
+  tracts <- run_extrapolation(
+    county = county, county_totals = rbind(county, unavailable),
+    no_county = "spread"
+  )
+
+  expect_setequal(unique(tracts$county_fips), c("01001", "01003"))
+})
+
+test_that("a 'Data not available' county with a count still counts (#54)", {
+  county <- fake_county_atlas()
+  labelled_unavailable <- county
+  labelled_unavailable$data_status[labelled_unavailable$fips == "01003"] <-
+    "Data not available"
+  one_county <- county[county$fips == "01001", ]
+
+  expect_error(
+    run_extrapolation(
+      county = one_county, county_totals = labelled_unavailable,
+      no_county = "spread"
+    ),
+    class = "rlang_error",
+    regexp = "01003"
+  )
+})
+
+test_that("each state is checked only for its own years (#54)", {
+  two <- two_state_atlas()
+  y2017 <- two$county
+  y2017$year <- 2017
+  both_years <- rbind(two$county, y2017)
+  state_both <- rbind(two$state, transform(two$state, year = 2017))
+  # State 01 in 2022 and state 02 in 2017, each complete.
+  x <- both_years[
+    (substr(both_years$fips, 1, 2) == "01" & both_years$year == 2022) |
+      (substr(both_years$fips, 1, 2) == "02" & both_years$year == 2017),
+  ]
+
+  expect_no_error(suppressWarnings(run_extrapolation(
+    county = x, state = state_both, acs = two$acs,
+    county_totals = both_years, no_county = "spread"
+  )))
+})
+
+test_that("the default report mode doesn't check for missing counties (#54)", {
+  full <- fake_county_atlas()
+  one_county <- full[full$fips == "01001", ]
+
+  tracts <- run_extrapolation(county = one_county, county_totals = full)
+
+  expect_equal(unique(tracts$county_fips), "01001")
+  expect_equal(unique(tracts$county_cases_spread), 0)
+})
+
 test_that("the no-county total is announced", {
   local_fake_sources(state = fake_state_atlas(no_county = 500))
   county <- impute_suppressed(fake_county_atlas())
 
   expect_snapshot(invisible(extrapolate_from_county(county)))
   expect_snapshot(invisible(extrapolate_from_county(county, no_county = "spread")))
+})
+
+# Missing ACS populations (#52) ------------------------------------------------
+# A missing estimate or variable row is not a zero: the county stratum it
+# belongs to is left out, not allocated over the remaining areas.
+
+acs_missing <- function(geoid, variables, drop = FALSE) {
+  acs <- fake_acs()
+  hit <- acs$GEOID %in% geoid & acs$variable %in% variables
+  if (drop) acs[!hit, ] else {
+    acs$estimate[hit] <- NA
+    acs
+  }
+}
+
+left_out_reasons <- function(tracts) {
+  na <- attr(tracts, "not_allocated")
+  unique(na[c("county_fips", "reason")])
+}
+
+test_that("a missing age band leaves its county out, with a warning", {
+  acs <- acs_missing("01001000100", "B01001_005")
+  expect_snapshot(tracts <- run_extrapolation(NULL, acs = acs))
+
+  expect_equal(unique(tracts$county_fips), "01003")
+  expect_equal(
+    left_out_reasons(tracts),
+    data.frame(county_fips = "01001", reason = "missing ACS population"),
+    ignore_attr = TRUE
+  )
+})
+
+test_that("an area with every band missing leaves its county out", {
+  bands <- sprintf("B01001_%03d", c(1:49))
+  acs <- acs_missing("01001000200", bands)
+  tracts <- suppressWarnings(run_extrapolation(NULL, acs = acs))
+
+  expect_equal(unique(tracts$county_fips), "01003")
+})
+
+test_that("a missing variable row leaves its county out", {
+  acs <- acs_missing("01003000100", "B01001_030", drop = TRUE)
+  tracts <- suppressWarnings(run_extrapolation(NULL, acs = acs))
+
+  expect_equal(unique(tracts$county_fips), "01001")
+  expect_equal(unique(left_out_reasons(tracts)$reason), "missing ACS population")
+})
+
+test_that("a real zero is still a zero, not missing", {
+  acs <- fake_acs()
+  acs$estimate[acs$GEOID == "01001000100" & acs$variable == "B01001_005"] <- 0
+
+  expect_no_warning(tracts <- run_extrapolation(NULL, acs = acs))
+  expect_setequal(unique(tracts$county_fips), c("01001", "01003"))
+})
+
+test_that("race scaling needs B01001_001", {
+  acs <- acs_missing("01001000100", "B01001_001")
+  tracts <- suppressWarnings(run_extrapolation("race", acs = acs))
+
+  expect_equal(unique(tracts$county_fips), "01003")
+})
+
+test_that("an empty result is still a result when every county is left out", {
+  acs <- acs_missing(fake_tracts$geoid, "B01001_005")
+  for (no_county in c("report", "spread")) {
+    tracts <- suppressWarnings(
+      run_extrapolation(NULL, acs = acs, no_county = no_county)
+    )
+    expect_equal(nrow(tracts), 0)
+    expect_true("area_cases" %in% names(tracts))
+    expect_setequal(attr(tracts, "not_allocated")$county_fips, c("01001", "01003"))
+  }
+})
+
+test_that("missing_population = 'error' stops instead", {
+  acs <- acs_missing("01001000100", "B01001_005")
+  expect_snapshot(
+    error = TRUE,
+    run_extrapolation(NULL, acs = acs, missing_population = "error")
+  )
 })
 
 # Rows that can't be allocated ---------------------------------------------------------

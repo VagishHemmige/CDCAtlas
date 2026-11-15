@@ -280,6 +280,19 @@ test_that("unestimated = 'zero' sets rows with no rate to 0", {
   expect_equal(unique(out$cases_source[out$fips == "01003"]), "not estimated")
 })
 
+test_that("population = 'acs' doesn't treat a missing population as 0 (#52)", {
+  acs <- fake_acs()
+  acs$estimate[acs$GEOID == "01003000100" & acs$variable == "B01001_030"] <- NA
+  local_fake_sources(acs = acs)
+  county <- fake_county_atlas(suppressed = "01003")
+
+  out <- suppressWarnings(impute_suppressed(county, cap = Inf, population = "acs"))
+  suppressed <- out[out$fips == "01003", ]
+
+  expect_equal(suppressed$cases, c(NA_real_, NA_real_))
+  expect_equal(unique(suppressed$cases_source), "not estimated")
+})
+
 test_that("not_available = 'keep' keeps the rows with no count", {
   county <- fake_county_atlas()
   county$cases[county$fips == "01003"] <- NA
