@@ -38,3 +38,30 @@
       i Please use `extrapolate_from_county()` instead.
       i Run `impute_suppressed()` on county data first.
 
+# geographies CDC doesn't report for a disease are refused
+
+    Code
+      get_atlas("hepatitis", "county", 2022)
+    Condition
+      Error in `get_atlas()`:
+      ! CDC doesn't report "hepatitis" for `geography = "county"`.
+      i Available for "hepatitis": "national" or "state".
+
+---
+
+    Code
+      get_atlas("congenital syphilis", "county", 2022)
+    Condition
+      Error in `get_atlas()`:
+      ! CDC doesn't report "congenital syphilis" for `geography = "county"`.
+      i Available for "congenital syphilis": "national" or "state".
+
+---
+
+    Code
+      get_atlas("chlamydia", "msa", 2022)
+    Condition
+      Error in `get_atlas()`:
+      ! CDC doesn't report "chlamydia" for `geography = "msa"`.
+      i Available for "chlamydia": "national", "state", or "county".
+

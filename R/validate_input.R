@@ -89,6 +89,20 @@
     )
   }
 
+  # AtlasPlus has no county data for hepatitis or congenital syphilis, and
+  # metropolitan areas only for HIV. From the locations CDC's set-up data
+  # lists for each indicator (`combo`), checked by a live test.
+  available <- .atlas_geographies(disease)
+  if (!geography %in% available) {
+    cli::cli_abort(
+      c(
+        "CDC doesn't report {.val {disease}} for {.code geography = \"{geography}\"}.",
+        "i" = "Available for {.val {disease}}: {.val {one_of(available)}}."
+      ),
+      call = call
+    )
+  }
+
   # year ------------------------------------------------------------------
 
   if (!is.numeric(year)) {
@@ -195,3 +209,18 @@
 
   invisible(TRUE)
 }
+
+
+# The geographies AtlasPlus reports for each get_atlas() disease. Regions are
+# only for the HIV estimates (see the region check above).
+.atlas_geographies <- function(disease) {
+  switch(
+    disease,
+    "hiv" = c("national", "state", "county", "msa"),
+    "estimate" = c("national", "region", "state", "county"),
+    "hepatitis" = ,
+    "congenital syphilis" = c("national", "state"),
+    c("national", "state", "county")
+  )
+}
+

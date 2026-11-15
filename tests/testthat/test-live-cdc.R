@@ -100,6 +100,31 @@ test_that("stored codes still match CDC's code table", {
   }
 })
 
+test_that("each disease's geographies are the ones CDC offers for its indicators", {
+  # CDC's set-up data list, for each indicator, every combination of codes
+  # AtlasPlus offers; `data_structure` names the variable type in each column
+  # (50 is the location).
+  combo <- .atlas_init_data()$combo
+  location_column <- match("50", combo$data_structure)
+  offered <- do.call(rbind, lapply(combo$diseases$combinations, function(m) {
+    m <- if (is.matrix(m)) m else do.call(rbind, m)
+    data.frame(indicator = m[, 1], location = m[, location_column])
+  }))
+  geography <- c(
+    "1001" = "national", "1002" = "state", "1003" = "county",
+    "1004" = "msa", "1005" = "region"
+  )
+  lookup <- .disease_indicators()
+  for (disease in unique(lookup$disease)) {
+    ids <- varvals$id[varvals$vtid == 1 &
+      varvals$name %in% lookup$indicator[lookup$disease == disease]]
+    for (id in ids) {
+      cdc <- unname(geography[as.character(unique(offered$location[offered$indicator == id]))])
+      expect_setequal(.atlas_geographies(disease), cdc)
+    }
+  }
+})
+
 for (year in c(2017, 2022)) {
   test_that(paste("Census variable codes have the expected labels,", year), {
     skip_if_not_installed("tidycensus")

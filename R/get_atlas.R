@@ -55,7 +55,8 @@
 #' @param disease A single disease name (e.g. `"gonorrhea"`).
 #' Multiple diseases are not currently supported in a single request.
 #' @param geography Character scalar. One of `"national"`, `"region"` (HIV
-#' estimates only), `"state"`, `"county"`, or `"msa"`.
+#' estimates only), `"state"`, `"county"` (not hepatitis or congenital
+#' syphilis), or `"msa"` (`"hiv"` only), as AtlasPlus offers them.
 #' @param extrapolate_to_tract `r lifecycle::badge("deprecated")` No longer
 #'   supported. Use [impute_suppressed()] and then [extrapolate_from_county()].
 #' @param year Integer vector of years. Valid values are from 2000 to 2023.
