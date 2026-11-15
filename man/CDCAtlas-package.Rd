@@ -4,11 +4,11 @@
 \name{CDCAtlas-package}
 \alias{CDCAtlas}
 \alias{CDCAtlas-package}
-\title{CDCAtlas: A package for downloading CDC Atlas data into R}
+\title{CDCAtlas: Download 'CDC AtlasPlus' Data and Estimate Tract-Level Counts}
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-Automated data extraction from the CDC Atlas database of HIV and STI data
+Downloads HIV, sexually transmitted infection, tuberculosis and viral hepatitis surveillance data from 'AtlasPlus', the interactive tool of the Centers for Disease Control and Prevention (CDC), through the endpoints its web application uses. Estimates suppressed county counts, reports cases in state totals that have no county, and allocates county counts to census tracts or block groups in proportion to American Community Survey (ACS) populations. Not affiliated with or endorsed by CDC.
 }
 \seealso{
 Useful links:
