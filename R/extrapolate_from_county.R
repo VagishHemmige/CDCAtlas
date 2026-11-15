@@ -44,7 +44,8 @@
 #'   * `"none"`: leave the estimates `NA`, with a warning.
 #' @param ages Ages the Census populations cover:
 #'   * `"auto"` (default): 13 and older for HIV indicators (as CDC reports
-#'     them), all ages otherwise.
+#'     them), all ages otherwise, decided indicator by indicator, so `x` can
+#'     combine HIV with other diseases.
 #'   * `"13+"` or `"all"`: set it yourself.
 #'
 #'   When `x` is stratified by age, the age groups set the ages, so 13 and
@@ -210,7 +211,6 @@ extrapolate_from_county <- function(
       call = call
     )
   }
-  ages <- .default_ages(x, stratify_by, ages)
 
   years <- sort(unique(as.numeric(as.character(x$year))))
   if (!is.null(acs_year)) {
@@ -241,12 +241,19 @@ extrapolate_from_county <- function(
     redistributed <- attr(county, "redistributed")
   }
   states <- sort(unique(county$state_fips))
-  pieces <- lapply(years, function(year) {
+  row_ages <- .row_ages(county, stratify_by, ages)
+  pieces <- list()
+  for (year in years) {
     acs <- acs_year %||% year
-    pop <- .area_population(acs, states, stratify_by, ages, to, race_table)
-    pop$acs_year <- acs
-    .join_areas(county[county$year == year, ], pop, stratify_by, to)
-  })
+    for (universe in unique(row_ages[county$year == year])) {
+      pop <- .area_population(acs, states, stratify_by, universe, to, race_table)
+      pop$acs_year <- acs
+      rows <- county$year == year & row_ages == universe
+      pieces[[length(pieces) + 1]] <- .join_areas(
+        county[rows, ], pop, stratify_by, to
+      )
+    }
+  }
   areas <- dplyr::bind_rows(lapply(pieces, `[[`, "areas"))
   not_allocated <- dplyr::bind_rows(lapply(pieces, `[[`, "not_allocated"))
 

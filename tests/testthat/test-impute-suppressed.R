@@ -174,6 +174,34 @@ test_that("population = 'acs' uses the county's tracts in the same stratum", {
   expect_equal(male$cases_source, "state_rate")
 })
 
+test_that("population = 'acs' keeps HIV at ages 13+ beside another disease (#53)", {
+  mixed <- function(make, ...) {
+    rbind(
+      make(indicators = "HIV prevalence", ...),
+      make(indicators = "Chlamydia", ...)
+    )
+  }
+  local_fake_sources(state = mixed(fake_state_atlas))
+  # One fake response holds both diseases' state rows.
+  local_mocked_bindings(.request_atlas_all = function(payloads) {
+    mixed(fake_state_atlas)
+  })
+  combined <- impute_suppressed(
+    mixed(fake_county_atlas, suppressed = "01003"),
+    cap = Inf,
+    population = "acs"
+  )
+  hiv_alone <- impute_suppressed(
+    fake_county_atlas(indicators = "HIV prevalence", suppressed = "01003"),
+    cap = Inf,
+    population = "acs"
+  )
+
+  hiv <- combined[combined$indicator == "HIV prevalence" &
+    combined$fips == "01003", ]
+  expect_equal(hiv$cases, hiv_alone$cases[hiv_alone$fips == "01003"])
+})
+
 test_that("population = 'acs' needs a Census key", {
   withr::local_envvar(CENSUS_API_KEY = "")
   local_mocked_bindings(.request_atlas = function(payload) stop("CDC was called"))

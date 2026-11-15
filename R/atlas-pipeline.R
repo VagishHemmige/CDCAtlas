@@ -200,16 +200,20 @@
   unique(lookup$disease[lookup$indicator %in% indicators])
 }
 
-# Ages the Census populations cover: 13+ for HIV indicators (and always for
-# age strata, whose groups start at 13), all ages otherwise.
-.default_ages <- function(x, stratify_by, ages = "auto") {
+# Ages the Census populations cover, for each row of `df`: 13+ for HIV
+# indicators (and always for age strata, whose groups start at 13), all ages
+# otherwise. Decided by each row's indicator, so combining diseases doesn't
+# change one disease's ages (#53). `ages` other than "auto" sets every row.
+.row_ages <- function(df, stratify_by, ages = "auto") {
   if (identical(stratify_by, "age")) {
-    return("13+")
+    return(rep("13+", nrow(df)))
   }
   if (ages != "auto") {
-    return(ages)
+    return(rep(ages, nrow(df)))
   }
-  if (all(.atlas_diseases(x) %in% c("hiv", "estimate"))) "13+" else "all"
+  lookup <- .disease_indicators()
+  disease <- lookup$disease[match(as.character(df$indicator), lookup$indicator)]
+  ifelse(disease %in% c("hiv", "estimate"), "13+", "all")
 }
 
 # Each row's value of the stratification variable (NA when unstratified),
