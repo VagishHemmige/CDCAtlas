@@ -132,12 +132,19 @@
 #'     \item{area_cases}{Estimated cases in the area.}
 #'   }
 #'
-#'   For HIV prevalence (including CDC's estimated prevalence), people without
-#'   HIV in an area can be estimated as `area_population_acs - area_cases`.
-#'   That doesn't hold for the other indicators: new diagnoses and incidence
-#'   need the population at risk, which excludes people already living with
-#'   HIV; chlamydia, gonorrhea and syphilis count infections rather than
-#'   people; and for Knowledge of Status the population isn't residents.
+#'   `area_population_acs - area_cases` means different things by indicator:
+#'   * HIV prevalence (people living with *diagnosed* HIV): residents aged 13
+#'     and older without diagnosed HIV, which includes people with
+#'     undiagnosed HIV.
+#'   * Estimated HIV prevalence (diagnosed and undiagnosed): closer to
+#'     residents without HIV, under the estimate's own assumptions.
+#'   * Other indicators: no such meaning. New diagnoses and incidence need the
+#'     population at risk, which excludes people already living with HIV;
+#'     chlamydia, gonorrhea and syphilis count infections rather than people;
+#'     for Knowledge of Status the population isn't residents.
+#'
+#'   It can be negative where `empty_strata` shares cases into a stratum with
+#'   no ACS population.
 #'
 #'   Two attributes record what was not allocated:
 #'   `attr(result, "no_county_cases")`, the [no_county_cases()] report, and
