@@ -57,6 +57,27 @@ test_that("national HIV request returns both indicators, 2017", {
   expect_gt(out$cases[out$indicator == "HIV prevalence"], 900000)
 })
 
+test_that("stored codes still match CDC's code table", {
+  # R/sysdata.rda is built by data-raw/DATASET.R. CDC may add codes (a new
+  # year, say); that is fine. A stored code that CDC dropped or relabelled
+  # means get_atlas() would send or label something wrong: rerun DATASET.R.
+  current <- tibble::as_tibble(.atlas_init_data()$varvals)
+  cols <- c("id", "name", "vtid", "fips")
+
+  expect_contains(current$id, varvals$id)
+  stored <- varvals[cols]
+  expect_equal(
+    current[match(stored$id, current$id), cols],
+    stored,
+    ignore_attr = TRUE
+  )
+
+  for (level in names(lookup)) {
+    rows <- match(lookup[[level]]$geo_id, current$id)
+    expect_equal(current$fips[rows], lookup[[level]]$fips, label = level)
+  }
+})
+
 # Tract pipeline with real CDC and Census data. Needs tidycensus and a Census
 # API key (CENSUS_API_KEY); each extrapolation downloads tract populations for
 # every state, so expect several minutes per test.

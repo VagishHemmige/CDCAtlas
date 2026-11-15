@@ -55,8 +55,9 @@ suppression/remainder and geography concerns. Recheck their current discussion
 and implementation rather than treating every proposal as adopted policy.
 [#45](https://github.com/VagishHemmige/CDCAtlas/issues/45) proposes a source
 interpretation article; do not claim it exists until it is committed.
-[#4](https://github.com/VagishHemmige/CDCAtlas/issues/4) tracks the currently
-uncommitted data-generation scripts. Do not invent their contents.
+`data-raw/DATASET.R` builds `R/sysdata.rda` from CDC's AtlasPlus set-up data;
+[#4](https://github.com/VagishHemmige/CDCAtlas/issues/4) tracks the remaining
+data-generation work (age schemes).
 
 ## Implementation and approval
 

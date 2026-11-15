@@ -4,7 +4,11 @@
 .httr-oauth
 .DS_Store
 .quarto
-data-raw/
+# data-raw/ is committed, except the maintainer's private working files:
+# AIDSVu downloads (their use is governed by AIDSVu's terms) and source PDFs.
+/data-raw/AIDSVu/
+/data-raw/aidsvu_*.R
+/data-raw/*.pdf
 
 inst/doc
 /doc/
