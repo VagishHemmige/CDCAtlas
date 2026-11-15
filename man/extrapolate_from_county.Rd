@@ -242,6 +242,25 @@ current county they fall in. The one 2010 tract split between two planning
 regions is shared by land area. The crosswalk ships in
 \code{inst/extdata/tract-2010-crosswalk.csv}.
 
+CDC's current county codes the package knows an ACS release lacks:
+\itemize{
+\item Connecticut's planning regions: handled by the crosswalk for ACS 2010 to
+2019; missing from ACS 2009, 2020 and 2021, which code Connecticut by its
+old counties (#121); in ACS 2022 on.
+\item Chugach and Copper River, Alaska: handled by the crosswalk for ACS 2010
+to 2019; missing from ACS 2009; in ACS 2020 on.
+\item Kusilvak, Alaska (02158, formerly Wade Hampton 02270) and Oglala Lakota,
+South Dakota (46102, formerly Shannon 46113), renamed in 2015: missing
+from ACS releases before 2015 (#121).
+}
+
+This list is not a full check of every ACS vintage against CDC's map.
+Counties a release doesn't match are left out with a warning that says
+why, for the cases above. In 2010-2019 a block group follows its tract: the block groups of the
+one split tract (09013890201) are shared between Capitol and Northeastern
+Connecticut planning regions by the tract's land area, not by where each
+block group lies.
+
 Tract and block group boundaries change every ten years, so estimates from
 ACS years on different sides of a decennial census (2017 and 2022, say)
 can't be compared area by area.
