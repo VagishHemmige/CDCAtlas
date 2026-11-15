@@ -16,3 +16,11 @@
       ! CDC AtlasPlus set-up data has no varvals code table.
       i CDC may have changed AtlasPlus.
 
+# get_atlas() checks `refresh`
+
+    Code
+      get_atlas("hiv", "national", 2020, refresh = NA)
+    Condition
+      Error in `get_atlas()`:
+      ! `refresh` must be `TRUE` or `FALSE`.
+

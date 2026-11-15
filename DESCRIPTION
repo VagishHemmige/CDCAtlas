@@ -18,7 +18,8 @@ Imports:
     httr,
     jsonlite,
     labelled,
-    memoise,
+    cachem (>= 1.0.0),
+    memoise (>= 2.0.0),
     digest,
     tibble,
     lifecycle

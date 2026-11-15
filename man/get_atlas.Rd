@@ -9,6 +9,7 @@ get_atlas(
   geography,
   year,
   stratify_by = NULL,
+  refresh = FALSE,
   extrapolate_to_tract = deprecated()
 )
 }
@@ -24,6 +25,9 @@ Can be a single year (e.g., \code{2022}) or a sequence (e.g., \code{2018:2022}).
 
 \item{stratify_by}{Optional character vector. Zero, one, or two of
 \code{"age"}, \code{"race"}, \code{"sex"}. If \code{NULL}, totals (unstratified) are returned.}
+
+\item{refresh}{If \code{TRUE}, download the data again from CDC even if a saved
+copy is less than 30 days old, and save the new copy. Default \code{FALSE}.}
 
 \item{extrapolate_to_tract}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} No longer
 supported. Use \code{\link[=impute_suppressed]{impute_suppressed()}} and then \code{\link[=extrapolate_from_county]{extrapolate_from_county()}}.}
@@ -111,6 +115,15 @@ This function is a reverse-engineered wrapper around the AtlasPlus
 public query system. The CDC does not publish an official API specification,
 and internal identifiers may change without notice. If the CDC modifies the
 backend schema, requests may fail. Please report issues via GitHub.
+\subsection{Saved downloads}{
+
+Each response from CDC is saved in the folder given by
+\code{tools::R_user_dir("CDCAtlas", "cache")} and reused for 30 days, so the same
+request doesn't download the data again. After 30 days the data are
+downloaded again, which picks up any revisions CDC has made. Use
+\code{refresh = TRUE} to download them sooner. Deleting the folder removes every
+saved response.
+}
 }
 \examples{
 \dontrun{
