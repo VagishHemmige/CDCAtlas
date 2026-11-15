@@ -103,7 +103,7 @@ county sums does not validate subgroup or geographic estimates.
 Do not invent definitions or silently choose unresolved methodological defaults.
 Preserve authoritative sources, versions/dates when available, and durable
 rationale near the code or in existing scientific documentation; link from
-PRs. The issue/vignette map in AGENTS.md supplies project rationale, not
+PRs. The issue/article map in AGENTS.md supplies project rationale, not
 independent verification of CDC definitions.
 
 ## Validation
@@ -150,7 +150,7 @@ coverage gap. Distinguish modeled estimates with assumptions and uncertainty
 from recovering suppressed observed counts.
 Report OS, R/package versions if execution occurred, failures, skipped checks
 and material coverage limits. Give exact remaining maintainer commands,
-including vignette rebuilds when affected, only after stating prerequisites,
+including article rebuilds when affected, only after stating prerequisites,
 network/cache effects and what the commands establish.
 Check dependency minimums and material Windows portability risks. Generated
 documentation can be a staged follow-up if explicitly documented, but broken
