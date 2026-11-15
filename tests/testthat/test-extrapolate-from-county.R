@@ -66,6 +66,53 @@ test_that("tract estimates are county count x tract share of the stratum", {
   )
 })
 
+test_that("allocation uses known shares after saving and reordering county rows", {
+  county <- data.frame(
+    indicator = "Chlamydia",
+    year = 2022,
+    geography = c("Synthetic A", "Synthetic B"),
+    data_status = "Not Suppressed",
+    race_ethnicity = "All races/ethnicities",
+    sex = "Both sexes",
+    age = "All age groups",
+    cases = c(12, 20),
+    population = c(400, 100),
+    fips = c("01001", "01003")
+  )
+  state <- county[1, ]
+  state$fips <- "01"
+  state$cases <- 32
+  state$population <- 500
+  acs <- expand.grid(
+    GEOID = c("01001000100", "01001000200", "01003000100"),
+    variable = sprintf("B01001_%03d", 1:49),
+    stringsAsFactors = FALSE
+  )
+  acs$NAME <- "Synthetic tract"
+  acs$estimate <- 0
+  totals <- acs$variable %in% c("B01001_001", "B01001_003")
+  acs$estimate[totals] <- rep(c(100, 300, 100), 2)
+  local_mocked_bindings(
+    .request_atlas = function(payload) state,
+    .check_census_ready = function(call) invisible(),
+    .get_acs_areas = function(...) acs[nrow(acs):1, ]
+  )
+
+  saved <- withr::local_tempfile(fileext = ".rds")
+  saveRDS(impute_suppressed(county), saved)
+  restored <- readRDS(saved)[2:1, ]
+  areas <- suppressMessages(extrapolate_from_county(restored))
+  areas <- areas[order(areas$geoid), ]
+
+  # Independently specified shares: 12 * 1/4, 12 * 3/4, and all of county B.
+  expect_equal(areas$geoid, c("01001000100", "01001000200", "01003000100"))
+  expect_equal(areas$county_fips, c("01001", "01001", "01003"))
+  expect_equal(areas$area_population_acs, c(100, 300, 100))
+  expect_equal(areas$area_cases, c(3, 9, 20))
+  expect_equal(attr(areas, "no_county_cases")$no_county_cases, 0)
+  expect_equal(nrow(attr(areas, "not_allocated")), 0)
+})
+
 # Census denominators ------------------------------------------------------------
 
 test_that("HIV denominators count ages 13+, with 2/5 of the 10-14 band", {

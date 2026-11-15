@@ -1,11 +1,13 @@
 # Synthetic audit checks
 
-Reusable checks written during a whole-package review
-([PACKAGE_REVIEW.md](../../PACKAGE_REVIEW.md)). They are not package tests:
-nothing here runs in R CMD check or CI, and nothing changes package behavior.
-The folder is excluded from package builds.
+Optional local runner for temporary synthetic checks during a whole-package
+review ([PACKAGE_REVIEW.md](../../PACKAGE_REVIEW.md)). It does not run in R CMD
+check or CI. The folder is excluded from package builds.
 
-No review has been run yet, so `tests/` is empty.
+Standing checks belong in the existing `tests/testthat/` files and workflows.
+Keep temporary review checks in the review deliverable or owning issue until
+integrated with the fix; remove duplicates afterwards. An empty `tests/` directory
+means there are no local checks for this runner, not that no review has occurred.
 
 ## Run
 
@@ -44,6 +46,6 @@ them.
 
 ## Recorded execution
 
-For each review, record the revision checked, OS, R and package versions, the
-command and the result here, and say which checks pass, fail, depend on a
-decision, or could not run.
+Record the revision, OS, R and dependency versions, commands and results in the
+review deliverable or PR, including passing, failing, decision-dependent and
+blocked checks. Do not accumulate review logs or a second backlog in this folder.

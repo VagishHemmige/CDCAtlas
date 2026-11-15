@@ -133,6 +133,13 @@ incompatible denominators, mixed indicators and partial geographic coverage.
 Use numerical tolerances appropriate to the calculation, not arbitrary
 rounding to force agreement.
 
+For a fix arising from a review, check that the useful reproducer becomes
+ordinary coverage in the existing owning test file, or that the PR explains
+why existing coverage suffices or the expectation was rejected. Verify failure
+before the fix and success afterwards when feasible. Retire duplicate standalone
+checks once covered. An unresolved methodological preference is not a permanent
+test contract. This requirement is scoped to the change, not a new package audit.
+
 Keep these evidence categories separate:
 1. Source inspection and mathematical reasoning.
 2. Personally executed synthetic checks.

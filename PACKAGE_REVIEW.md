@@ -37,8 +37,10 @@ code or decide scientific defaults. Proposed repairs and methodological choices
 belong in the report for maintainer consideration. Review work includes writing
 and running independent synthetic audit tests in the isolated workspace and
 preparing concrete test and CI patches for review. Preserve these as
-deliverables; do not silently install them into the package or activate changed
-workflows.
+deliverables outside the repository until integration is authorized; do not
+silently install them into the package or activate changed workflows. The lasting
+outcome is appropriate checks in existing tests and workflows, not another audit
+suite or repository archive.
 
 ### Data and execution boundaries
 
@@ -289,11 +291,17 @@ claimed and whether tests would detect meaningfully wrong results. Reproduce
 serious suspected defects when feasible.
 
 Write meaningful new synthetic tests for uncovered high-risk behavior and
-suspected defects during the audit. Preserve reusable test files, small
-documented synthetic fixtures or generators, and the exact runner, in
-`tools/audit/` on a review branch. Keep audit additions distinct from the frozen
-baseline. A later test author must be able to rerun them against the same
-revision without reconstructing the review conversation.
+suspected defects during the audit. Keep their fixtures, commands and results in
+the permitted durable review deliverable, separate from the frozen baseline.
+Use the existing isolated runner where useful; its presence does not require
+committing a second test suite. A later test author must be able to reproduce a
+finding from its issue example or retained deliverable without the conversation.
+
+For lasting coverage, strengthen existing tests or place a regression beside the
+owning function's tests with its approved fix. Do not commit raw reports, role
+transcripts, coverage ledgers, runtime downloads or exploratory scripts. Keep
+source facts in the existing reference catalogue and decisions in owning issues;
+do not create a tracking issue or a second live backlog.
 
 For each new test record its purpose, independently justified expectation,
 source or accepted contract, affected paths, related issues, dependencies,
@@ -303,8 +311,8 @@ command and result. Classify deliverables as:
 - **Failing:** a reproducible discrepancy linked to a finding, with defect versus
   incorrect test expectation distinguished by evidence.
 - **Decision-dependent:** alternative synthetic comparisons awaiting a
-  maintainer decision; do not encode one alternative as the approved
-  expectation.
+  maintainer decision. Keep them out of permanent pass/fail proposals until the
+  contract is selected; label observed behavior without endorsing it.
 - **Blocked or not run:** the exact blocker and remaining verification work.
 
 Retain a failing reproducer even if the fix is outside review scope. Do not make
@@ -316,17 +324,24 @@ package behavior.
 A prioritized proposal for ongoing testing is a required outcome. Identify what
 belongs in regular tests, live tests, audit runners or CI, including existing
 tests that should be strengthened rather than duplicated. For each useful audit
-check, recommend permanent integration, a retained reproducer, or disposal.
+check, recommend integration into an existing owning test file, a temporary
+reproducer retained with its issue/review deliverable, or disposal.
 Explain coverage gained, priority, runtime and maintenance cost, and
 prerequisites. If no changes are warranted, justify that from the assessment.
 
 Deliver reviewable test additions and inert workflow patches for material gaps,
 with destination files, rationale, commands, dependencies, expected signals and
-validation already performed. Store workflow proposals as patch files, not
-active workflows. Preparing patches does not authorize activating workflows,
+validation already performed. Keep these proposals in the durable review
+deliverable, not a new repository proposal directory. Prefer existing workflows;
+add a job only for a demonstrated gap that they cannot adequately cover. Store
+unapproved workflow proposals as patch files, not active workflows. Preparing
+patches does not authorize activating workflows,
 changing repository settings or using secrets. Installing permanent tests and
 workflows is a separate step through task branches and PRs after maintainer
-review.
+review. Fix PRs must integrate, replace or retire the relevant reproducer with a
+brief rationale. Demonstrate the regression before and after the fix; do not
+merge known failing tests, encode incorrect output as expected, or add skips to
+make a gate pass. Remove standalone duplicates when ordinary tests cover them.
 
 ### Execution record and remaining checks
 
@@ -399,8 +414,10 @@ a disposition; serious findings have a reproducer or a specific verification
 blocker; scientific claims have sources or explicit uncertainty; draft comments
 and new-issue proposals are ready for maintainer review; and reusable audit
 tests and justified test and CI proposals are preserved and linked. "Not
-assessed" remains a coverage gap. If gaps remain, label the report partial and
-state what remains.
+assessed" remains a coverage gap. Report analytical coverage, remaining
+validation and repository integration
+separately. If gaps remain, label the report partial and state what remains;
+posting findings does not establish that checks or documentation were integrated.
 
 ### Integrate knowledge before closing the review
 
@@ -411,8 +428,10 @@ regression tests belong beside the affected tests, user-facing corrections in
 the relevant help or article, and process lessons in the applicable review
 protocol. Retain audit reproducers until their implementation is approved.
 
-Prepare concrete, self-reviewed documentation diffs as review deliverables on a
-task branch or PR where permitted. Record each material result as integrated
+Prepare concrete, self-reviewed diffs for existing documentation as review
+deliverables on a task branch or PR where permitted. Keep full reports and
+bookkeeping outside the repository; a short PR description and the owning issues
+are sufficient for integration status. Record each material result as integrated
 (with link), proposed (with patch or link), deferred (with owning issue and
 reason) or archive-only (with reason). Track unresolved package choices in their
 owning issues; reference entries may explain the alternatives without becoming
