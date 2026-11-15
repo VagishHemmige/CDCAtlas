@@ -78,7 +78,7 @@ waves if concurrency is limited; do not omit a role to fit available slots.
 | Senior R package engineer | Every exported function and internal helper, contracts, types, attributes, dependencies, namespace, errors, caching, rate limiting, side effects and architecture |
 | Independent testing and reproducibility engineer | Owns the existing-test and CI audit, creation and execution of reusable synthetic audit tests, and concrete permanent-test and CI proposals; challenges claimed guarantees |
 | Scientific librarian and provenance reviewer | Sources for every definition, code table and methodological claim, including version and section; reference-catalogue quality and placement |
-| Researcher using the package | Installation, README, help, articles and website; discoverability, comprehensibility, practical misuse risks and missing capabilities |
+| Researcher using the package | Owns the site, articles and documentation review (section 4): whether a new user can follow the articles to a correct result and understands what each result is; discoverability, practical misuse risks and missing capabilities |
 
 Review existing capabilities and relevant gaps; do not invent unsupported
 methods merely to fill a role's assignment.
@@ -201,7 +201,65 @@ choices and unresolved questions. A methodological choice needs options,
 consequences and a named maintainer decision; do not add options merely to
 avoid deciding.
 
-## 4. Independent validation, test creation and CI
+## 4. Site, articles and documentation
+
+The researcher using the package owns this workstream. The epidemiologist and
+the ACS methods reviewer check that explanations are correct, the package
+engineer checks that the site matches the code, and the librarian checks
+citations. Give the researcher the published site and the help pages first,
+before any code, so the first reading is a user's.
+
+### Reading for understanding
+
+Read every article, the README, and the help page of every exported function
+as a researcher who knows R but not AtlasPlus or the package would.
+
+- **Can a reader get to a correct result?** Follow each article's steps in
+  order in the isolated workspace, using mocked or recorded data where live
+  requests are not authorized. Record any step that fails, needs knowledge the
+  text does not give, or depends on an earlier unstated choice.
+- **Is each result explained for what it is?** A reader should know that filled
+  suppressed counts are estimates, what "cases with no county" means, that tract
+  and block-group figures are allocations rather than observed counts, which
+  assumptions each step makes, and its limitations.
+- **Are choices explained?** For each option that changes a result, the reader
+  should learn what it does, when to pick each value, and what the default
+  assumes.
+- **Are terms defined?** Suppression, data status, indicator names, age
+  universe, preliminary and provisional data, geography vintage: defined at
+  first use, and the same way in the articles and the help pages.
+- **Does it read well?** Purpose before procedure, simple cases before
+  advanced ones, headings that say what a section is for, plain language, short
+  sentences, acronyms spelled out, examples that look like real use.
+- **Where could a careful reader still go wrong?** For example, summing state
+  rows into a national total that includes territories, comparing preliminary
+  years, treating rates or percentages as counts, or combining strata the
+  package does not support.
+
+Record each finding as the passage, the problem, its likely consequence for a
+reader, and a proposed rewrite. Keep these separate from code defects; an
+explanation that contradicts the code is both, and is reported as both.
+
+### Site and code agree
+
+- Every exported function is in the reference index. Help text matches the
+  behavior: arguments, defaults, returned columns, messages and errors.
+  Examples run.
+- Articles use the current API, and the output they show matches what the code
+  returns. Figures from CDC or the Census say when they were retrieved or are
+  produced at build. Descriptions of methods match the code and the reference
+  catalogue.
+- The deployed site was built from the reviewed revision (compare the site's
+  `pkgdown.yml` and the `gh-pages` commit with the default branch), the site
+  builds, and its links work. `llms.txt` and the Markdown copies match the
+  pages. Record root Markdown files published as unlinked pages.
+- Accessibility: alt text that conveys what each chart shows, headings in
+  order, descriptive link text, nothing conveyed by color alone, readable
+  tables.
+- Release: nothing private, nothing governed by other terms, and no keys on the
+  public site.
+
+## 5. Independent validation, test creation and CI
 
 The testing and reproducibility engineer owns this workstream. The
 epidemiologist, ACS reviewer and biostatistician establish expected results;
@@ -280,7 +338,7 @@ the exact blocker. Do not claim execution from inspection alone. Synthetic
 checks establish behavior, not agreement with CDC's published figures; give
 exact live checks the maintainer can authorize.
 
-## 5. Reconcile every open issue
+## 6. Reconcile every open issue
 
 After independent discovery, give the relevant reviewers the full issue and
 discussion, linked PRs and supporting material. Each open issue receives a
@@ -298,7 +356,7 @@ Do not accept an issue's proposed solution as authoritative. Do not use generic
 "still relevant" comments in place of analysis. Refresh the issue inventory at
 report completion; account for newly opened or closed issues explicitly.
 
-## 6. Cross-specialty challenge and future gaps
+## 7. Cross-specialty challenge and future gaps
 
 After the first passes, have the epidemiologist, ACS reviewer and biostatistician
 challenge estimate definitions together; the AtlasPlus specialist and package
@@ -314,7 +372,7 @@ correctness blockers, validation gaps, design decisions, documentation needs and
 optional enhancements. Consider reuse of existing capabilities before proposing
 new APIs.
 
-## 7. Consolidated report and completion criteria
+## 8. Consolidated report and completion criteria
 
 Deliver:
 - Executive assessment and prioritized findings.
@@ -327,6 +385,7 @@ Deliver:
   a manifest distinguishing passing, failing, decision-dependent and blocked
   checks.
 - Concrete permanent-test and CI patches for material gaps.
+- Site, article and help findings, with proposed rewrites.
 - A staged roadmap appropriate to the package's development stage.
 
 Give each finding a stable ID, severity (Must fix / Should fix / Consider),
@@ -363,7 +422,7 @@ End the consolidated report with a short closing summary: what was preserved,
 where it lives, and what remains unresolved. Future first-pass packets must
 still exclude these accumulated diagnoses until reconciliation.
 
-## 8. Report first, posting afterwards
+## 9. Report first, posting afterwards
 
 Present the consolidated report to the maintainer before posting any audit
 comments or new issues. Wait for the maintainer's response authorizing the
@@ -387,7 +446,7 @@ require per-file approval of concrete, self-reviewed drafts under the
 maintainer's working instructions. This document grants no standing posting,
 implementation or automated-review permissions.
 
-## 9. Posting templates
+## 10. Posting templates
 
 The templates are drafting prompts, not mandatory boilerplate. Replace
 placeholders, omit inapplicable sections, and never fill a field with an
