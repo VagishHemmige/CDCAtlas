@@ -48,6 +48,51 @@ test_that("national HIV request returns both indicators, 2017", {
   expect_gt(out$cases[out$indicator == "HIV prevalence"], 900000)
 })
 
+# The help for get_atlas() describes these indicators; these checks keep it
+# true.
+test_that("each disease returns the indicators its help describes, 2021", {
+  local_mocked_bindings(.request_atlas = .request_atlas_internal)
+  indicators <- function(disease) {
+    as.character(unique(get_atlas(disease, "national", 2021)$indicator))
+  }
+
+  expect_setequal(
+    indicators("adult syphilis"),
+    c(
+      "Primary and Secondary Syphilis",
+      "Early Non-Primary, Non-Secondary Syphilis",
+      "Unknown Duration or Late Syphilis"
+    )
+  )
+  expect_setequal(
+    indicators("hepatitis"),
+    c("Hepatitis  A", "Acute Viral Hepatitis B", "Acute Viral Hepatitis C")
+  )
+})
+
+test_that("reported counts have no confidence intervals and estimates do, 2021", {
+  local_mocked_bindings(.request_atlas = .request_atlas_internal)
+  reported <- get_atlas("hiv", "national", 2021)
+  estimated <- get_atlas("estimate", "national", 2021)
+  ci <- c("lowerci_rate", "upperci_rate", "lowerci_cases", "upperci_cases")
+
+  expect_equal(sum(!is.na(as.matrix(reported[ci]))), 0)
+  expect_setequal(
+    as.character(unique(estimated$indicator)),
+    c(
+      "Estimated HIV incidence",
+      "Estimated HIV prevalence (undiagnosed and diagnosed)",
+      "Knowledge of Status"
+    )
+  )
+  counts <- estimated[estimated$indicator != "Knowledge of Status", ]
+  expect_equal(sum(is.na(as.matrix(counts[c("lowerci_cases", "upperci_cases")]))), 0)
+  status <- estimated[estimated$indicator == "Knowledge of Status", ]
+  expect_equal(nrow(status), 1)
+  values <- unlist(status[c("cases", "rate100000")])
+  expect_equal(any(values > 0 & values <= 100, na.rm = TRUE), TRUE)
+})
+
 test_that("stored codes still match CDC's code table", {
   # R/sysdata.rda is built by data-raw/DATASET.R. CDC may add codes (a new
   # year, say); that is fine. A stored code that CDC dropped or relabelled

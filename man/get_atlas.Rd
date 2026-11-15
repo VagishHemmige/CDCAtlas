@@ -2,7 +2,7 @@
 % Please edit documentation in R/get_atlas.R
 \name{get_atlas}
 \alias{get_atlas}
-\title{Retrieve STI surveillance data from CDC AtlasPlus}
+\title{Retrieve surveillance data from CDC AtlasPlus}
 \usage{
 get_atlas(
   disease,
@@ -39,12 +39,15 @@ A tibble with the following columns:
 \item{sex}{Sex category (factor, if stratified)}
 \item{age}{Age group (factor, if stratified)}
 \item{transmission}{Transmission category (factor)}
-\item{rate100000}{Incidence rate per 100,000 (numeric)}
+\item{rate100000}{Rate per 100,000 population (numeric)}
 \item{cases}{Case count (numeric)}
 \item{population}{Population denominator (numeric)}
-\item{lowerci_rate, upperci_rate}{95\% CI bounds for rate (numeric)}
+\item{lowerci_rate, upperci_rate}{95\% CI bounds for rate (numeric). Usually
+empty (\code{NA}) for reported cases; given for the modeled estimates.}
 \item{rse}{Relative standard error (numeric)}
-\item{lowerci_cases, upperci_cases}{95\% CI bounds for cases (numeric)}
+\item{lowerci_cases, upperci_cases}{95\% CI bounds for cases (numeric).
+Usually empty (\code{NA}) for reported cases; given for the modeled
+estimates.}
 \item{fips}{FIPS code (character)}
 }
 
@@ -54,8 +57,9 @@ compatibility for all years.
 }
 \description{
 \code{get_atlas()} provides a programmatic interface to the CDC AtlasPlus platform,
-returning case counts, population denominators, and rate estimates for
-sexually transmitted infection (STI) surveillance. The function submits a
+returning case counts, population denominators, and rates for HIV, sexually
+transmitted infections (STIs), viral hepatitis and tuberculosis surveillance.
+The function submits a
 payload to the AtlasPlus data endpoint and parses the response into a tidy
 tibble.
 }
@@ -76,16 +80,30 @@ tracts <- extrapolate_from_county(county)
 }\if{html}{\out{</div>}}
 
 \strong{Supported diseases}
+
+Some values return more than one indicator; the \code{indicator} column says
+which row is which.
 \itemize{
 \item \code{"chlamydia"}
 \item \code{"gonorrhea"}
-\item \code{"adult syphilis"}
+\item \code{"adult syphilis"}: three indicators, one per stage: primary and
+secondary syphilis; early non-primary, non-secondary syphilis; and
+syphilis of unknown duration or late syphilis.
 \item \code{"congenital syphilis"}
 \item \code{"tuberculosis"}
-\item \code{"hiv"} (will provide confirmed diagnoses)
-\item \code{"estimate"} (estimated HIV counts)
-\item \code{"hepatitis"}
+\item \code{"hiv"}: two indicators, HIV diagnoses (new diagnoses in the year) and
+HIV prevalence (people living with diagnosed HIV).
+\item \code{"estimate"}: three modeled HIV indicators: estimated HIV incidence,
+estimated HIV prevalence (diagnosed and undiagnosed), and Knowledge of
+Status. Knowledge of Status is a percentage, not a count. CDC doesn't
+release these estimates for every year or geography; check AtlasPlus for
+what is available.
+\item \code{"hepatitis"}: three indicators: hepatitis A, acute hepatitis B and acute
+hepatitis C.
 }
+
+HIV indicators cover people aged 13 and older; the other diseases cover all
+ages.
 
 \strong{Geography}
 \itemize{

@@ -1,8 +1,9 @@
-#' Retrieve STI surveillance data from CDC AtlasPlus
+#' Retrieve surveillance data from CDC AtlasPlus
 #'
 #' `get_atlas()` provides a programmatic interface to the CDC AtlasPlus platform,
-#' returning case counts, population denominators, and rate estimates for
-#' sexually transmitted infection (STI) surveillance. The function submits a
+#' returning case counts, population denominators, and rates for HIV, sexually
+#' transmitted infections (STIs), viral hepatitis and tuberculosis surveillance.
+#' The function submits a
 #' payload to the AtlasPlus data endpoint and parses the response into a tidy
 #' tibble.
 #'
@@ -23,14 +24,28 @@
 #' ```
 #'
 #' **Supported diseases**
+#'
+#' Some values return more than one indicator; the `indicator` column says
+#' which row is which.
 #' - `"chlamydia"`
 #' - `"gonorrhea"`
-#' - `"adult syphilis"`
+#' - `"adult syphilis"`: three indicators, one per stage: primary and
+#'   secondary syphilis; early non-primary, non-secondary syphilis; and
+#'   syphilis of unknown duration or late syphilis.
 #' - `"congenital syphilis"`
 #' - `"tuberculosis"`
-#' - `"hiv"` (will provide confirmed diagnoses)
-#' - `"estimate"` (estimated HIV counts)
-#' - `"hepatitis"`
+#' - `"hiv"`: two indicators, HIV diagnoses (new diagnoses in the year) and
+#'   HIV prevalence (people living with diagnosed HIV).
+#' - `"estimate"`: three modeled HIV indicators: estimated HIV incidence,
+#'   estimated HIV prevalence (diagnosed and undiagnosed), and Knowledge of
+#'   Status. Knowledge of Status is a percentage, not a count. CDC doesn't
+#'   release these estimates for every year or geography; check AtlasPlus for
+#'   what is available.
+#' - `"hepatitis"`: three indicators: hepatitis A, acute hepatitis B and acute
+#'   hepatitis C.
+#'
+#' HIV indicators cover people aged 13 and older; the other diseases cover all
+#' ages.
 #'
 #' **Geography**
 #' - `"national"`
@@ -69,12 +84,15 @@
 #'   \item{sex}{Sex category (factor, if stratified)}
 #'   \item{age}{Age group (factor, if stratified)}
 #'   \item{transmission}{Transmission category (factor)}
-#'   \item{rate100000}{Incidence rate per 100,000 (numeric)}
+#'   \item{rate100000}{Rate per 100,000 population (numeric)}
 #'   \item{cases}{Case count (numeric)}
 #'   \item{population}{Population denominator (numeric)}
-#'   \item{lowerci_rate, upperci_rate}{95% CI bounds for rate (numeric)}
+#'   \item{lowerci_rate, upperci_rate}{95% CI bounds for rate (numeric). Usually
+#'     empty (`NA`) for reported cases; given for the modeled estimates.}
 #'   \item{rse}{Relative standard error (numeric)}
-#'   \item{lowerci_cases, upperci_cases}{95% CI bounds for cases (numeric)}
+#'   \item{lowerci_cases, upperci_cases}{95% CI bounds for cases (numeric).
+#'     Usually empty (`NA`) for reported cases; given for the modeled
+#'     estimates.}
 #'   \item{fips}{FIPS code (character)}
 #' }
 #'
