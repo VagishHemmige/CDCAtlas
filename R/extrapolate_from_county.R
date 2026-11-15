@@ -708,6 +708,7 @@ extrapolate_from_county <- function(
     variable = acs$variable,
     estimate = acs$estimate
   )
+  .check_acs_unique(acs)
 
   # Sum of each area's estimates for the variables in `table`, weighted. A
   # variable can count towards more than one stratum. A missing estimate, or
@@ -728,7 +729,7 @@ extrapolate_from_county <- function(
     ) |>
       dplyr::summarize(
         value = sum(.data$estimate * .data$weight),
-        n_found = dplyr::n(),
+        n_found = dplyr::n_distinct(.data$variable),
         .by = c("geoid", "stratum")
       )
     n_needed <- needed$n_needed[match(sums$stratum, needed$stratum)]
@@ -778,6 +779,27 @@ extrapolate_from_county <- function(
     out <- .apply_tract_crosswalk(out)
   }
   out
+}
+
+# Each area should have each ACS variable once. A repeated row would let a
+# duplicate stand in for a missing variable, or count an area twice and skew
+# the shares, so stop (#111).
+.check_acs_unique <- function(acs) {
+  repeated <- duplicated(acs[c("geoid", "variable")])
+  if (!any(repeated)) {
+    return(invisible())
+  }
+  areas <- unique(acs$geoid[repeated])
+  cli::cli_abort(
+    c(
+      "The Census returned some ACS variables more than once for the same
+       area.",
+      "i" = "{cli::qty(length(areas))}Area{?s}: {.val {areas}}.",
+      "i" = "This shouldn't happen; please report it at
+             {.url https://github.com/VagishHemmige/CDCAtlas/issues}."
+    ),
+    call = NULL
+  )
 }
 
 # ACS 5-year releases on 2010 tracts and block groups (2006-2010 to 2015-2019).
