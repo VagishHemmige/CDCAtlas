@@ -36,11 +36,8 @@ id<- switch (geography,
 id<-c(id, year-1478)
 
 #Add stratification variables to id
-#Add age stratification variables
-if ("age" %in% stratify_by & !("hiv" %in% disease)) {id<-c(id,654,657,660,661,663,664,666,668,669,672,673)}
-if (!("age" %in% stratify_by) & !("hiv" %in% disease | "estimate" %in% disease)){id<-c(id, 651)}
-if ("age" %in% stratify_by & ("hiv" %in% disease)) {id<-c(id, 656,662,665,668,669,672)}
-if (!("age" %in% stratify_by) & ("hiv" %in% disease | "estimate" %in% disease)){id<-c(id, 650)}
+#Add age: each disease's own age groups, or its age total
+id <- c(id, .atlas_age_codes(disease, "age" %in% stratify_by))
 
 #Add race stratification variables
 if ("race" %in% stratify_by) {id<-c(id,552,553,554,555,562,556,559,557)}
@@ -103,3 +100,33 @@ id<-c(id,801)
     .build_payload(disease, geography, year, stratify_by, geo_ids = geo_ids)
   })
 }
+
+
+# AtlasPlus age codes for one disease: its age groups when stratified by age,
+# otherwise its total. From CDC's set-up data (`combo`, which lists the codes
+# each indicator offers), checked by a live test. Each set of groups covers
+# the disease's ages once: HIV groups start at 13; the others cover all ages,
+# and chlamydia, gonorrhea and syphilis also have "Unknown" (673) (#10, #11).
+# Congenital syphilis has no age groups.
+.atlas_age_codes <- function(disease, by_age) {
+  hiv <- c(656, 662, 665, 668, 669, 672)
+  all_ages <- c(654, 657, 660, 661, 663, 664, 666, 668, 669, 672)
+  if (!by_age) {
+    return(if (disease %in% c("hiv", "estimate")) 650 else 651)
+  }
+  switch(
+    disease,
+    "hiv" = ,
+    "estimate" = hiv,
+    "chlamydia" = ,
+    "gonorrhea" = ,
+    "adult syphilis" = c(all_ages, 673),
+    "tuberculosis" = ,
+    "hepatitis" = all_ages,
+    "congenital syphilis" = cli::cli_abort(
+      "CDC has no age groups for congenital syphilis.",
+      .internal = TRUE
+    )
+  )
+}
+

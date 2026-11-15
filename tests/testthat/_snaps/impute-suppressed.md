@@ -147,15 +147,14 @@
       x It is stratified by "sex" and "age".
       i `population = "cdc"` works for any strata.
 
-# population = 'acs' stops on age strata for diseases other than HIV
+# population = 'acs' stops for congenital syphilis
 
     Code
-      impute_suppressed(chlamydia, population = "acs")
+      impute_suppressed(congenital, population = "acs")
     Condition
       Error in `impute_suppressed()`:
-      ! Age-stratified estimates support only HIV diagnoses and prevalence.
-      x `x` has "chlamydia" data.
-      i CDC's age groups for other diseases aren't matched to Census ages yet.
+      ! Census populations don't fit congenital syphilis.
+      x Its rates are per 100,000 live births, not per 100,000 people.
       i `population = "cdc"` works for any strata.
 
 # population = 'acs' needs a Census key

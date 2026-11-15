@@ -54,9 +54,10 @@
 #'     combine HIV with other diseases.
 #'   * `"13+"` or `"all"`: set it yourself.
 #'
-#'   When `x` is stratified by age, the age groups set the ages, so 13 and
-#'   older is used for the total population (the `"total"` fallback for
-#'   empty strata).
+#'   When `x` is stratified by age, the age groups set the ages and `ages` is
+#'   ignored: HIV groups start at 13, so the total population (the `"total"`
+#'   fallback for empty strata) is ages 13 and older; other diseases' groups
+#'   cover all ages.
 #' @param race_table The ACS table for race populations, used when `x` is
 #'   stratified by race:
 #'   * `"B03002"` (default): Hispanic or Latino origin by race. Its groups
@@ -74,6 +75,14 @@
 #'   * `"redistribute"`: shared across the county's known race groups in
 #'     proportion to their counts, within each indicator and year, then
 #'     across areas as usual. A county with no cases of known race keeps its
+#'     unknown cases unallocated.
+#' @param unknown_age Cases CDC reports with age "Unknown" (chlamydia,
+#'   gonorrhea and syphilis), when `x` is stratified by age:
+#'   * `"report"` (default): left out, with a message, and listed in
+#'     `attr(result, "not_allocated")`.
+#'   * `"redistribute"`: shared across the county's known age groups in
+#'     proportion to their counts, within each indicator and year, then
+#'     across areas as usual. A county with no cases of known age keeps its
 #'     unknown cases unallocated.
 #' @param unestimated Suppressed rows [impute_suppressed()] couldn't estimate
 #'   (`cases_source = "not estimated"`, with no count), such as a county CDC
@@ -108,8 +117,9 @@
 #'       county population.}
 #'     \item{county_cases_spread}{Cases with no county added to this county
 #'       (`no_county = "spread"`); 0 otherwise.}
-#'     \item{county_cases_unknown}{Cases of unknown race added to this race
-#'       group (`unknown_race = "redistribute"`); 0 otherwise.}
+#'     \item{county_cases_unknown}{Cases of unknown race or age added to this
+#'       group (`unknown_race` or `unknown_age = "redistribute"`); 0
+#'       otherwise.}
 #'     \item{county_cases_allocated}{`county_cases + county_cases_spread +
 #'       county_cases_unknown`: what the county's areas add up to.}
 #'     \item{area_population_acs, county_population_acs}{ACS population in
@@ -133,13 +143,15 @@
 #'
 #' Census populations come from ACS tables requested by variable code:
 #' B01001 (sex by age) for all ages, sex and age, and for race the table set
-#' by `race_table`. For ages 13 and older, 2/5 of the 10 to 14 band is
-#' counted, assuming ages are spread evenly within it.
+#' by `race_table`. Each CDC age group counts the share of each B01001 age
+#' band that its ages cover, assuming ages are spread evenly within a band:
+#' for ages 13 and older (and HIV's 13-24 group), 2/5 of the 10 to 14 band.
+#' [get_atlas()] requests each disease's own age groups, which cover its ages
+#' once.
 #'
 #' County rows with no Census denominator are left out and listed in
-#' `attr(result, "not_allocated")`: race "Other", race "Unknown" (unless
-#' redistributed), age groups
-#' other than CDC's HIV age groups, suppressed rows with no estimate (see
+#' `attr(result, "not_allocated")`: race "Other", race or age "Unknown"
+#' (unless redistributed), suppressed rows with no estimate (see
 #' `unestimated`), rows kept by
 #' `impute_suppressed(not_available = "keep")`, and counties with no ACS areas
 #' (such as Connecticut's planning regions with 2010 tracts, until #30 adds a
@@ -153,9 +165,8 @@
 #' environment variable (see `tidycensus::census_api_key()`). Also downloads
 #' the matching state data from CDC AtlasPlus for the no-county report.
 #'
-#' Age-stratified extrapolation supports only HIV diagnoses and prevalence,
-#' because CDC's age groups for other diseases aren't matched to Census ages
-#' yet.
+#' Congenital syphilis isn't supported: its rates are per 100,000 live
+#' births, so Census populations are the wrong denominator.
 #'
 #' @seealso [impute_suppressed()], [no_county_cases()]; the article
 #'   ["About CDC AtlasPlus data"](https://vagishhemmige.github.io/CDCAtlas/articles/about-atlasplus-data.html)
@@ -182,6 +193,7 @@ extrapolate_from_county <- function(
   ages = c("auto", "13+", "all"),
   race_table = c("B03002", "B01001"),
   unknown_race = c("report", "redistribute"),
+  unknown_age = c("report", "redistribute"),
   unestimated = c("leave out", "error"),
   missing_population = c("leave out", "error"),
   acs_year = NULL,
@@ -199,6 +211,7 @@ extrapolate_from_county <- function(
   ages <- rlang::arg_match(ages)
   race_table <- rlang::arg_match(race_table)
   unknown_race <- rlang::arg_match(unknown_race)
+  unknown_age <- rlang::arg_match(unknown_age)
 
   if (!is.null(weights)) {
     cli::cli_abort("{.arg weights} is not supported yet (#1).", call = call)
@@ -234,7 +247,11 @@ extrapolate_from_county <- function(
   county$county_cases_unknown <- 0
   redistributed <- NULL
   if (identical(stratify_by, "race") && unknown_race == "redistribute") {
-    county <- .redistribute_unknown_race(county)
+    county <- .redistribute_unknown(county, "race_ethnicity", other = "Other")
+    redistributed <- attr(county, "redistributed")
+  }
+  if (identical(stratify_by, "age") && unknown_age == "redistribute") {
+    county <- .redistribute_unknown(county, "age")
     redistributed <- attr(county, "redistributed")
   }
   states <- sort(unique(county$state_fips))
@@ -243,9 +260,12 @@ extrapolate_from_county <- function(
   for (year in years) {
     acs <- acs_year %||% year
     for (universe in unique(row_ages[county$year == year])) {
-      pop <- .area_population(acs, states, stratify_by, universe, to, race_table)
-      pop$acs_year <- acs
       rows <- county$year == year & row_ages == universe
+      pop <- .area_population(
+        acs, states, stratify_by, universe, to, race_table,
+        age_groups = unique(county$age[rows])
+      )
+      pop$acs_year <- acs
       pieces[[length(pieces) + 1]] <- .join_areas(
         county[rows, ], pop, stratify_by, to
       )
@@ -287,8 +307,9 @@ extrapolate_from_county <- function(
           "with no county")
   )
   if (!is.null(redistributed) && nrow(redistributed) > 0) {
+    what <- if (identical(stratify_by, "age")) "age" else "race"
     cli::cli_inform(c(
-      "i" = "Cases of unknown race shared across known race groups:",
+      "i" = "Cases of unknown {what} shared across known {what} groups:",
       .lines_by_indicator(redistributed, "county_cases")
     ))
   }
@@ -385,10 +406,10 @@ extrapolate_from_county <- function(
 # Census variables --------------------------------------------------------------
 
 # ACS table B01001 (sex by age) age bands, in table order. Codes 003-025 are
-# male and 027-049 female. `hiv_age` is the AtlasPlus HIV age group each band
-# belongs to; `weight_13` counts 2/5 of the 10-14 band (ages 13 and 14),
-# assuming ages are spread evenly within the band. `band` is the end of the
-# Census label, checked by a live test.
+# male and 027-049 female. `lower` and `upper` are the band's first and last
+# age (`Inf` for 85 and over); `weight_13` counts 2/5 of the 10-14 band (ages
+# 13 and 14), assuming ages are spread evenly within the band. `band` is the
+# end of the Census label, checked by a live test.
 .acs_age_bands <- function() {
   data.frame(
     band = c(
@@ -399,9 +420,13 @@ extrapolate_from_county <- function(
       "62 to 64 years", "65 and 66 years", "67 to 69 years", "70 to 74 years",
       "75 to 79 years", "80 to 84 years", "85 years and over"
     ),
-    hiv_age = c(
-      NA, NA, rep("13-24", 6), rep("25-34", 2), rep("35-44", 2),
-      rep("45-54", 2), rep("55-64", 3), rep("65+", 6)
+    lower = c(
+      0, 5, 10, 15, 18, 20, 21, 22, 25, 30, 35, 40, 45, 50, 55, 60, 62, 65,
+      67, 70, 75, 80, 85
+    ),
+    upper = c(
+      4, 9, 14, 17, 19, 20, 21, 24, 29, 34, 39, 44, 49, 54, 59, 61, 64, 66,
+      69, 74, 79, 84, Inf
     ),
     weight_13 = c(0, 0, 0.4, rep(1, 20)),
     male = sprintf("B01001_%03d", 3:25),
@@ -474,10 +499,71 @@ extrapolate_from_county <- function(
   )
 }
 
-# One row per Census variable, with its weight and the stratum it counts
-# towards (`stratum` is NA when unstratified). `ages` is "13+" or "all"; age
-# groups always use the 13+ weights, as CDC's HIV age groups start at 13.
-.census_denominators <- function(stratify_by, ages, race_table = "B03002") {
+# First and last age of a CDC age-group label ("13-24", "05-14", "13\u201319",
+# "65+"); NA for labels with no ages, such as "Unknown".
+.age_group_bounds <- function(label) {
+  label <- gsub("\u2013", "-", enc2utf8(label), fixed = TRUE, useBytes = TRUE)
+  if (grepl("^[0-9]+-[0-9]+$", label)) {
+    return(as.numeric(strsplit(label, "-", fixed = TRUE)[[1]]))
+  }
+  if (grepl("^[0-9]+\\+$", label)) {
+    return(c(as.numeric(sub("+", "", label, fixed = TRUE)), Inf))
+  }
+  c(NA_real_, NA_real_)
+}
+
+# Share of each ACS age band that falls in ages `lower` to `upper`, assuming
+# ages are spread evenly within a band (so ages 13-14 are 2/5 of the 10-14
+# band). The open 85+ band counts in full when the group reaches 85 and has no
+# upper limit.
+.band_weights <- function(bands, lower, upper) {
+  closed <- is.finite(bands$upper)
+  overlap <- pmin(bands$upper, upper) - pmax(bands$lower, lower) + 1
+  weight <- ifelse(closed, pmax(overlap, 0) / (bands$upper - bands$lower + 1), NA)
+  open_in <- !closed & is.infinite(upper) & lower <= bands$lower
+  open_out <- !closed & upper < bands$lower
+  weight[open_in] <- 1
+  weight[open_out] <- 0
+  if (anyNA(weight)) {
+    cli::cli_abort(
+      "Age group {lower}-{upper} splits the ACS 85 and over band.",
+      .internal = TRUE
+    )
+  }
+  weight
+}
+
+# One row per Census variable and stratum it counts towards, with its weight
+# (`stratum` is NA when unstratified). `ages` is "13+" or "all". For age
+# strata, `age_groups` are CDC's labels; each group counts the share of each
+# ACS band its ages cover, so groups starting at 13 count 2/5 of the 10-14
+# band. Labels with no ages (such as "Unknown") have no rows.
+.census_denominators <- function(stratify_by, ages, race_table = "B03002",
+                                 age_groups = NULL) {
+  if (identical(stratify_by, "age")) {
+    bands <- .acs_age_bands()
+    rows <- lapply(unique(age_groups), function(group) {
+      bounds <- .age_group_bounds(group)
+      if (anyNA(bounds)) {
+        return(NULL)
+      }
+      weight <- .band_weights(bands, bounds[1], bounds[2])
+      out <- data.frame(
+        variable = c(bands$male, bands$female),
+        weight = rep(weight, 2),
+        stratum = group
+      )
+      out[out$weight > 0, ]
+    })
+    out <- do.call(rbind, rows)
+    if (is.null(out)) {
+      out <- data.frame(
+        variable = character(), weight = numeric(), stratum = character()
+      )
+    }
+    rownames(out) <- NULL
+    return(out)
+  }
   if (identical(stratify_by, "race") && race_table == "B03002") {
     race <- .acs_race_variables()
     return(data.frame(
@@ -503,23 +589,17 @@ extrapolate_from_county <- function(
   }
 
   bands <- .acs_age_bands()
-  weight <- if (ages == "13+" || identical(stratify_by, "age")) {
-    bands$weight_13
-  } else {
-    rep(1, nrow(bands))
-  }
+  weight <- if (ages == "13+") bands$weight_13 else rep(1, nrow(bands))
   by_band <- data.frame(
     variable = c(bands$male, bands$female),
     weight = rep(weight, 2),
-    sex = rep(c("Male", "Female"), each = nrow(bands)),
-    hiv_age = rep(bands$hiv_age, 2)
+    sex = rep(c("Male", "Female"), each = nrow(bands))
   )
   by_band <- by_band[by_band$weight > 0, ]
   by_band$stratum <- switch(
     stratify_by %||% "none",
     none = NA_character_,
-    sex = by_band$sex,
-    age = by_band$hiv_age
+    sex = by_band$sex
   )
   by_band[c("variable", "weight", "stratum")]
 }
@@ -539,8 +619,10 @@ extrapolate_from_county <- function(
 # appears in every stratum, with 0 if it has no population in it), with the
 # stratum population and the area's total population at the same ages.
 .area_population <- function(year, states, stratify_by, ages, to = "tract",
-                             race_table = "B03002") {
-  denominators <- .census_denominators(stratify_by, ages, race_table)
+                             race_table = "B03002", age_groups = NULL) {
+  denominators <- .census_denominators(
+    stratify_by, ages, race_table, age_groups
+  )
   total <- .census_denominators(NULL, ages)
   total_13 <- .census_denominators(NULL, "13+")
   variables <- unique(c(
@@ -556,32 +638,28 @@ extrapolate_from_county <- function(
   )
 
   # Sum of each area's estimates for the variables in `table`, weighted. A
-  # missing estimate, or a variable row the area lacks, makes the sum NA
-  # rather than an undercount (#52).
+  # variable can count towards more than one stratum. A missing estimate, or
+  # a variable row the area lacks, makes the sum NA rather than an undercount
+  # (#52).
   weighted_sum <- function(table, by_stratum = FALSE) {
-    table <- table[table$weight != 0, ]
-    rows <- match(acs$variable, table$variable)
-    keep <- !is.na(rows)
+    table <- table[table$weight != 0, c("variable", "weight", "stratum")]
+    if (!by_stratum) {
+      table$stratum <- NA_character_
+    }
     needed <- table |>
-      dplyr::summarize(
-        n_needed = dplyr::n(),
-        .by = if (by_stratum) "stratum" else character()
-      )
-    sums <- data.frame(
-      geoid = acs$geoid[keep],
-      stratum = if (by_stratum) table$stratum[rows[keep]] else NA_character_,
-      value = acs$estimate[keep] * table$weight[rows[keep]]
+      dplyr::summarize(n_needed = dplyr::n(), .by = "stratum")
+    sums <- dplyr::inner_join(
+      acs[c("geoid", "variable", "estimate")],
+      table,
+      by = "variable",
+      relationship = "many-to-many"
     ) |>
       dplyr::summarize(
-        value = sum(.data$value),
+        value = sum(.data$estimate * .data$weight),
         n_found = dplyr::n(),
         .by = c("geoid", "stratum")
       )
-    n_needed <- if (by_stratum) {
-      needed$n_needed[match(sums$stratum, needed$stratum)]
-    } else {
-      needed$n_needed
-    }
+    n_needed <- needed$n_needed[match(sums$stratum, needed$stratum)]
     sums$value[sums$n_found < n_needed] <- NA_real_
     sums[c("geoid", "stratum", "value")]
   }
@@ -714,14 +792,15 @@ extrapolate_from_county <- function(
   list(areas = areas[!affected, ], not_allocated = not_allocated)
 }
 
-# Share each county's race "Unknown" cases across its known race groups in
-# proportion to their counts, within indicator and year. Unknown rows that are
-# shared are removed; the rest stay (and are reported as not allocated). The
-# shared rows are kept in attr(, "redistributed").
-.redistribute_unknown_race <- function(county) {
+# Share each county's "Unknown" cases in `column` (race or age) across its
+# known groups in proportion to their counts, within indicator and year.
+# Groups in `other` (race "Other") are neither known nor shared to. Unknown
+# rows that are shared are removed; the rest stay (and are reported as not
+# allocated). The shared rows are kept in attr(, "redistributed").
+.redistribute_unknown <- function(county, column, other = character()) {
   keys <- c("county_fips", "indicator", "year")
-  unknown <- county$race_ethnicity == "Unknown" & !is.na(county$county_cases)
-  known <- !county$race_ethnicity %in% c("Unknown", "Other") &
+  unknown <- county[[column]] == "Unknown" & !is.na(county$county_cases)
+  known <- !county[[column]] %in% c("Unknown", other) &
     !is.na(county$county_cases)
 
   known_total <- county[known, ] |>
