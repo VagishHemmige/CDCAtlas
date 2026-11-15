@@ -11,7 +11,7 @@ impute_suppressed(
   floor = 0,
   population = c("cdc", "acs"),
   unestimated = c("na", "zero"),
-  not_available = c("drop", "keep")
+  not_available = c("keep", "drop")
 )
 }
 \arguments{
@@ -65,8 +65,12 @@ counts its cases in the remainder with no county, and
 
 \item{not_available}{Rows marked "Data not available" with no count:
 \itemize{
-\item \code{"drop"} (default): remove them, with a message.
-\item \code{"keep"}: keep them with \code{NA} cases. The later steps leave them out.
+\item \code{"keep"} (default): keep them with \code{NA} cases. The later steps leave
+them out of the tracts, and their cases stay in the state's remainder.
+\item \code{"drop"}: remove them, with a message. If that removes every row a
+state has in an indicator, year and stratum, that state's remainder is
+no longer reported by \code{\link[=no_county_cases]{no_county_cases()}} or spread by
+\code{\link[=extrapolate_from_county]{extrapolate_from_county()}}, so this warns and names them.
 }}
 }
 \value{
@@ -95,9 +99,10 @@ Rows are handled by what CDC published:
 \item A published count is kept, whatever its data status. (Connecticut's 2017
 planning regions are marked "Data not available" but have counts.)
 \item A row marked "Data not available" with no count has no data to estimate
-from; \code{not_available} says whether it is dropped or kept. Either way its
-cases are still in the state total, so \code{\link[=no_county_cases]{no_county_cases()}} counts them in
-the remainder.
+from; \code{not_available} says whether it is kept or dropped. Its cases are
+still in the state total, so \code{\link[=no_county_cases]{no_county_cases()}} counts them in the
+remainder, as long as the state still has a row in that indicator, year
+and stratum.
 \item Any other row with no count is suppressed and is filled in by \code{method}.
 }
 }
