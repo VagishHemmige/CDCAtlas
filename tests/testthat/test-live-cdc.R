@@ -207,6 +207,32 @@ test_that("each disease's age codes are ones CDC offers for its indicators (#11)
   }
 })
 
+test_that("each disease's race codes are exactly the ones CDC offers (#105)", {
+  # Both directions: every code sent is offered, and every race group CDC
+  # offers is sent, so a group can't be silently left out.
+  columns <- .atlas_init_data()$combo$data_structure
+  if (!"5" %in% columns) {
+    fail(paste("No race column (5) in combo; columns:", toString(columns)))
+  }
+  offered <- cdc_offered("5")
+  race_ids <- varvals$id[varvals$vtid == 5]
+  for (disease in setdiff(
+    unique(.disease_indicators()$disease),
+    "congenital syphilis"
+  )) {
+    sent <- strsplit(
+      .build_payload(disease, "state", 2022, stratify_by = "race")$VariableIDs,
+      ","
+    )[[1]]
+    sent <- intersect(as.integer(sent), race_ids)
+    for (id in indicator_ids(disease)) {
+      cdc <- setdiff(offered$code[offered$indicator == id], 551)
+      expect_setequal(sent, cdc)
+      expect_contains(offered$code[offered$indicator == id], 551)
+    }
+  }
+})
+
 test_that("each disease's geographies are the ones CDC offers for its indicators", {
   offered <- cdc_offered("50")
   geography <- c(
