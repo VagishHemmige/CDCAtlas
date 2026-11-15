@@ -30,6 +30,7 @@ reference:
   - title: "Data Access"
     contents:
       - get_atlas
+      - clear_atlas_cache
   - title: "Estimates below county level"
     contents:
       - impute_suppressed

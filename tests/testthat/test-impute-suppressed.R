@@ -145,9 +145,11 @@ test_that("state totals are requested for the same disease, years and strata", {
   })
   .fetch_state_totals(fake_county_atlas("sex", years = 2021:2022))
 
-  expect_length(received, 1)
-  expected <- .build_payload("hiv", "state", 2021:2022, stratify_by = "sex")
-  expect_equal(received[[1]], expected)
+  expected <- list(
+    .build_payload("hiv", "state", 2021, stratify_by = "sex"),
+    .build_payload("hiv", "state", 2022, stratify_by = "sex")
+  )
+  expect_equal(received, expected)
 })
 
 test_that("state_rate is floored at `floor`", {
@@ -278,6 +280,19 @@ test_that("unestimated = 'zero' sets rows with no rate to 0", {
   expect_snapshot(out <- impute_suppressed(county, unestimated = "zero"))
   expect_equal(out$cases[out$fips == "01003"], c(0, 0))
   expect_equal(unique(out$cases_source[out$fips == "01003"]), "not estimated")
+})
+
+test_that("population = 'acs' doesn't treat a missing population as 0 (#52)", {
+  acs <- fake_acs()
+  acs$estimate[acs$GEOID == "01003000100" & acs$variable == "B01001_030"] <- NA
+  local_fake_sources(acs = acs)
+  county <- fake_county_atlas(suppressed = "01003")
+
+  out <- suppressWarnings(impute_suppressed(county, cap = Inf, population = "acs"))
+  suppressed <- out[out$fips == "01003", ]
+
+  expect_equal(suppressed$cases, c(NA_real_, NA_real_))
+  expect_equal(unique(suppressed$cases_source), "not estimated")
 })
 
 test_that("not_available = 'keep' keeps the rows with no count", {

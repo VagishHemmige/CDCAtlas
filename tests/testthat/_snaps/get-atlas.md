@@ -18,3 +18,23 @@
       i Please use `extrapolate_from_county()` instead.
       i Run `impute_suppressed()` on county data first.
 
+# an old positional extrapolate_to_tract still stops before any request
+
+    Code
+      get_atlas("hiv", "county", 2022, NULL, TRUE)
+    Condition
+      Error:
+      ! The `extrapolate_to_tract` argument of `get_atlas()` was deprecated in CDCAtlas 0.0.0.9001 and is now defunct.
+      i Please use `extrapolate_from_county()` instead.
+      i Run `impute_suppressed()` on county data first.
+
+---
+
+    Code
+      get_atlas("hiv", "county", 2022, NULL, FALSE)
+    Condition
+      Error:
+      ! The `extrapolate_to_tract` argument of `get_atlas()` was deprecated in CDCAtlas 0.0.0.9001 and is now defunct.
+      i Please use `extrapolate_from_county()` instead.
+      i Run `impute_suppressed()` on county data first.
+
