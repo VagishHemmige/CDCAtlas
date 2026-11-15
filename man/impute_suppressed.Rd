@@ -46,8 +46,9 @@ tidycensus and a Census API key.
 
 \code{"acs"} accepts the same input as \code{\link[=extrapolate_from_county]{extrapolate_from_county()}}: at most
 one stratification variable, and no congenital syphilis (whose rates are
-per 100,000 live births). Other input stops before anything is
-downloaded; use \code{"cdc"} for it.
+per 100,000 live births). It also refuses Knowledge of Status, whose
+denominator is people living with HIV, not residents. Other input stops
+before anything is downloaded; use \code{"cdc"} for it.
 
 CDC gives Connecticut's 2017 planning regions no population, so \code{"cdc"}
 can't estimate them; \code{"acs"} can, from 2010 tracts assigned to the
@@ -79,8 +80,9 @@ no longer reported by \code{\link[=no_county_cases]{no_county_cases()}} or sprea
 \itemize{
 \item \code{"published"}: CDC's count.
 \item \code{"state_rate"} or \code{"zero"}: filled in by \code{method}.
-\item \code{"not estimated"}: \code{"state_rate"} couldn't estimate it; \code{NA}, or 0 with
-\code{unestimated = "zero"}.
+\item \code{"not estimated"}: \code{"state_rate"} couldn't estimate it (\code{NA}, or 0
+with \code{unestimated = "zero"}), or it had no count and wasn't marked
+"Data suppressed" (always \code{NA}).
 \item \code{"not available"}: kept with \code{not_available = "keep"}; \code{NA}.
 }
 
@@ -103,7 +105,10 @@ from; \code{not_available} says whether it is kept or dropped. Its cases are
 still in the state total, so \code{\link[=no_county_cases]{no_county_cases()}} counts them in the
 remainder, as long as the state still has a row in that indicator, year
 and stratum.
-\item Any other row with no count is suppressed and is filled in by \code{method}.
+\item A row marked "Data suppressed" with no count is filled in by \code{method}.
+\item A row with no count and any other status (or none), such as "No reported
+cases" or a code this version doesn't know, is not filled in: it stays
+\code{NA} and is marked \code{"not estimated"}, with a warning.
 }
 }
 \details{

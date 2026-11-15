@@ -3,7 +3,7 @@
     Code
       report <- no_county_cases(not_estimated)
     Message
-      i 2 suppressed rows that `impute_suppressed()` couldn't estimate were counted in the remainder with no county.
+      i 2 rows with no count that `impute_suppressed()` couldn't estimate were counted in the remainder with no county.
         County: "County 01003".
 
 # no_county_cases() refuses published rows with no count and state data
