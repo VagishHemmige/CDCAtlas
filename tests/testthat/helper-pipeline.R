@@ -165,13 +165,17 @@ fake_state_atlas <- function(no_county = 0, ...) {
 }
 
 # Replace CDC and the Census with the made-up data for one test.
+# `county_totals` is CDC's full county table for the request; NULL means the
+# county data being processed is complete.
 local_fake_sources <- function(
   state = fake_state_atlas(),
   acs = fake_acs(),
+  county_totals = NULL,
   env = parent.frame()
 ) {
   local_mocked_bindings(
     .request_atlas = function(payload) state,
+    .fetch_county_totals = function(x) county_totals %||% x,
     .check_census_ready = function(call) invisible(),
     .get_acs_areas = function(variables, year, states, to) {
       if (to == "block group") {
