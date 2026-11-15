@@ -137,8 +137,21 @@
 #'       population"`, `"total population"`, `"equal shares"` or `"none"` (see
 #'       `empty_strata`).}
 #'     \item{area_cases}{Estimated cases in the area.}
-#'     \item{area_noncases}{`area_population_acs - area_cases`, floored at 0.}
 #'   }
+#'
+#'   `area_population_acs - area_cases` means different things by indicator:
+#'   * HIV prevalence (people living with *diagnosed* HIV): residents aged 13
+#'     and older without diagnosed HIV, which includes people with
+#'     undiagnosed HIV.
+#'   * Estimated HIV prevalence (diagnosed and undiagnosed): closer to
+#'     residents without HIV, under the estimate's own assumptions.
+#'   * Other indicators: no such meaning. New diagnoses and incidence need the
+#'     population at risk, which excludes people already living with HIV;
+#'     chlamydia, gonorrhea and syphilis count infections rather than people;
+#'     for Knowledge of Status the population isn't residents.
+#'
+#'   It can be negative where `empty_strata` shares cases into a stratum with
+#'   no ACS population.
 #'
 #'   Two attributes record what was not allocated:
 #'   `attr(result, "no_county_cases")`, the [no_county_cases()] report, and
@@ -318,7 +331,7 @@ extrapolate_from_county <- function(
     "county_cases_spread", "county_cases_unknown", "county_cases_allocated",
     "area_population_acs", "county_population_acs",
     "area_total_population", "county_total_population", "allocation",
-    "area_cases", "area_noncases"
+    "area_cases"
   )])
   attr(out, "no_county_cases") <- report
   attr(out, "not_allocated") <- tibble::as_tibble(not_allocated)
@@ -1075,7 +1088,6 @@ extrapolate_from_county <- function(
             .data$area_total_population
           )
       ),
-      area_noncases = pmax(0, .data$area_population_acs - .data$area_cases),
       .by = dplyr::all_of(.county_groups)
     )
 }
