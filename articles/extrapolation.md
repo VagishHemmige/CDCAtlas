@@ -101,23 +101,22 @@ hiv_tract <- get_atlas(
   impute_suppressed() |>
   extrapolate_from_county()
 #> Downloading from CDC AtlasPlus ■■                                 4% | ETA:  1m
-#> Downloading from CDC AtlasPlus ■■■■■■■                           19% | ETA: 38s
-#> Downloading from CDC AtlasPlus ■■■■■■■                           21% | ETA: 43s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■                        29% | ETA: 38s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■                        31% | ETA: 39s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■                       35% | ETA: 39s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■                    42% | ETA: 33s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■                   46% | ETA: 31s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■                  50% | ETA: 30s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■                 54% | ETA: 28s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■              63% | ETA: 21s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■             67% | ETA: 19s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■            71% | ETA: 17s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■         79% | ETA: 12s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■        83% | ETA: 10s
+#> Downloading from CDC AtlasPlus ■■■■■■■                           21% | ETA: 38s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■                         27% | ETA: 35s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■                        29% | ETA: 36s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■                       33% | ETA: 36s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■                      37% | ETA: 36s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■                    44% | ETA: 30s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■                   48% | ETA: 29s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■                 52% | ETA: 27s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■               62% | ETA: 21s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■             65% | ETA: 19s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■            71% | ETA: 16s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■         79% | ETA: 11s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■        83% | ETA:  9s
 #> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■        85% | ETA:  9s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■      90% | ETA:  6s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■     94% | ETA:  3s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■      90% | ETA:  5s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■    96% | ETA:  2s
 #> ℹ Dropped 17 rows marked "Data not available" with no count.
 #>   Their cases are still in the state totals; see `no_county_cases()`.
 #> Warning: 1 suppressed row could not be estimated and is set to `NA`.
@@ -305,24 +304,21 @@ hiv_tract_sex <- get_atlas(
 ) |>
   impute_suppressed() |>
   extrapolate_from_county()
-#> Downloading from CDC AtlasPlus ■■                                 4% | ETA:  1m
-#> Downloading from CDC AtlasPlus ■■■■■■■                           19% | ETA: 35s
-#> Downloading from CDC AtlasPlus ■■■■■■■                           21% | ETA: 40s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■                         27% | ETA: 38s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■                        31% | ETA: 39s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■                       35% | ETA: 40s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■                     38% | ETA: 36s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■                    44% | ETA: 32s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■                  50% | ETA: 30s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■                 52% | ETA: 29s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■               62% | ETA: 22s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■             65% | ETA: 20s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■            71% | ETA: 17s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■          77% | ETA: 13s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■        83% | ETA: 10s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■        85% | ETA:  9s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■      90% | ETA:  6s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■     94% | ETA:  3s
+#> Downloading from CDC AtlasPlus ■■■■                              10% | ETA: 39s
+#> Downloading from CDC AtlasPlus ■■■■■■■■                          23% | ETA: 33s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■                        29% | ETA: 33s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■                       33% | ETA: 34s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■                      37% | ETA: 34s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■                    44% | ETA: 28s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■                  50% | ETA: 26s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■                 54% | ETA: 24s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■              63% | ETA: 18s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■             67% | ETA: 17s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■           73% | ETA: 14s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■         81% | ETA: 10s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■        85% | ETA:  8s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■      90% | ETA:  5s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■    96% | ETA:  2s
 #> ℹ Dropped 35 rows marked "Data not available" with no count.
 #>   Their cases are still in the state totals; see `no_county_cases()`.
 #> Warning: 1 suppressed row could not be estimated and is set to `NA`.
@@ -414,23 +410,21 @@ hiv_tract_age <- get_atlas(
 ) |>
   impute_suppressed() |>
   extrapolate_from_county()
-#> Downloading from CDC AtlasPlus ■■■                                6% | ETA:  1m
-#> Downloading from CDC AtlasPlus ■■■■■■■                           19% | ETA: 40s
-#> Downloading from CDC AtlasPlus ■■■■■■■                           21% | ETA: 45s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■                         27% | ETA: 42s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■                        31% | ETA: 42s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■                       35% | ETA: 43s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■                     38% | ETA: 39s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■                   46% | ETA: 33s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■                  50% | ETA: 31s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■                 54% | ETA: 29s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■               62% | ETA: 23s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■             65% | ETA: 21s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■            69% | ETA: 19s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■           75% | ETA: 15s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■        83% | ETA: 10s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■        85% | ETA: 10s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■      90% | ETA:  6s
+#> Downloading from CDC AtlasPlus ■■■■                              10% | ETA: 41s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■                         25% | ETA: 32s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■                        29% | ETA: 34s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■                       33% | ETA: 35s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■                      37% | ETA: 35s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■                    44% | ETA: 29s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■                   48% | ETA: 27s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■                 52% | ETA: 26s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■               62% | ETA: 20s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■             65% | ETA: 18s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■            71% | ETA: 15s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■         79% | ETA: 11s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■        83% | ETA:  9s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■        85% | ETA:  9s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■      90% | ETA:  5s
 #> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■    96% | ETA:  2s
 #> ℹ Dropped 107 rows marked "Data not available" with no count.
 #>   Their cases are still in the state totals; see `no_county_cases()`.
@@ -513,24 +507,21 @@ hiv_tract_race <- get_atlas(
 ) |>
   impute_suppressed() |>
   extrapolate_from_county()
-#> Downloading from CDC AtlasPlus ■■■                                8% | ETA: 50s
-#> Downloading from CDC AtlasPlus ■■■■■■■                           21% | ETA: 42s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■                         27% | ETA: 38s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■                        29% | ETA: 38s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■                       33% | ETA: 39s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■                      37% | ETA: 39s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■                    44% | ETA: 32s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■                   48% | ETA: 31s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■                  50% | ETA: 30s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■                56% | ETA: 27s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■             65% | ETA: 20s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■            69% | ETA: 18s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■           73% | ETA: 16s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■         79% | ETA: 12s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■        83% | ETA: 10s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■        85% | ETA: 10s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■       87% | ETA:  9s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■      90% | ETA:  6s
+#> Downloading from CDC AtlasPlus ■■■                                8% | ETA: 40s
+#> Downloading from CDC AtlasPlus ■■■■■■■                           21% | ETA: 36s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■                         27% | ETA: 33s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■                        31% | ETA: 35s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■                       35% | ETA: 36s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■                     40% | ETA: 31s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■                   46% | ETA: 28s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■                  50% | ETA: 27s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■                 54% | ETA: 26s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■              63% | ETA: 19s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■            69% | ETA: 16s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■           73% | ETA: 14s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■         81% | ETA: 10s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■        85% | ETA:  9s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■      90% | ETA:  5s
 #> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■    96% | ETA:  2s
 #> ℹ Dropped 125 rows marked "Data not available" with no count.
 #>   Their cases are still in the state totals; see `no_county_cases()`.

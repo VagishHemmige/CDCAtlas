@@ -147,9 +147,11 @@ site build. Workflows read it with `${{ secrets.CENSUS_API_KEY }}`;
 never print, log or commit its value.
 
 Run `devtools::document()` only in isolation when relevant; exclude
-unrelated Rd and incidental DESCRIPTION/RoxygenNote churn. Do not run
-formatters unless requested. Inspect generated exports/imports rather
-than assuming they are safe.
+unrelated Rd and incidental DESCRIPTION/RoxygenNote churn. Format R code
+with Air (`air format`), on the files a change touches and only those;
+don’t reformat other files, and don’t use styler. The `format-suggest`
+workflow posts Air’s fixes on each pull request. Inspect generated
+exports/imports rather than assuming they are safe.
 
 ## Skills and validation
 
@@ -163,8 +165,8 @@ reviews. Names vary by environment: `r-testthat` / `testing-r-packages`,
 `r-lifecycle` / `lifecycle`. Use the installed equivalent.
 
 Disclose unavailable skills or references. Permission boundaries and
-this project’s no-unsolicited-formatting rule take precedence over skill
-defaults.
+this project’s formatting rule (Air, touched files only) take precedence
+over skill defaults.
 
 Prefer regression tests demonstrating the bug before the fix. Keep
 routine tests reproducible and independent of live services. Run
@@ -228,9 +230,7 @@ technical standards.
 ## Documentation maintenance and publication
 
 The paths above describe the current layout. Update them when files
-move. Air adoption in
-[\#42](https://github.com/VagishHemmige/CDCAtlas/issues/42) does not
-itself authorize unsolicited formatting.
+move.
 
 [reference/](https://vagishhemmige.github.io/CDCAtlas/reference/README.md)
 holds background on CDC AtlasPlus, Census geography and estimation
