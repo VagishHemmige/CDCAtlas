@@ -73,6 +73,9 @@ test_that("stored codes still match CDC's code table", {
   )
 
   for (level in names(lookup)) {
+    expect_contains(current$id, lookup[[level]]$geo_id)
+    missing_fips <- sum(is.na(lookup[[level]]$fips))
+    expect_equal(missing_fips, 0, label = paste(level, "missing FIPS"))
     rows <- match(lookup[[level]]$geo_id, current$id)
     expect_equal(current$fips[rows], lookup[[level]]$fips, label = level)
   }

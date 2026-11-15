@@ -18,10 +18,25 @@ init <- .atlas_init_data()
 varvals <- tibble::as_tibble(init$varvals)
 
 # AtlasPlus geography ids, with their names and FIPS codes from `varvals`.
+# Stops before anything is written if CDC no longer lists an id, lists it twice,
+# or gives it no name or FIPS code: get_atlas() would silently drop it.
 geo_lookup <- function(geo_id) {
-  tibble::tibble(geo_id = geo_id) |>
+  matches <- vapply(geo_id, \(id) sum(varvals$id == id), integer(1))
+  out <- tibble::tibble(geo_id = geo_id) |>
     dplyr::left_join(varvals, by = c("geo_id" = "id")) |>
     dplyr::select("geo_id", "name", "fips")
+  bad <- unique(c(
+    geo_id[matches != 1],
+    out$geo_id[is.na(out$name) | is.na(out$fips)]
+  ))
+  if (length(bad) > 0) {
+    cli::cli_abort(c(
+      "CDC's code table doesn't match {length(bad)} lookup id{?s}: {bad}.",
+      "i" = "Nothing was written. Check these ids in AtlasPlus and update the
+        lists in data-raw/DATASET.R."
+    ))
+  }
+  out
 }
 
 lookup <- list(
