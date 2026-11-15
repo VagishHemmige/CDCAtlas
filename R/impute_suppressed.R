@@ -37,6 +37,10 @@
 #'     ages, summed from its tracts as [extrapolate_from_county()] does. Needs
 #'     tidycensus and a Census API key.
 #'
+#'   `"acs"` accepts the same strata as [extrapolate_from_county()]: at most
+#'   one stratification variable, and age only for HIV. Other input stops
+#'   before anything is downloaded; use `"cdc"` for it.
+#'
 #'   Neither covers Connecticut's 2017 planning regions: CDC gives them no
 #'   population, and 2017 ACS tracts belong to the old counties (#30).
 #' @param unestimated What to do with a suppressed row `"state_rate"` can't
@@ -142,6 +146,10 @@ impute_suppressed <- function(
   }
 
   if (population == "acs") {
+    .check_census_strata(
+      x, call,
+      hint = c("i" = "{.code population = \"cdc\"} works for any strata.")
+    )
     .check_census_ready(call)
   }
   state <- .fetch_state_totals(x)
