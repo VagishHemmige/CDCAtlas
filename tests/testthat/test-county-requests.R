@@ -176,6 +176,18 @@ test_that("get_atlas() returns a tibble, for one request or many (#17)", {
   expect_s3_class(county, "tbl_df")
 })
 
+test_that("rate labels fit every indicator, not only incidence", {
+  local_fake_cdc()
+  out <- suppressMessages(get_atlas("hiv", "state", 2017))
+
+  expect_identical(
+    labelled::var_label(out$rate100000),
+    "Rate per 100,000 population (percentage for Knowledge of Status; see ?get_atlas for denominators)"
+  )
+  expect_identical(labelled::var_label(out$lowerci_rate), "Lower 95% confidence interval of rate")
+  expect_identical(labelled::var_label(out$upperci_rate), "Upper 95% confidence interval of rate")
+})
+
 test_that("combined factor levels follow CDC's lookup order, as a single request would", {
   local_fake_cdc()
   out <- suppressMessages(get_atlas("hiv", "county", 2017))
