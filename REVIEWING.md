@@ -3,6 +3,8 @@
 These standards apply to ChatGPT and Claude, within the user's permissions.
 Read [AGENTS.md](AGENTS.md). A review is an assessment of a defined change,
 not automatic permission to edit, publish, approve or merge.
+[PACKAGE_REVIEW.md](PACKAGE_REVIEW.md) applies only to a whole-package review
+the maintainer commissions, not to PR reviews.
 
 ## Policy revision and coverage
 
@@ -61,6 +63,9 @@ not silently substituted current definitions.
 For ACS use the requested year's table metadata/universe and
 [Census geography-vintage documentation](https://www.census.gov/programs-surveys/acs/geography-acs/geography-boundaries-by-year.html).
 These are starting points, not evidence that every package mapping is correct.
+Sources already checked, with access dates, are catalogued in
+[reference/README.md](reference/README.md); recheck the source itself when a
+conclusion depends on it.
 Use an available authorized browser/web-fetch or other retrieval tool; shell
 network access is not required. Disclose unavailable sources and the resulting
 evidence gap rather than inventing verification.
@@ -98,7 +103,7 @@ county sums does not validate subgroup or geographic estimates.
 Do not invent definitions or silently choose unresolved methodological defaults.
 Preserve authoritative sources, versions/dates when available, and durable
 rationale near the code or in existing scientific documentation; link from
-PRs. The issue/vignette map in AGENTS.md supplies project rationale, not
+PRs. The issue/article map in AGENTS.md supplies project rationale, not
 independent verification of CDC definitions.
 
 ## Validation
@@ -145,7 +150,7 @@ coverage gap. Distinguish modeled estimates with assumptions and uncertainty
 from recovering suppressed observed counts.
 Report OS, R/package versions if execution occurred, failures, skipped checks
 and material coverage limits. Give exact remaining maintainer commands,
-including vignette rebuilds when affected, only after stating prerequisites,
+including article rebuilds when affected, only after stating prerequisites,
 network/cache effects and what the commands establish.
 Check dependency minimums and material Windows portability risks. Generated
 documentation can be a staged follow-up if explicitly documented, but broken
