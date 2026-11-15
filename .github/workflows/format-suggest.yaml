@@ -1,0 +1,43 @@
+# Workflow derived from https://github.com/posit-dev/setup-air/tree/main/examples
+#
+# Runs Air on each pull request and posts its changes as suggestions the
+# author can accept (#42, #43).
+#
+# `pull_request_target` gives the token write access to pull requests, even
+# from forks, so it must check out the pull request's commit explicitly. The
+# pull request's code is only formatted, never run, which GitHub's security
+# guidance treats as safe:
+# https://securitylab.github.com/resources/github-actions-preventing-pwn-requests/
+# This workflow uses no secrets.
+on:
+  pull_request_target:
+
+name: format-suggest.yaml
+
+jobs:
+  format-suggest:
+    name: format-suggest
+    runs-on: ubuntu-latest
+
+    permissions:
+      # Required to post suggestion comments on the pull request
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          allow-unsafe-pr-checkout: true
+
+      - name: Install
+        uses: posit-dev/setup-air@v1
+
+      - name: Format
+        run: air format .
+
+      - name: Suggest
+        uses: reviewdog/action-suggester@v1
+        with:
+          level: error
+          fail_level: error
+          tool_name: air
