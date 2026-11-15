@@ -187,7 +187,12 @@
 #' Copper River), each 2010 tract and its block groups are assigned to the
 #' current county they fall in. The one 2010 tract split between two planning
 #' regions is shared by land area. The crosswalk ships in
-#' `inst/extdata/tract-2010-crosswalk.csv`.
+#' `inst/extdata/tract-2010-crosswalk.csv`. It is derived by
+#' `data-raw/tract-crosswalk.R` (in the package's GitHub repository) from two
+#' Census Bureau relationship files: the 2020-to-2010 census tract files for
+#' Connecticut and Alaska, and the 2022 county subdivision to census tract
+#' file for Connecticut, which gives each tract its planning region. These
+#' are US government works, in the public domain in the United States.
 #'
 #' CDC's current county codes the package knows an ACS release lacks:
 #' * Connecticut's planning regions: handled by the crosswalk for ACS 2010 to
