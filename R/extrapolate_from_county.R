@@ -130,8 +130,14 @@
 #'       population"`, `"total population"`, `"equal shares"` or `"none"` (see
 #'       `empty_strata`).}
 #'     \item{area_cases}{Estimated cases in the area.}
-#'     \item{area_noncases}{`area_population_acs - area_cases`, floored at 0.}
 #'   }
+#'
+#'   For HIV prevalence (including CDC's estimated prevalence), people without
+#'   HIV in an area can be estimated as `area_population_acs - area_cases`.
+#'   That doesn't hold for the other indicators: new diagnoses and incidence
+#'   need the population at risk, which excludes people already living with
+#'   HIV; chlamydia, gonorrhea and syphilis count infections rather than
+#'   people; and for Knowledge of Status the population isn't residents.
 #'
 #'   Two attributes record what was not allocated:
 #'   `attr(result, "no_county_cases")`, the [no_county_cases()] report, and
@@ -311,7 +317,7 @@ extrapolate_from_county <- function(
     "county_cases_spread", "county_cases_unknown", "county_cases_allocated",
     "area_population_acs", "county_population_acs",
     "area_total_population", "county_total_population", "allocation",
-    "area_cases", "area_noncases"
+    "area_cases"
   )])
   attr(out, "no_county_cases") <- report
   attr(out, "not_allocated") <- tibble::as_tibble(not_allocated)
@@ -1043,7 +1049,6 @@ extrapolate_from_county <- function(
             .data$area_total_population
           )
       ),
-      area_noncases = pmax(0, .data$area_population_acs - .data$area_cases),
       .by = dplyr::all_of(.county_groups)
     )
 }

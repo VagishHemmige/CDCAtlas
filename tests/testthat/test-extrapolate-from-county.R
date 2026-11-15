@@ -45,7 +45,6 @@ for (strat in list(NULL, "sex", "race", "age")) {
     tracts <- run_extrapolation(strat)
     expect_equal(sum(is.na(tracts$area_cases)), 0)
     expect_gte(min(tracts$area_cases), 0)
-    expect_gte(min(tracts$area_noncases), 0)
   })
 }
 
@@ -60,10 +59,14 @@ test_that("tract estimates are county count x tract share of the stratum", {
   share <- one$area_population_acs / sum(one$area_population_acs)
   expect_equal(one$area_cases, 111 * share)
   expect_equal(unique(one$county_population_acs), sum(one$area_population_acs))
-  expect_equal(
-    one$area_noncases,
-    one$area_population_acs - one$area_cases
-  )
+})
+
+test_that("there is no area_noncases column (#117)", {
+  # Population minus cases means people without the condition only for
+  # prevalence; for diagnoses, infections and Knowledge of Status it doesn't.
+  tracts <- run_extrapolation(NULL)
+  expect_false("area_noncases" %in% names(tracts))
+  expect_equal(names(tracts)[ncol(tracts)], "area_cases")
 })
 
 test_that("allocation uses known shares after saving and reordering county rows", {
