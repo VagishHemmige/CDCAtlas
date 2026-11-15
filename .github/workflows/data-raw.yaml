@@ -1,0 +1,47 @@
+# Reruns a data-raw script on GitHub, where Census and CDC can be reached, and
+# fails if what it writes differs from the committed file. The rebuilt files
+# are uploaded as an artifact either way, so a difference can be inspected.
+#
+# Runs on pull requests that change the script or its output, and on request
+# (Actions tab -> data-raw.yaml -> Run workflow).
+on:
+  pull_request:
+    paths:
+      - "data-raw/tract-crosswalk.R"
+      - "inst/extdata/tract-2010-crosswalk.csv"
+      - ".github/workflows/data-raw.yaml"
+  workflow_dispatch:
+
+name: data-raw.yaml
+
+permissions: read-all
+
+jobs:
+  tract-crosswalk:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"hard"'
+          extra-packages: any::dplyr
+
+      - name: Rebuild the 2010 tract crosswalk
+        run: Rscript data-raw/tract-crosswalk.R
+
+      - name: Upload the rebuilt file
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tract-2010-crosswalk
+          path: inst/extdata/tract-2010-crosswalk.csv
+
+      - name: Check it matches the committed file
+        run: git diff --exit-code -- inst/extdata/tract-2010-crosswalk.csv
