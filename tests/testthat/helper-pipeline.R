@@ -74,8 +74,17 @@ fake_acs_tract <- function(geoid, acs = fake_acs()) {
 # CDC's age groups for chlamydia, gonorrhea and syphilis, as get_atlas()
 # requests them.
 sti_age_groups <- c(
-  "0-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-54",
-  "55-64", "65+", "Unknown"
+  "0-14",
+  "15-19",
+  "20-24",
+  "25-29",
+  "30-34",
+  "35-39",
+  "40-44",
+  "45-54",
+  "55-64",
+  "65+",
+  "Unknown"
 )
 
 strata_for <- function(stratify_by, all_ages = "Ages 13 years and older") {
@@ -90,16 +99,24 @@ strata_for <- function(stratify_by, all_ages = "Ages 13 years and older") {
   values <- switch(
     stratify_by,
     sex = list(sex = c("Male", "Female")),
-    race = list(race_ethnicity = c(
-      "American Indian/Alaska Native", "Asian", "Black/African American",
-      "Hispanic/Latino", "Multiracial",
-      "Native Hawaiian/Other Pacific Islander", "White"
-    )),
-    age = list(age = if (all_ages == "All age groups") {
-      sti_age_groups
-    } else {
-      c("13-24", "25-34", "35-44", "45-54", "55-64", "65+")
-    })
+    race = list(
+      race_ethnicity = c(
+        "American Indian/Alaska Native",
+        "Asian",
+        "Black/African American",
+        "Hispanic/Latino",
+        "Multiracial",
+        "Native Hawaiian/Other Pacific Islander",
+        "White"
+      )
+    ),
+    age = list(
+      age = if (all_ages == "All age groups") {
+        sti_age_groups
+      } else {
+        c("13-24", "25-34", "35-44", "45-54", "55-64", "65+")
+      }
+    )
   )
   out <- all[rep(1, length(values[[1]])), ]
   out[[names(values)]] <- values[[1]]
@@ -128,8 +145,11 @@ fake_county_atlas <- function(
     year = years,
     stringsAsFactors = FALSE
   )
-  cases <- 10 * match(grid$county, c("01001", "01003")) + grid$stratum +
-    100 * (match(grid$indicator, indicators) - 1) + (grid$year - min(years))
+  cases <- 10 *
+    match(grid$county, c("01001", "01003")) +
+    grid$stratum +
+    100 * (match(grid$indicator, indicators) - 1) +
+    (grid$year - min(years))
   is_suppressed <- grid$county %in% suppressed
   out <- data.frame(
     indicator = grid$indicator,
@@ -144,8 +164,15 @@ fake_county_atlas <- function(
     fips = grid$county,
     row.names = NULL
   )
-  factors <- c("indicator", "geography", "data_status", "race_ethnicity",
-               "sex", "age", "transmission")
+  factors <- c(
+    "indicator",
+    "geography",
+    "data_status",
+    "race_ethnicity",
+    "sex",
+    "age",
+    "transmission"
+  )
   out[factors] <- lapply(out[factors], factor)
   out$data_status <- factor(
     out$data_status,
@@ -186,7 +213,8 @@ fake_state_response <- function(state, payload) {
   years <- ids[ids %in% varvals$id[varvals$vtid == 2]] + 1478
   indicators <- varvals$name[varvals$id %in% ids]
   state[
-    as.numeric(as.character(state$year)) %in% years &
+    as.numeric(as.character(state$year)) %in%
+      years &
       as.character(state$indicator) %in% indicators,
   ]
 }

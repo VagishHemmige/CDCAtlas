@@ -269,19 +269,29 @@ extrapolate_from_county <- function(
     for (universe in unique(row_ages[county$year == year])) {
       rows <- county$year == year & row_ages == universe
       pop <- .area_population(
-        acs, states, stratify_by, universe, to, race_table,
+        acs,
+        states,
+        stratify_by,
+        universe,
+        to,
+        race_table,
         age_groups = unique(county$age[rows])
       )
       pop$acs_year <- acs
       pieces[[length(pieces) + 1]] <- .join_areas(
-        county[rows, ], pop, stratify_by, to
+        county[rows, ],
+        pop,
+        stratify_by,
+        to
       )
     }
   }
   areas <- dplyr::bind_rows(lapply(pieces, `[[`, "areas"))
   not_allocated <- dplyr::bind_rows(lapply(pieces, `[[`, "not_allocated"))
   missing_pop <- .leave_out_missing_population(
-    areas, missing_population, call
+    areas,
+    missing_population,
+    call
   )
   areas <- missing_pop$areas
   not_allocated <- dplyr::bind_rows(not_allocated, missing_pop$not_allocated)
@@ -293,6 +303,7 @@ extrapolate_from_county <- function(
   areas <- .allocate(areas, empty_strata)
   areas$area_type <- rep(to, nrow(areas))
 
+  # fmt: skip
   out <- tibble::as_tibble(areas[c(
     "year", "acs_year", "area_type", "geoid", "area_name", "county_fips",
     "county_name", "state_fips", "indicator", "race_ethnicity", "sex", "age",
@@ -306,12 +317,21 @@ extrapolate_from_county <- function(
   attr(out, "not_allocated") <- tibble::as_tibble(not_allocated)
 
   .announce_extrapolation(
-    out, report, not_allocated, no_county, empty_strata, to
+    out,
+    report,
+    not_allocated,
+    no_county,
+    empty_strata,
+    to
   )
   .announce_not_estimated(
     x,
-    paste("left out of the", to, "estimates and counted in the remainder",
-          "with no county")
+    paste(
+      "left out of the",
+      to,
+      "estimates and counted in the remainder",
+      "with no county"
+    )
   )
   if (!is.null(redistributed) && nrow(redistributed) > 0) {
     what <- if (identical(stratify_by, "age")) "age" else "race"
@@ -418,6 +438,7 @@ extrapolate_from_county <- function(
 # 13 and 14), assuming ages are spread evenly within the band. `band` is the
 # end of the Census label, checked by a live test.
 .acs_age_bands <- function() {
+  # fmt: skip
   data.frame(
     band = c(
       "Under 5 years", "5 to 9 years", "10 to 14 years", "15 to 17 years",
@@ -449,8 +470,12 @@ extrapolate_from_county <- function(
   data.frame(
     variable = sprintf("B03002_%03d", c(3, 4, 5, 6, 7, 9, 12)),
     race_ethnicity = c(
-      "White", "Black/African American", "American Indian/Alaska Native",
-      "Asian", "Native Hawaiian/Other Pacific Islander", "Multiracial",
+      "White",
+      "Black/African American",
+      "American Indian/Alaska Native",
+      "Asian",
+      "Native Hawaiian/Other Pacific Islander",
+      "Multiracial",
       "Hispanic/Latino"
     ),
     label = c(
@@ -472,12 +497,21 @@ extrapolate_from_county <- function(
 .acs_race_age_tables <- function() {
   data.frame(
     table = c(
-      "B01001H", "B01001B", "B01001C", "B01001D", "B01001E", "B01001G",
+      "B01001H",
+      "B01001B",
+      "B01001C",
+      "B01001D",
+      "B01001E",
+      "B01001G",
       "B01001I"
     ),
     race_ethnicity = c(
-      "White", "Black/African American", "American Indian/Alaska Native",
-      "Asian", "Native Hawaiian/Other Pacific Islander", "Multiracial",
+      "White",
+      "Black/African American",
+      "American Indian/Alaska Native",
+      "Asian",
+      "Native Hawaiian/Other Pacific Islander",
+      "Multiracial",
       "Hispanic/Latino"
     ),
     concept = c(
@@ -495,6 +529,7 @@ extrapolate_from_county <- function(
 # Age bands of the B01001B-I tables, in table order: codes 003-016 male and
 # 018-031 female. `weight_13` as in .acs_age_bands().
 .acs_race_age_bands <- function() {
+  # fmt: skip
   data.frame(
     band = c(
       "Under 5 years", "5 to 9 years", "10 to 14 years", "15 to 17 years",
@@ -526,7 +561,11 @@ extrapolate_from_county <- function(
 .band_weights <- function(bands, lower, upper) {
   closed <- is.finite(bands$upper)
   overlap <- pmin(bands$upper, upper) - pmax(bands$lower, lower) + 1
-  weight <- ifelse(closed, pmax(overlap, 0) / (bands$upper - bands$lower + 1), NA)
+  weight <- ifelse(
+    closed,
+    pmax(overlap, 0) / (bands$upper - bands$lower + 1),
+    NA
+  )
   open_in <- !closed & is.infinite(upper) & lower <= bands$lower
   open_out <- !closed & upper < bands$lower
   weight[open_in] <- 1
@@ -545,8 +584,12 @@ extrapolate_from_county <- function(
 # strata, `age_groups` are CDC's labels; each group counts the share of each
 # ACS band its ages cover, so groups starting at 13 count 2/5 of the 10-14
 # band. Labels with no ages (such as "Unknown") have no rows.
-.census_denominators <- function(stratify_by, ages, race_table = "B03002",
-                                 age_groups = NULL) {
+.census_denominators <- function(
+  stratify_by,
+  ages,
+  race_table = "B03002",
+  age_groups = NULL
+) {
   if (identical(stratify_by, "age")) {
     bands <- .acs_age_bands()
     rows <- lapply(unique(age_groups), function(group) {
@@ -565,7 +608,9 @@ extrapolate_from_county <- function(
     out <- do.call(rbind, rows)
     if (is.null(out)) {
       out <- data.frame(
-        variable = character(), weight = numeric(), stratum = character()
+        variable = character(),
+        weight = numeric(),
+        stratum = character()
       )
     }
     rownames(out) <- NULL
@@ -625,15 +670,28 @@ extrapolate_from_county <- function(
 # Area populations for one ACS year: one row per area and stratum (every area
 # appears in every stratum, with 0 if it has no population in it), with the
 # stratum population and the area's total population at the same ages.
-.area_population <- function(year, states, stratify_by, ages, to = "tract",
-                             race_table = "B03002", age_groups = NULL) {
+.area_population <- function(
+  year,
+  states,
+  stratify_by,
+  ages,
+  to = "tract",
+  race_table = "B03002",
+  age_groups = NULL
+) {
   denominators <- .census_denominators(
-    stratify_by, ages, race_table, age_groups
+    stratify_by,
+    ages,
+    race_table,
+    age_groups
   )
   total <- .census_denominators(NULL, ages)
   total_13 <- .census_denominators(NULL, "13+")
   variables <- unique(c(
-    denominators$variable, total$variable, total_13$variable, "B01001_001"
+    denominators$variable,
+    total$variable,
+    total_13$variable,
+    "B01001_001"
   ))
 
   acs <- .get_acs_areas(variables, year, states, to)
@@ -678,7 +736,8 @@ extrapolate_from_county <- function(
   areas <- unique(acs[c("geoid", "area_name")])
   areas$county_fips <- substr(areas$geoid, 1, 5)
   areas$area_total_population <- lookup_value(
-    weighted_sum(total), areas$geoid
+    weighted_sum(total),
+    areas$geoid
   )
 
   in_stratum <- weighted_sum(denominators, by_stratum = TRUE)
@@ -689,8 +748,9 @@ extrapolate_from_county <- function(
     .row_key(in_stratum, c("geoid", "stratum"))
   )]
 
-  if (identical(stratify_by, "race") && race_table == "B03002" &&
-    ages == "13+") {
+  if (
+    identical(stratify_by, "race") && race_table == "B03002" && ages == "13+"
+  ) {
     total_13 <- lookup_value(weighted_sum(total_13), out$geoid)
     all_ages <- acs[acs$variable == "B01001_001", c("geoid", "estimate")]
     names(all_ages)[2] <- "value"
@@ -700,8 +760,12 @@ extrapolate_from_county <- function(
   }
 
   out <- out[c(
-    "geoid", "area_name", "county_fips", "stratum",
-    "area_population_acs", "area_total_population"
+    "geoid",
+    "area_name",
+    "county_fips",
+    "stratum",
+    "area_population_acs",
+    "area_total_population"
   )]
   if (year %in% .acs_years_2010_tracts) {
     out <- .apply_tract_crosswalk(out)
@@ -775,8 +839,7 @@ extrapolate_from_county <- function(
     is.na(county$county_cases)
   no_data <- not_available | not_estimated
   no_areas <- !no_data & !county$county_fips %in% pop$county_fips
-  no_denominator <- !no_data & !no_areas &
-    !county$stratum %in% pop$stratum
+  no_denominator <- !no_data & !no_areas & !county$stratum %in% pop$stratum
   left_out <- no_data | no_areas | no_denominator
 
   not_allocated <- county[left_out, setdiff(names(county), "stratum")]
@@ -832,8 +895,12 @@ extrapolate_from_county <- function(
     "i" = "See {.code attr(x, \"not_allocated\")}."
   ))
   pop_columns <- c(
-    "geoid", "area_name", "stratum", "area_population_acs",
-    "area_total_population", "acs_year"
+    "geoid",
+    "area_name",
+    "stratum",
+    "area_population_acs",
+    "area_total_population",
+    "acs_year"
   )
   not_allocated <- rows[setdiff(names(rows), pop_columns)]
   not_allocated$reason <- "missing ACS population"
@@ -855,7 +922,8 @@ extrapolate_from_county <- function(
     dplyr::summarize(total = sum(.data$county_cases), .by = dplyr::all_of(keys))
   unknown_rows <- county[unknown, ]
   unknown_rows$known_total <- known_total$total[match(
-    .row_key(unknown_rows, keys), .row_key(known_total, keys)
+    .row_key(unknown_rows, keys),
+    .row_key(known_total, keys)
   )]
   shared <- unknown_rows[dplyr::coalesce(unknown_rows$known_total, 0) > 0, ]
 
@@ -870,8 +938,11 @@ extrapolate_from_county <- function(
     0
   )
 
-  out <- county[!(unknown & .row_key(county, keys) %in%
-    .row_key(shared, keys)), ]
+  out <- county[
+    !(unknown &
+      .row_key(county, keys) %in%
+        .row_key(shared, keys)),
+  ]
   attr(out, "redistributed") <- shared
   out
 }
@@ -899,8 +970,12 @@ extrapolate_from_county <- function(
 
 # Share each state's positive no-county remainder across its counties in the
 # data, by the counties' ACS population in the stratum.
-.spread_no_county <- function(areas, report, empty_strata,
-                              spread_by = "population") {
+.spread_no_county <- function(
+  areas,
+  report,
+  empty_strata,
+  spread_by = "population"
+) {
   state_keys <- c("state_fips", .atlas_keys)
   county_keys <- c(state_keys, "county_fips")
 
@@ -922,15 +997,18 @@ extrapolate_from_county <- function(
         "county cases"
       } else {
         .allocation_rule(
-          sum(.data$stratum_pop), sum(.data$total_pop), empty_strata
+          sum(.data$stratum_pop),
+          sum(.data$total_pop),
+          empty_strata
         )
       },
       county_cases_spread = dplyr::coalesce(
-        .data$remainder * dplyr::if_else(
-          .data$rule == "county cases",
-          .data$cases / sum(.data$cases),
-          .shares(.data$rule, .data$stratum_pop, .data$total_pop)
-        ),
+        .data$remainder *
+          dplyr::if_else(
+            .data$rule == "county cases",
+            .data$cases / sum(.data$cases),
+            .shares(.data$rule, .data$stratum_pop, .data$total_pop)
+          ),
         0
       ),
       .by = dplyr::all_of(state_keys)
@@ -948,17 +1026,20 @@ extrapolate_from_county <- function(
       county_population_acs = sum(.data$area_population_acs),
       county_total_population = sum(.data$area_total_population),
       allocation = .allocation_rule(
-        .data$county_population_acs, .data$county_total_population,
+        .data$county_population_acs,
+        .data$county_total_population,
         empty_strata
       ),
-      county_cases_allocated = .data$county_cases + .data$county_cases_spread +
+      county_cases_allocated = .data$county_cases +
+        .data$county_cases_spread +
         .data$county_cases_unknown,
       area_cases = dplyr::if_else(
         .data$county_cases_allocated == 0,
         0,
         .data$county_cases_allocated *
           .shares(
-            .data$allocation, .data$area_population_acs,
+            .data$allocation,
+            .data$area_population_acs,
             .data$area_total_population
           )
       ),
@@ -972,7 +1053,11 @@ extrapolate_from_county <- function(
 
 # One "* indicator year: n" line per indicator and year.
 .lines_by_indicator <- function(df, value) {
-  df <- data.frame(indicator = df$indicator, year = df$year, cases = df[[value]])
+  df <- data.frame(
+    indicator = df$indicator,
+    year = df$year,
+    cases = df[[value]]
+  )
   by_indicator <- df |>
     dplyr::summarize(
       cases = sum(.data$cases, na.rm = TRUE),
@@ -987,8 +1072,14 @@ extrapolate_from_county <- function(
   rlang::set_names(lines, rep("*", length(lines)))
 }
 
-.announce_extrapolation <- function(out, report, not_allocated, no_county,
-                                    empty_strata, to) {
+.announce_extrapolation <- function(
+  out,
+  report,
+  not_allocated,
+  no_county,
+  empty_strata,
+  to
+) {
   areas <- .area_plural(to)
   positive <- report
   positive$no_county_cases <- pmax(0, positive$no_county_cases)
@@ -1059,7 +1150,11 @@ extrapolate_from_county <- function(
 # (no allocated county in that state stratum, or rule "none").
 .announce_spread <- function(areas, report, to) {
   state_keys <- c("state_fips", .atlas_keys)
-  spread <- unique(areas[c(state_keys, "county_fips", "county_cases_spread")]) |>
+  spread <- unique(areas[c(
+    state_keys,
+    "county_fips",
+    "county_cases_spread"
+  )]) |>
     dplyr::summarize(
       spread = sum(.data$county_cases_spread),
       .by = dplyr::all_of(state_keys)

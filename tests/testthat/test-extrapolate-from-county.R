@@ -11,7 +11,10 @@ run_extrapolation <- function(
   env = parent.frame()
 ) {
   local_fake_sources(
-    state = state, acs = acs, county_totals = county_totals, env = env
+    state = state,
+    acs = acs,
+    county_totals = county_totals,
+    env = env
   )
   if (!"cases_source" %in% names(county)) {
     county <- impute_suppressed(county)
@@ -48,8 +51,11 @@ for (strat in list(NULL, "sex", "race", "age")) {
 
 test_that("tract estimates are county count x tract share of the stratum", {
   tracts <- run_extrapolation("sex")
-  one <- tracts[tracts$county_fips == "01001" & tracts$sex == "Male" &
-    tracts$indicator == "HIV prevalence", ]
+  one <- tracts[
+    tracts$county_fips == "01001" &
+      tracts$sex == "Male" &
+      tracts$indicator == "HIV prevalence",
+  ]
 
   share <- one$area_population_acs / sum(one$area_population_acs)
   expect_equal(one$area_cases, 111 * share)
@@ -173,7 +179,9 @@ test_that("race denominators aren't scaled for all ages", {
 acs_without_35_44 <- function() {
   acs <- fake_acs()
   bands <- c("B01001_013", "B01001_014", "B01001_037", "B01001_038")
-  acs$estimate[substr(acs$GEOID, 1, 5) == "01003" & acs$variable %in% bands] <- 0
+  acs$estimate[
+    substr(acs$GEOID, 1, 5) == "01003" & acs$variable %in% bands
+  ] <- 0
   acs
 }
 
@@ -192,7 +200,9 @@ test_that("empty strata are shared by total population by default", {
 test_that("empty strata can be shared equally", {
   acs <- fake_acs()
   bands <- c("B01001_013", "B01001_014", "B01001_037", "B01001_038")
-  acs$estimate[substr(acs$GEOID, 1, 5) == "01001" & acs$variable %in% bands] <- 0
+  acs$estimate[
+    substr(acs$GEOID, 1, 5) == "01001" & acs$variable %in% bands
+  ] <- 0
 
   tracts <- run_extrapolation("age", acs = acs, empty_strata = "equal")
   empty <- tracts[tracts$county_fips == "01001" & tracts$age == "35-44", ]
@@ -234,7 +244,10 @@ test_that("a stratum with no cases gives 0, even with no population", {
   county$cases[county$fips == "01003" & county$age == "35-44"] <- 0
 
   tracts <- run_extrapolation(
-    "age", county = county, acs = acs, empty_strata = "none"
+    "age",
+    county = county,
+    acs = acs,
+    empty_strata = "none"
   )
   empty <- tracts[tracts$county_fips == "01003" & tracts$age == "35-44", ]
 
@@ -271,19 +284,28 @@ test_that("no-county cases are reported, not allocated, by default", {
 test_that("no-county cases can be spread across counties by population", {
   state <- fake_state_atlas(no_county = 500, suppressed = character(0))
   county <- fake_county_atlas(suppressed = "01003")
-  tracts <- run_extrapolation(county = county, state = state, no_county = "spread")
+  tracts <- run_extrapolation(
+    county = county,
+    state = state,
+    no_county = "spread"
+  )
   report <- attr(tracts, "no_county_cases")
 
   expect_equal(
     sum(tracts$area_cases),
     sum(report$state_cases)
   )
-  spread <- unique(tracts[c("county_fips", "indicator", "county_cases_spread",
-                            "county_population_acs")])
+  spread <- unique(tracts[c(
+    "county_fips",
+    "indicator",
+    "county_cases_spread",
+    "county_population_acs"
+  )])
   diagnoses <- spread[spread$indicator == "HIV diagnoses", ]
   expect_equal(
     diagnoses$county_cases_spread,
-    report$no_county_cases[1] * diagnoses$county_population_acs /
+    report$no_county_cases[1] *
+      diagnoses$county_population_acs /
       sum(diagnoses$county_population_acs)
   )
   check <- county_vs_areas(tracts)
@@ -294,10 +316,16 @@ test_that("each state's remainder is spread within that state", {
   two <- two_state_atlas()
   county <- impute_suppressed(two$county, method = "zero")
   tracts <- run_extrapolation(
-    county = county, state = two$state, acs = two$acs, no_county = "spread"
+    county = county,
+    state = two$state,
+    acs = two$acs,
+    no_county = "spread"
   )
   by_state <- tracts |>
-    dplyr::summarize(area_cases = sum(area_cases), .by = c(state_fips, indicator))
+    dplyr::summarize(
+      area_cases = sum(area_cases),
+      .by = c(state_fips, indicator)
+    )
   state <- two$state[order(two$state$fips, two$state$indicator), ]
 
   expect_equal(by_state$area_cases, state$cases)
@@ -337,7 +365,9 @@ test_that("spreading stops when `x` lacks some of a state's counties (#54)", {
   expect_snapshot(
     error = TRUE,
     run_extrapolation(
-      county = one_county, county_totals = full, no_county = "spread"
+      county = one_county,
+      county_totals = full,
+      no_county = "spread"
     )
   )
 })
@@ -347,8 +377,11 @@ test_that("spreading works on whole states filtered from a larger table (#54)", 
   state_02 <- two$county[substr(two$county$fips, 1, 2) == "02", ]
 
   tracts <- run_extrapolation(
-    county = state_02, state = two$state, acs = two$acs,
-    county_totals = two$county, no_county = "spread"
+    county = state_02,
+    state = two$state,
+    acs = two$acs,
+    county_totals = two$county,
+    no_county = "spread"
   )
 
   expect_equal(unique(tracts$state_fips), "02")
@@ -364,7 +397,8 @@ test_that("counties CDC lists as not available don't count as missing (#54)", {
   unavailable$data_status[] <- "Data not available"
 
   tracts <- run_extrapolation(
-    county = county, county_totals = rbind(county, unavailable),
+    county = county,
+    county_totals = rbind(county, unavailable),
     no_county = "spread"
   )
 
@@ -380,7 +414,8 @@ test_that("a 'Data not available' county with a count still counts (#54)", {
 
   expect_error(
     run_extrapolation(
-      county = one_county, county_totals = labelled_unavailable,
+      county = one_county,
+      county_totals = labelled_unavailable,
       no_county = "spread"
     ),
     class = "rlang_error",
@@ -401,8 +436,11 @@ test_that("each state is checked only for its own years (#54)", {
   ]
 
   expect_no_error(suppressWarnings(run_extrapolation(
-    county = x, state = state_both, acs = two$acs,
-    county_totals = both_years, no_county = "spread"
+    county = x,
+    state = state_both,
+    acs = two$acs,
+    county_totals = both_years,
+    no_county = "spread"
   )))
 })
 
@@ -421,7 +459,10 @@ test_that("the no-county total is announced", {
   county <- impute_suppressed(fake_county_atlas())
 
   expect_snapshot(invisible(extrapolate_from_county(county)))
-  expect_snapshot(invisible(extrapolate_from_county(county, no_county = "spread")))
+  expect_snapshot(invisible(extrapolate_from_county(
+    county,
+    no_county = "spread"
+  )))
 })
 
 # Missing ACS populations (#52) ------------------------------------------------
@@ -431,7 +472,9 @@ test_that("the no-county total is announced", {
 acs_missing <- function(geoid, variables, drop = FALSE) {
   acs <- fake_acs()
   hit <- acs$GEOID %in% geoid & acs$variable %in% variables
-  if (drop) acs[!hit, ] else {
+  if (drop) {
+    acs[!hit, ]
+  } else {
     acs$estimate[hit] <- NA
     acs
   }
@@ -467,7 +510,10 @@ test_that("a missing variable row leaves its county out", {
   tracts <- suppressWarnings(run_extrapolation(NULL, acs = acs))
 
   expect_equal(unique(tracts$county_fips), "01001")
-  expect_equal(unique(left_out_reasons(tracts)$reason), "missing ACS population")
+  expect_equal(
+    unique(left_out_reasons(tracts)$reason),
+    "missing ACS population"
+  )
 })
 
 test_that("a real zero is still a zero, not missing", {
@@ -493,7 +539,10 @@ test_that("an empty result is still a result when every county is left out", {
     )
     expect_equal(nrow(tracts), 0)
     expect_true("area_cases" %in% names(tracts))
-    expect_setequal(attr(tracts, "not_allocated")$county_fips, c("01001", "01003"))
+    expect_setequal(
+      attr(tracts, "not_allocated")$county_fips,
+      c("01001", "01003")
+    )
   }
 })
 
@@ -603,9 +652,15 @@ test_that("extrapolate_from_county() rejects data and arguments it can't use", {
     error = TRUE,
     extrapolate_from_county(several_years, acs_year = 2021)
   )
-  expect_snapshot(error = TRUE, extrapolate_from_county(county, acs_year = "2021"))
+  expect_snapshot(
+    error = TRUE,
+    extrapolate_from_county(county, acs_year = "2021")
+  )
   expect_snapshot(error = TRUE, extrapolate_from_county(county, weights = 1))
-  expect_snapshot(error = TRUE, extrapolate_from_county(county, no_county = "drop"))
+  expect_snapshot(
+    error = TRUE,
+    extrapolate_from_county(county, no_county = "drop")
+  )
 })
 
 test_that("a missing Census key is reported before any request", {
@@ -674,19 +729,31 @@ test_that("block group estimates add up to county counts", {
       tolerance = 1e-8,
       label = paste("block group sums,", case)
     )
-    expect_equal(unique(nchar(areas$geoid)), 12, label = paste("GEOID length,", case))
-    expect_equal(unique(areas$area_type), "block group", label = paste("area type,", case))
+    expect_equal(
+      unique(nchar(areas$geoid)),
+      12,
+      label = paste("GEOID length,", case)
+    )
+    expect_equal(
+      unique(areas$area_type),
+      "block group",
+      label = paste("area type,", case)
+    )
   }
 })
 
 test_that("each tract's block groups split its share by population", {
   areas <- run_extrapolation(NULL, to = "block group")
-  one <- areas[areas$county_fips == "01003" &
-    areas$indicator == "HIV prevalence", ]
+  one <- areas[
+    areas$county_fips == "01003" &
+      areas$indicator == "HIV prevalence",
+  ]
 
   expect_equal(one$geoid, c("010030001001", "010030001002"))
-  expect_equal(one$area_cases, 121 * one$area_population_acs /
-    sum(one$area_population_acs))
+  expect_equal(
+    one$area_cases,
+    121 * one$area_population_acs / sum(one$area_population_acs)
+  )
   expect_gt(one$area_cases[2], one$area_cases[1])
 })
 
@@ -747,7 +814,9 @@ test_that("race_table = 'B01001' counts all ages for other diseases", {
 test_that("spread_by = 'cases' shares the remainder by county counts", {
   state <- fake_state_atlas(no_county = 500)
   tracts <- run_extrapolation(
-    state = state, no_county = "spread", spread_by = "cases"
+    state = state,
+    no_county = "spread",
+    spread_by = "cases"
   )
   spread <- unique(tracts[c("county_fips", "indicator", "county_cases_spread")])
   diagnoses <- spread[spread$indicator == "HIV diagnoses", ]
@@ -762,10 +831,15 @@ test_that("spread_by = 'cases' falls back to population with no county cases", {
   county$cases <- 0
   state <- fake_state_atlas(no_county = 500)
   tracts <- run_extrapolation(
-    county = county, state = state, no_county = "spread", spread_by = "cases"
+    county = county,
+    state = state,
+    no_county = "spread",
+    spread_by = "cases"
   )
   by_population <- run_extrapolation(
-    county = county, state = state, no_county = "spread"
+    county = county,
+    state = state,
+    no_county = "spread"
   )
 
   expect_equal(tracts$area_cases, by_population$area_cases)
@@ -837,8 +911,14 @@ test_that("2010 tracts are moved to CDC's current counties by the crosswalk", {
   total <- sum(pop[sprintf("B01001_%03d", c(6:25, 30:49))]) +
     0.4 * (pop[["B01001_005"]] + pop[["B01001_029"]])
 
-  in_01003 <- unique(tracts[tracts$county_fips == "01003", c("geoid", "area_total_population")])
-  expect_setequal(in_01003$geoid, c("01001000200", "01001000300", "01003000100"))
+  in_01003 <- unique(tracts[
+    tracts$county_fips == "01003",
+    c("geoid", "area_total_population")
+  ])
+  expect_setequal(
+    in_01003$geoid,
+    c("01001000200", "01001000300", "01003000100")
+  )
   expect_equal(
     in_01003$area_total_population[in_01003$geoid == "01001000200"],
     0.5 * total
@@ -896,7 +976,10 @@ test_that("STI age groups count every ACS band once, for both sexes", {
 test_that("HIV age groups count 2/5 of the 10-14 band and nothing younger", {
   weights <- band_weights(strata_for("age")$age, ages = "13+")
   expect_equal(unname(weights[c("B01001_005", "B01001_029")]), c(0.4, 0.4))
-  expect_equal(intersect(names(weights), sprintf("B01001_%03d", c(3, 4, 27, 28))), character(0))
+  expect_equal(
+    intersect(names(weights), sprintf("B01001_%03d", c(3, 4, 27, 28))),
+    character(0)
+  )
   rest <- setdiff(names(weights), c("B01001_005", "B01001_029"))
   expect_equal(unname(weights[rest]), rep(1, length(rest)))
 })
@@ -983,7 +1066,12 @@ test_that("unknown_age = 'redistribute' shares unknown cases across known ages",
 })
 
 test_that("unknown_age is checked", {
-  county <- impute_suppressed(fake_county_atlas("age", indicators = "Chlamydia"), method = "zero")
-  expect_snapshot(error = TRUE, extrapolate_from_county(county, unknown_age = "spread"))
+  county <- impute_suppressed(
+    fake_county_atlas("age", indicators = "Chlamydia"),
+    method = "zero"
+  )
+  expect_snapshot(
+    error = TRUE,
+    extrapolate_from_county(county, unknown_age = "spread")
+  )
 })
-

@@ -1,11 +1,10 @@
 .validate_get_atlas_inputs <- function(
-    disease,
-    geography,
-    year,
-    stratify_by = NULL,
-    call = rlang::caller_call()
+  disease,
+  geography,
+  year,
+  stratify_by = NULL,
+  call = rlang::caller_call()
 ) {
-
   valid_diseases <- c(
     "chlamydia",
     "gonorrhea",

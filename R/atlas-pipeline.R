@@ -276,7 +276,11 @@
   years <- as.numeric(as.character(x$year))
   states <- unique(substr(as.character(x$fips), 1, 2))
   payloads <- .build_payloads(
-    .atlas_diseases(x), "county", years, stratify_by, states = states
+    .atlas_diseases(x),
+    "county",
+    years,
+    stratify_by,
+    states = states
   )
   .request_atlas_all(unname(payloads))
 }

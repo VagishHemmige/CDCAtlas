@@ -95,7 +95,10 @@ no_county_cases <- function(x) {
       imputed_cases = sum(.data$imputed),
       .by = dplyr::all_of(keys)
     )
-  state_cases <- state$cases[match(.row_key(report, keys), .row_key(state, keys))]
+  state_cases <- state$cases[match(
+    .row_key(report, keys),
+    .row_key(state, keys)
+  )]
 
   report$state <- lookup[["state"]]$name[
     match(report$state_fips, lookup[["state"]]$fips)
@@ -108,8 +111,13 @@ no_county_cases <- function(x) {
   report$no_county_cases <- report$unpublished_cases - report$imputed_cases
 
   tibble::as_tibble(report[c(
-    "state_fips", "state", .atlas_keys,
-    "state_cases", "published_cases", "unpublished_cases", "imputed_cases",
+    "state_fips",
+    "state",
+    .atlas_keys,
+    "state_cases",
+    "published_cases",
+    "unpublished_cases",
+    "imputed_cases",
     "no_county_cases"
   )])
 }

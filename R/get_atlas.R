@@ -164,14 +164,13 @@
 #' @export
 
 get_atlas <- function(
-    disease,
-    geography,
-    year,
-    stratify_by=NULL,
-    extrapolate_to_tract=deprecated(),
-    refresh=FALSE)
-{
-
+  disease,
+  geography,
+  year,
+  stratify_by = NULL,
+  extrapolate_to_tract = deprecated(),
+  refresh = FALSE
+) {
   if (lifecycle::is_present(extrapolate_to_tract)) {
     lifecycle::deprecate_stop(
       "0.0.0.9001",
@@ -181,7 +180,7 @@ get_atlas <- function(
     )
   }
 
-#Validate input
+  #Validate input
   .validate_get_atlas_inputs(
     disease = disease,
     geography = geography,
@@ -193,24 +192,27 @@ get_atlas <- function(
     cli::cli_abort("{.arg refresh} must be {.code TRUE} or {.code FALSE}.")
   }
 
-
-
-#Construct the payloads for the call to the CDC site based on what users request.
-#County requests are split into one payload per state.
-payloads <- .build_payloads(
-    disease=disease,
-    geography=geography,
-    year=year,
-    stratify_by=stratify_by
+  #Construct the payloads for the call to the CDC site based on what users request.
+  #County requests are split into one payload per state.
+  payloads <- .build_payloads(
+    disease = disease,
+    geography = geography,
+    year = year,
+    stratify_by = stratify_by
   )
 
-if (refresh) {
-  .forget_atlas_requests(payloads)
-  # The later pipeline steps compare county data with state totals
-  # (.fetch_state_totals()); refresh those too, so both are equally new.
-  if (geography == "county") {
-    .forget_atlas_requests(.build_payloads(disease, "state", year, stratify_by))
+  if (refresh) {
+    .forget_atlas_requests(payloads)
+    # The later pipeline steps compare county data with state totals
+    # (.fetch_state_totals()); refresh those too, so both are equally new.
+    if (geography == "county") {
+      .forget_atlas_requests(.build_payloads(
+        disease,
+        "state",
+        year,
+        stratify_by
+      ))
+    }
   }
-}
-.request_atlas_all(payloads)
+  .request_atlas_all(payloads)
 }

@@ -10,82 +10,84 @@
 #'
 #' @keywords internal
 
-.request_atlas_internal<- function(payload) {
-#Url for CDC Atlas
-url_data <- "https://gis.cdc.gov/api/AtlasPlus/qtOutputData"
+.request_atlas_internal <- function(payload) {
+  #Url for CDC Atlas
+  url_data <- "https://gis.cdc.gov/api/AtlasPlus/qtOutputData"
 
-#Call CDC site, rate limited and with a time limit. A network failure gets a
-#plain message, a failed request CDC's own explanation, and a timeout is
-#retried (#13).
-res <- .with_atlas_retries(function() {
-  client_rate()
-  res <- .atlas_call(httr::POST(
-    url_data,
-    body = payload,
-    encode = "json",
-    .atlas_headers(),
-    httr::timeout(.atlas_timeout_seconds)
-  ))
-  status <- httr::status_code(res)
-  if (status != 200) {
-    .abort_cdc_status(res, status)
-  }
-  res
-})
+  #Call CDC site, rate limited and with a time limit. A network failure gets a
+  #plain message, a failed request CDC's own explanation, and a timeout is
+  #retried (#13).
+  res <- .with_atlas_retries(function() {
+    client_rate()
+    res <- .atlas_call(httr::POST(
+      url_data,
+      body = payload,
+      encode = "json",
+      .atlas_headers(),
+      httr::timeout(.atlas_timeout_seconds)
+    ))
+    status <- httr::status_code(res)
+    if (status != 200) {
+      .abort_cdc_status(res, status)
+    }
+    res
+  })
 
-#Encode JSON
-dat <- jsonlite::fromJSON(httr::content(res, "text", encoding = "UTF-8"))
+  #Encode JSON
+  dat <- jsonlite::fromJSON(httr::content(res, "text", encoding = "UTF-8"))
 
-if (is.null(dat$sourcedata)) {
-  cli::cli_abort(
-    c(
-      "CDC AtlasPlus returned no data for this request.",
-      "i" = "CDC may not have released this year for this disease yet, or
+  if (is.null(dat$sourcedata)) {
+    cli::cli_abort(
+      c(
+        "CDC AtlasPlus returned no data for this request.",
+        "i" = "CDC may not have released this year for this disease yet, or
              may not report this combination of geography and strata.",
-      "i" = "Check what AtlasPlus offers at
+        "i" = "Check what AtlasPlus offers at
              {.url https://gis.cdc.gov/grasp/nchhstpatlas/main.html}."
-    ),
-    call = NULL
-  )
-}
-
-# --- Convert to a data frame and label columns --
-#Uses internal package data varvals
-df <- as.data.frame(dat$sourcedata) |>
-  #Add fips
-  dplyr::left_join(dplyr::select(varvals, "id", "fips"), by = c("V3" = "id")) |>
-
-  #Decode data
-  dplyr::mutate(
-    dplyr::across(
-      dplyr::all_of(c("V1", "V3", "V4", "V5", "V6", "V7", "V8")),
-      ~factor(.x, levels = varvals$id, labels = varvals$name)
+      ),
+      call = NULL
     )
-  ) |>
-  dplyr::mutate(V2 = .data$V2 + 1478) |>
-  dplyr::rename(
-    indicator = "V1",
-    year = "V2",
-    geography = "V3",
-    data_status = "V4",
-    race_ethnicity = "V5",
-    sex = "V6",
-    age = "V7",
-    transmission = "V8",
-    rate100000 = "V9",
-    cases = "V10",
-    population = "V11",
-    lowerci_rate = "V12",
-    upperci_rate = "V13",
-    rse = "V14",
-    lowerci_cases = "V15",
-    upperci_cases = "V16"
-  )
+  }
 
+  # --- Convert to a data frame and label columns --
+  #Uses internal package data varvals
+  df <- as.data.frame(dat$sourcedata) |>
+    #Add fips
+    dplyr::left_join(
+      dplyr::select(varvals, "id", "fips"),
+      by = c("V3" = "id")
+    ) |>
 
-df <- tibble::as_tibble(.label_atlas_columns(df))
+    #Decode data
+    dplyr::mutate(
+      dplyr::across(
+        dplyr::all_of(c("V1", "V3", "V4", "V5", "V6", "V7", "V8")),
+        ~ factor(.x, levels = varvals$id, labels = varvals$name)
+      )
+    ) |>
+    dplyr::mutate(V2 = .data$V2 + 1478) |>
+    dplyr::rename(
+      indicator = "V1",
+      year = "V2",
+      geography = "V3",
+      data_status = "V4",
+      race_ethnicity = "V5",
+      sex = "V6",
+      age = "V7",
+      transmission = "V8",
+      rate100000 = "V9",
+      cases = "V10",
+      population = "V11",
+      lowerci_rate = "V12",
+      upperci_rate = "V13",
+      rse = "V14",
+      lowerci_cases = "V15",
+      upperci_cases = "V16"
+    )
 
-return(df)
+  df <- tibble::as_tibble(.label_atlas_columns(df))
+
+  return(df)
 }
 
 
@@ -128,7 +130,11 @@ return(df)
   tryCatch(
     request,
     error = function(e) {
-      timed_out <- grepl("Timeout was reached", conditionMessage(e), fixed = TRUE)
+      timed_out <- grepl(
+        "Timeout was reached",
+        conditionMessage(e),
+        fixed = TRUE
+      )
       cli::cli_abort(
         c(
           "Couldn't reach CDC AtlasPlus.",
@@ -229,7 +235,9 @@ return(df)
 # The one GET request, kept separate so tests can replace it.
 .atlas_get <- function(url) {
   .atlas_call(httr::GET(
-    url, .atlas_headers(), httr::timeout(.atlas_timeout_seconds)
+    url,
+    .atlas_headers(),
+    httr::timeout(.atlas_timeout_seconds)
   ))
 }
 
@@ -237,24 +245,39 @@ return(df)
 # Variable labels and unused factor levels. Applied to each response, and again
 # after combining several responses, because binding rows drops the labels.
 .label_atlas_columns <- function(df) {
-
-  labelled::var_label(df$indicator)       <- "Indicator (disease or condition being measured)"
-  labelled::var_label(df$year)            <- "Calendar year"
-  labelled::var_label(df$geography)       <- "Geographic level (state, county, national, MSA, etc.)"
-  labelled::var_label(df$data_status)     <- "Data completeness / suppression notes"
-  labelled::var_label(df$race_ethnicity)  <- "Race and ethnicity category"
-  labelled::var_label(df$sex)             <- "Sex category"
-  labelled::var_label(df$age)             <- "Age group"
-  labelled::var_label(df$transmission)    <- "Transmission category (HIV/STI)"
-  labelled::var_label(df$rate100000)      <- "Rate per 100,000 population (percentage for Knowledge of Status; see ?get_atlas for denominators)"
-  labelled::var_label(df$cases)           <- "Number of reported cases"
-  labelled::var_label(df$population)      <- "Population denominator"
-  labelled::var_label(df$lowerci_rate)    <- "Lower 95% confidence interval of rate"
-  labelled::var_label(df$upperci_rate)    <- "Upper 95% confidence interval of rate"
-  labelled::var_label(df$rse)             <- "Relative standard error of rate"
-  labelled::var_label(df$lowerci_cases)   <- "Lower 95% confidence interval of case count"
-  labelled::var_label(df$upperci_cases)   <- "Upper 95% confidence interval of case count"
-  labelled::var_label(df$fips)   <- "Census FIPS code for geographical merging with Census data"
+  labelled::var_label(
+    df$indicator
+  ) <- "Indicator (disease or condition being measured)"
+  labelled::var_label(df$year) <- "Calendar year"
+  labelled::var_label(
+    df$geography
+  ) <- "Geographic level (state, county, national, MSA, etc.)"
+  labelled::var_label(df$data_status) <- "Data completeness / suppression notes"
+  labelled::var_label(df$race_ethnicity) <- "Race and ethnicity category"
+  labelled::var_label(df$sex) <- "Sex category"
+  labelled::var_label(df$age) <- "Age group"
+  labelled::var_label(df$transmission) <- "Transmission category (HIV/STI)"
+  labelled::var_label(
+    df$rate100000
+  ) <- "Rate per 100,000 population (percentage for Knowledge of Status; see ?get_atlas for denominators)"
+  labelled::var_label(df$cases) <- "Number of reported cases"
+  labelled::var_label(df$population) <- "Population denominator"
+  labelled::var_label(
+    df$lowerci_rate
+  ) <- "Lower 95% confidence interval of rate"
+  labelled::var_label(
+    df$upperci_rate
+  ) <- "Upper 95% confidence interval of rate"
+  labelled::var_label(df$rse) <- "Relative standard error of rate"
+  labelled::var_label(
+    df$lowerci_cases
+  ) <- "Lower 95% confidence interval of case count"
+  labelled::var_label(
+    df$upperci_cases
+  ) <- "Upper 95% confidence interval of case count"
+  labelled::var_label(
+    df$fips
+  ) <- "Census FIPS code for geographical merging with Census data"
 
   df <- df |>
     dplyr::mutate(
@@ -272,7 +295,10 @@ return(df)
   }
 
   results <- vector("list", length(payloads))
-  for (i in cli::cli_progress_along(payloads, "Downloading from CDC AtlasPlus")) {
+  for (i in cli::cli_progress_along(
+    payloads,
+    "Downloading from CDC AtlasPlus"
+  )) {
     results[[i]] <- .request_atlas(payloads[[i]])
   }
 
@@ -281,7 +307,10 @@ return(df)
   combined <- dplyr::bind_rows(results) |>
     dplyr::mutate(dplyr::across(
       dplyr::where(is.factor),
-      ~ factor(as.character(.x), levels = intersect(unique(varvals$name), unique(as.character(.x))))
+      ~ factor(
+        as.character(.x),
+        levels = intersect(unique(varvals$name), unique(as.character(.x)))
+      )
     ))
 
   .label_atlas_columns(combined)
@@ -294,9 +323,8 @@ return(df)
 #' @keywords internal
 client_rate <- ratelimitr::limit_rate(
   function() Sys.sleep(0),
-  ratelimitr::rate(n = 5, period = 1)  # max 5 requests per second
+  ratelimitr::rate(n = 5, period = 1) # max 5 requests per second
 )
-
 
 
 # Cached AtlasPlus requests.

@@ -45,6 +45,7 @@ lookup <- list(
   state = geo_lookup(c(5001:5056, 8451)),
 
   # The 50 Ending the HIV Epidemic (EHE) counties. Not used by the package yet.
+  # fmt: skip
   ehe = geo_lookup(c(
     5165, 5248, 5266, 5277, 5280, 5281, 5283, 5284, 5285, 5381, 5388, 5397,
     5410, 5425, 5430, 5432, 5434, 5482, 5493, 5509, 5516, 5673, 5808, 6192,
@@ -55,6 +56,7 @@ lookup <- list(
 
   # Metropolitan statistical areas, in AtlasPlus's order. Leaves out its three
   # summary rows (8436-8438).
+  # fmt: skip
   msa = geo_lookup(c(
     8294, 8295, 8296, 8297, 8357, 8469, 8298, 8459, 8299, 8300, 8301, 8302,
     8303, 8304, 8305, 8306, 8433, 8309, 8310, 8307, 8386, 8311, 8312, 8313,

@@ -1,60 +1,83 @@
 #' Internal: temporary dummy payload builder
 #' @keywords internal
 .build_payload <- function(
-    disease,
-    geography,
-    year,
-    stratify_by = NULL,
-    geo_ids = NULL
+  disease,
+  geography,
+  year,
+  stratify_by = NULL,
+  geo_ids = NULL
 ) {
+  #Initial payload
+  id <- NULL
 
-#Initial payload
-id<-NULL
+  #Add each disease to payload
+  if ("chlamydia" %in% disease) {
+    id <- c(id, 206)
+  }
+  if ("gonorrhea" %in% disease) {
+    id <- c(id, 207)
+  }
+  if ("adult syphilis" %in% disease) {
+    id <- c(id, 208, 213, 290)
+  }
+  if ("congenital syphilis" %in% disease) {
+    id <- c(id, 214)
+  }
+  if ("tuberculosis" %in% disease) {
+    id <- c(id, 209)
+  }
+  if ("hiv" %in% disease) {
+    id <- c(id, 203, 205)
+  }
+  if ("estimate" %in% disease) {
+    id <- c(id, 285:287)
+  }
+  if ("hepatitis" %in% disease) {
+    id <- c(id, 210:212)
+  }
 
-#Add each disease to payload
-if ("chlamydia" %in% disease) {id <- c(id, 206)}
-if ("gonorrhea" %in% disease) {id <- c(id, 207)}
-if ("adult syphilis" %in% disease) {id <- c(id, 208, 213, 290)}
-if ("congenital syphilis" %in% disease) {id <- c(id, 214)}
-if ("tuberculosis" %in% disease) {id <- c(id, 209)}
-if ("hiv" %in% disease) {id <- c(id, 203, 205)}
-if ("estimate" %in% disease) {id <- c(id, 285:287)}
-if ("hepatitis" %in% disease) {id<-c(id, 210:212)}
+  #Add geography to payload.  Only allows one geography
+  id <- switch(
+    geography,
+    "national" = c(id, 5000), #5000 is the United States; state codes start at 5001
+    #CDC's region level (geoLevel 1005): the four Census regions (8453-8456) and
+    #U.S. territories and freely associated states (8457)
+    "region" = c(id, varvals$id[varvals$geoLevel %in% 1005]),
+    "state" = c(id, lookup[["state"]]$geo_id),
+    "county" = c(id, geo_ids %||% lookup[["counties"]]$geo_id),
+    "msa" = c(id, lookup[["msa"]]$geo_id)
+  )
 
-#Add geography to payload.  Only allows one geography
-id<- switch (geography,
-"national" =  c(id,5000),  #5000 is the United States; state codes start at 5001
-#CDC's region level (geoLevel 1005): the four Census regions (8453-8456) and
-#U.S. territories and freely associated states (8457)
-"region"=c(id, varvals$id[varvals$geoLevel %in% 1005]),
-"state"=c(id,lookup[["state"]]$geo_id),
-"county"= c(id, geo_ids %||% lookup[["counties"]]$geo_id),
-"msa"=c(id,lookup[["msa"]]$geo_id)
-)
+  #Add year to payload.  The year id is the current year, subtracting 1478
+  id <- c(id, year - 1478)
 
-#Add year to payload.  The year id is the current year, subtracting 1478
-id<-c(id, year-1478)
+  #Add stratification variables to id
+  #Add age: each disease's own age groups, or its age total
+  id <- c(id, .atlas_age_codes(disease, "age" %in% stratify_by))
 
-#Add stratification variables to id
-#Add age: each disease's own age groups, or its age total
-id <- c(id, .atlas_age_codes(disease, "age" %in% stratify_by))
+  #Add race stratification variables
+  if ("race" %in% stratify_by) {
+    id <- c(id, 552, 553, 554, 555, 562, 556, 559, 557)
+  }
+  if (!("race" %in% stratify_by)) {
+    id <- c(id, 551)
+  }
 
-#Add race stratification variables
-if ("race" %in% stratify_by) {id<-c(id,552,553,554,555,562,556,559,557)}
-if (!("race" %in% stratify_by)){id<-c(id, 551)}
+  #Add sex stratification variables
+  if ("sex" %in% stratify_by) {
+    id <- c(id, 602, 603)
+  }
+  if (!("sex" %in% stratify_by)) {
+    id <- c(id, 601)
+  }
 
-#Add sex stratification variables
-if ("sex" %in% stratify_by) {id<-c(id,602, 603)}
-if (!("sex" %in% stratify_by)){id<-c(id, 601)}
+  #Transmission category--defaults to all for now
+  id <- c(id, 801)
 
-#Transmission category--defaults to all for now
-id<-c(id,801)
-
-#Create payload
+  #Create payload
   list(
-    VariableIDs = paste(id,
-      collapse = ","
-    ))
+    VariableIDs = paste(id, collapse = ",")
+  )
 }
 
 
@@ -69,23 +92,35 @@ id<-c(id,801)
 # `states`: for counties, the 2-digit state FIPS codes to request (all if
 # NULL). County payloads are named by state code.
 .build_payloads <- function(
-    disease,
-    geography,
-    year,
-    stratify_by = NULL,
-    states = NULL
+  disease,
+  geography,
+  year,
+  stratify_by = NULL,
+  states = NULL
 ) {
   years <- sort(unique(as.numeric(year)))
   pieces <- lapply(unique(disease), function(one_disease) {
     lapply(years, function(one_year) {
-      .build_year_payloads(one_disease, geography, one_year, stratify_by, states)
+      .build_year_payloads(
+        one_disease,
+        geography,
+        one_year,
+        stratify_by,
+        states
+      )
     })
   })
   unlist(unlist(pieces, recursive = FALSE), recursive = FALSE)
 }
 
 # The payloads for one disease and year: one, or one per state for counties.
-.build_year_payloads <- function(disease, geography, year, stratify_by, states) {
+.build_year_payloads <- function(
+  disease,
+  geography,
+  year,
+  stratify_by,
+  states
+) {
   if (geography != "county") {
     return(list(.build_payload(disease, geography, year, stratify_by)))
   }
@@ -129,4 +164,3 @@ id<-c(id,801)
     )
   )
 }
-
