@@ -115,11 +115,16 @@ for (year in c(2017, 2022)) {
   })
 }
 
-test_that("HIV has data for the latest year in the code table", {
-  # If this fails, CDC has listed a year before releasing HIV data for it, or
-  # the package's code table is out of date (data-raw/DATASET.R).
+test_that("HIV diagnoses are released for the latest stored year", {
+  # Checks data availability only: CDC listing a year before releasing HIV
+  # diagnoses for it would fail here. Whether CDC now lists a later year than
+  # the stored code table is a separate question this test does not answer.
   local_mocked_bindings(.request_atlas = .request_atlas_internal)
-  out <- get_atlas("hiv", "national", .latest_atlas_year())
+  latest <- .latest_atlas_year()
+  out <- get_atlas("hiv", "national", latest)
+  diagnoses <- out[out$indicator == "HIV diagnoses", ]
 
-  expect_contains(as.character(out$indicator), "HIV diagnoses")
+  expect_equal(nrow(diagnoses), 1)
+  expect_equal(diagnoses$year, latest)
+  expect_equal(as.character(diagnoses$geography), "United States")
 })
