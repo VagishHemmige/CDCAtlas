@@ -22,10 +22,11 @@ if ("estimate" %in% disease) {id <- c(id, 285:287)}
 if ("hepatitis" %in% disease) {id<-c(id, 210:212)}
 
 #Add geography to payload.  Only allows one geography
-#Of note, there is a specific marker () to group by region; otherwise,
 id<- switch (geography,
 "national" =  c(id,5000),  #5000 is the United States; state codes start at 5001
-"region"=id, #Placeholder code
+#CDC's region level (geoLevel 1005): the four Census regions (8453-8456) and
+#U.S. territories and freely associated states (8457)
+"region"=c(id, varvals$id[varvals$geoLevel %in% 1005]),
 "state"=c(id,lookup[["state"]]$geo_id),
 "county"= c(id, geo_ids %||% lookup[["counties"]]$geo_id),
 "msa"=c(id,lookup[["msa"]]$geo_id)
