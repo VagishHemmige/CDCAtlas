@@ -233,6 +233,25 @@
 # The state rows matching county data `x`: same diseases, years and
 # stratification. One request per disease, because each disease has its own
 # payload codes.
+# CDC's full county table for the indicators, years and stratification in
+# `x`, for the states in `x`. Uses the request cache, so data downloaded
+# earlier with get_atlas() costs nothing.
+.fetch_county_totals <- function(x) {
+  stratify_by <- .atlas_stratify_by(x)
+  if (length(stratify_by) == 0) {
+    stratify_by <- NULL
+  }
+  years <- sort(unique(as.numeric(as.character(x$year))))
+  states <- unique(substr(as.character(x$fips), 1, 2))
+  payloads <- unlist(
+    lapply(.atlas_diseases(x), function(disease) {
+      .build_payloads(disease, "county", years, stratify_by)[states]
+    }),
+    recursive = FALSE
+  )
+  .request_atlas_all(unname(payloads[!vapply(payloads, is.null, logical(1))]))
+}
+
 .fetch_state_totals <- function(x) {
   stratify_by <- .atlas_stratify_by(x)
   if (length(stratify_by) == 0) {

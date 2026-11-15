@@ -6,10 +6,13 @@ run_extrapolation <- function(
   county = fake_county_atlas(stratify_by),
   state = fake_state_atlas(stratify_by = stratify_by),
   acs = fake_acs(),
+  county_totals = NULL,
   ...,
   env = parent.frame()
 ) {
-  local_fake_sources(state = state, acs = acs, env = env)
+  local_fake_sources(
+    state = state, acs = acs, county_totals = county_totals, env = env
+  )
   if (!"cases_source" %in% names(county)) {
     county <- impute_suppressed(county)
   }
@@ -296,6 +299,57 @@ test_that("negative remainders are not spread", {
   state <- fake_state_atlas(no_county = -100)
   tracts <- run_extrapolation(state = state, no_county = "spread")
 
+  expect_equal(unique(tracts$county_cases_spread), 0)
+})
+
+test_that("spreading stops when `x` lacks some of a state's counties (#54)", {
+  full <- fake_county_atlas()
+  one_county <- full[full$fips == "01001", ]
+
+  expect_snapshot(
+    error = TRUE,
+    run_extrapolation(
+      county = one_county, county_totals = full, no_county = "spread"
+    )
+  )
+})
+
+test_that("spreading works on whole states filtered from a larger table (#54)", {
+  two <- two_state_atlas()
+  state_02 <- two$county[substr(two$county$fips, 1, 2) == "02", ]
+
+  tracts <- run_extrapolation(
+    county = state_02, state = two$state, acs = two$acs,
+    county_totals = two$county, no_county = "spread"
+  )
+
+  expect_equal(unique(tracts$state_fips), "02")
+  expect_gt(sum(tracts$county_cases_spread), 0)
+})
+
+test_that("counties CDC lists as not available don't count as missing (#54)", {
+  county <- fake_county_atlas()
+  unavailable <- county[county$fips == "01003", ]
+  unavailable$fips <- "01005"
+  unavailable$geography <- factor("County 01005")
+  unavailable$cases <- NA_real_
+  unavailable$data_status[] <- "Data not available"
+
+  tracts <- run_extrapolation(
+    county = county, county_totals = rbind(county, unavailable),
+    no_county = "spread"
+  )
+
+  expect_setequal(unique(tracts$county_fips), c("01001", "01003"))
+})
+
+test_that("the default report mode doesn't check for missing counties (#54)", {
+  full <- fake_county_atlas()
+  one_county <- full[full$fips == "01001", ]
+
+  tracts <- run_extrapolation(county = one_county, county_totals = full)
+
+  expect_equal(unique(tracts$county_fips), "01001")
   expect_equal(unique(tracts$county_cases_spread), 0)
 })
 

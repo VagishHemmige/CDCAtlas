@@ -23,7 +23,12 @@
 #'   * `"report"` (default): left out of the estimates, with a message giving
 #'     the total. The report is kept in `attr(result, "no_county_cases")`.
 #'   * `"spread"`: shared across the state's counties in `x` by their ACS
-#'     population in the same stratum, then across areas as usual. Negative
+#'     population in the same stratum, then across areas as usual. `x` must
+#'     hold every county CDC reports in each of its states (counties CDC lists
+#'     as "Data not available" aside), or the counties left out would have
+#'     their cases spread too; to study part of a state, spread first and
+#'     filter the result. Checking needs CDC's county table, which comes from
+#'     the cache when `x` was downloaded in this session. Negative
 #'     remainders are not spread, nor are remainders in a state with no
 #'     allocated county in that stratum; the message says how many cases
 #'     could not be spread.
@@ -231,6 +236,9 @@ extrapolate_from_county <- function(
 
   .check_census_ready(call)
 
+  if (no_county == "spread") {
+    .check_whole_states(x, call)
+  }
   report <- .no_county_cases(x, .fetch_state_totals(x))
 
   county <- .county_cases(x)
@@ -293,6 +301,38 @@ extrapolate_from_county <- function(
 # Checks --------------------------------------------------------------------------
 
 # Say what is missing before any request is made.
+# no_county = "spread" shares each state's remainder (state total minus the
+# counties in `x`) across the counties in `x`. If `x` leaves out counties CDC
+# reports, their own cases would be counted in the remainder and moved to the
+# counties kept (#54). Counties CDC lists as "Data not available" don't count.
+.check_whole_states <- function(x, call) {
+  keys <- c("fips", .atlas_keys)
+  cdc <- .fetch_county_totals(x)
+  x_states <- unique(substr(as.character(x$fips), 1, 2))
+  cdc <- cdc[substr(as.character(cdc$fips), 1, 2) %in% x_states &
+    as.character(cdc$data_status) != "Data not available", ]
+  cdc <- cdc[.row_key(cdc, .atlas_keys) %in% .row_key(x, .atlas_keys), ]
+  missing <- cdc[!.row_key(cdc, keys) %in% .row_key(x, keys), ]
+  if (nrow(missing) == 0) {
+    return(invisible())
+  }
+  counties <- unique(as.character(missing$fips))
+  states <- unique(substr(counties, 1, 2))
+  cli::cli_abort(
+    c(
+      "{.arg no_county = \"spread\"} needs every county CDC reports in each
+       state of {.arg x}.",
+      "x" = "{.arg x} is missing {length(counties)} count{?y/ies} in state{?s}
+             {.val {states}}, for example {.val {utils::head(counties, 3)}}.",
+      "i" = "Their cases would be spread to the counties in {.arg x} as if
+             they had no county.",
+      "i" = "Run {.fn extrapolate_from_county} on whole states and filter the
+             result, or use {.code no_county = \"report\"}."
+    ),
+    call = call
+  )
+}
+
 .check_census_ready <- function(call) {
   if (!nzchar(Sys.getenv("CENSUS_API_KEY"))) {
     cli::cli_abort(
