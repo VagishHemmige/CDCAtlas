@@ -72,8 +72,8 @@ Multiple diseases are not currently supported in a single request.</p></dd>
 
 
 <dt id="arg-geography">geography<a class="anchor" aria-label="anchor" href="#arg-geography"></a></dt>
-<dd><p>Character scalar. One of <code>"national"</code>, <code>"state"</code>,
-<code>"county"</code>, or <code>"msa"</code>. Region-level queries are not supported yet.</p></dd>
+<dd><p>Character scalar. One of <code>"national"</code>, <code>"region"</code> (HIV
+estimates only), <code>"state"</code>, <code>"county"</code>, or <code>"msa"</code>.</p></dd>
 
 
 <dt id="arg-year">year<a class="anchor" aria-label="anchor" href="#arg-year"></a></dt>
@@ -165,6 +165,10 @@ pass county data to <code><a href="impute_suppressed.html">impute_suppressed()</
 <li><p><code>"estimate"</code> (estimated HIV counts)</p></li>
 <li><p><code>"hepatitis"</code></p></li>
 </ul><p><strong>Geography</strong></p><ul><li><p><code>"national"</code></p></li>
+<li><p><code>"region"</code>: the four Census regions (Northeast, Midwest, South, West) and
+U.S. territories and freely associated states. Only for
+<code>disease = "estimate"</code>: CDC returns regions only for its HIV estimates.
+The <code>fips</code> column holds CDC's own codes for these, not Census FIPS codes.</p></li>
 <li><p><code>"state"</code></p></li>
 <li><p><code>"county"</code></p></li>
 <li><p><code>"msa"</code> (metropolitan statistical area)</p></li>

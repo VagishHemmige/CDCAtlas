@@ -65,9 +65,10 @@ discussion and implementation rather than treating every proposal as
 adopted policy.
 [\#45](https://github.com/VagishHemmige/CDCAtlas/issues/45) proposes a
 source interpretation article; do not claim it exists until it is
-committed. [\#4](https://github.com/VagishHemmige/CDCAtlas/issues/4)
-tracks the currently uncommitted data-generation scripts. Do not invent
-their contents.
+committed. `data-raw/DATASET.R` builds `R/sysdata.rda` from CDC’s
+AtlasPlus set-up data;
+[\#4](https://github.com/VagishHemmige/CDCAtlas/issues/4) tracks the
+remaining data-generation work (age schemes).
 
 ## Implementation and approval
 
@@ -174,10 +175,15 @@ Separate source inspection, personally executed synthetic checks,
 recorded responses, live API checks, observed CI and author-reported
 validation. Record live retrieval dates, tested requests and coverage
 gaps without keys or credentials. Supply exact commands for remaining
-maintainer checks and vignette rebuilding when relevant, with
+maintainer checks and article and site rebuilding when relevant, with
 prerequisites and side effects. The established pipeline-validation
 workflow includes the full live suite with `CDCATLAS_LIVE_TESTS=true`
-and `devtools::test(filter = "live")`. Before using that workflow,
+and `devtools::test(filter = "live")`. `test-live-cdc.R` holds quick
+checks (a few small requests, about a minute) and `test-live-pipeline.R`
+the county downloads and full pipeline (35 to 45 minutes). Run the full
+suite when download, imputation or extrapolation code changes, and only
+the quick checks or the specific affected test otherwise;
+`live-tests.yaml` offers the same choice. Before using that workflow,
 inspect all selected tests, including imputation, and their data/cache
 effects. Run the full suite only when every selected path is permitted;
 otherwise run the permitted subset and report the coverage gap. A test
@@ -225,9 +231,23 @@ move. Air adoption in
 [\#42](https://github.com/VagishHemmige/CDCAtlas/issues/42) does not
 itself authorize unsolicited formatting.
 
-`.Rbuildignore` excludes AGENTS.md and REVIEWING.md from package builds,
-not from pkgdown. Both root Markdown files can become unlinked website
-pages, including search and sitemap entries.
+[reference/](https://vagishhemmige.github.io/CDCAtlas/reference/README.md)
+holds background on CDC AtlasPlus, Census geography and estimation
+methods. Read
+[reference/README.md](https://vagishhemmige.github.io/CDCAtlas/reference/README.md)
+before implementing or reviewing scientific logic, verify claims against
+the cited sources, and follow its placement and citation rules: code may
+cite a reference entry by its heading; reference entries never name
+package functions or issues.
+[PACKAGE_REVIEW.md](https://vagishhemmige.github.io/CDCAtlas/PACKAGE_REVIEW.md)
+is the protocol for a whole-package review, used only when the
+maintainer commissions one; `tools/audit/` holds that review’s synthetic
+checks.
+
+`.Rbuildignore` excludes AGENTS.md, REVIEWING.md, PACKAGE_REVIEW.md,
+`reference/` and `tools/` from package builds, not from pkgdown. The
+three root Markdown files can become unlinked website pages, including
+search and sitemap entries; `reference/` and `tools/` are not published.
 [\#40](https://github.com/VagishHemmige/CDCAtlas/issues/40) currently
 defers the publication fix. Do not claim these files are unpublished or
 private. A publishing change requires a separately reviewed

@@ -124,7 +124,10 @@ state rate's denominator.</p></li>
 <li><p><code>"acs"</code>: the county's ACS 5-year population in the same stratum and
 ages, summed from its tracts as <code><a href="extrapolate_from_county.html">extrapolate_from_county()</a></code> does. Needs
 tidycensus and a Census API key.</p></li>
-</ul><p>Neither covers Connecticut's 2017 planning regions: CDC gives them no
+</ul><p><code>"acs"</code> accepts the same strata as <code><a href="extrapolate_from_county.html">extrapolate_from_county()</a></code>: at most
+one stratification variable, and age only for HIV. Other input stops
+before anything is downloaded; use <code>"cdc"</code> for it.</p>
+<p>Neither covers Connecticut's 2017 planning regions: CDC gives them no
 population, and 2017 ACS tracts belong to the old counties (#30).</p></dd>
 
 

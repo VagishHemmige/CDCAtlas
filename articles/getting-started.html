@@ -108,27 +108,18 @@ year.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">chlamydia_state</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   indicator year  geography    data_status        race_ethnicity        sex</span></span>
-<span><span class="co">#&gt; 1 Chlamydia 2022    Alabama Not Suppressed All races/ethnicities Both sexes</span></span>
-<span><span class="co">#&gt; 2 Chlamydia 2022     Alaska Not Suppressed All races/ethnicities Both sexes</span></span>
-<span><span class="co">#&gt; 3 Chlamydia 2022    Arizona Not Suppressed All races/ethnicities Both sexes</span></span>
-<span><span class="co">#&gt; 4 Chlamydia 2022   Arkansas Not Suppressed All races/ethnicities Both sexes</span></span>
-<span><span class="co">#&gt; 5 Chlamydia 2022 California Not Suppressed All races/ethnicities Both sexes</span></span>
-<span><span class="co">#&gt; 6 Chlamydia 2022   Colorado Not Suppressed All races/ethnicities Both sexes</span></span>
-<span><span class="co">#&gt;              age                transmission rate100000  cases population</span></span>
-<span><span class="co">#&gt; 1 All age groups All transmission categories      612.1  31060    5074296</span></span>
-<span><span class="co">#&gt; 2 All age groups All transmission categories      727.7   5338     733583</span></span>
-<span><span class="co">#&gt; 3 All age groups All transmission categories      554.4  40796    7359197</span></span>
-<span><span class="co">#&gt; 4 All age groups All transmission categories      588.3  17918    3045637</span></span>
-<span><span class="co">#&gt; 5 All age groups All transmission categories      493.6 192647   39029342</span></span>
-<span><span class="co">#&gt; 6 All age groups All transmission categories      456.3  26646    5839926</span></span>
-<span><span class="co">#&gt;   lowerci_rate upperci_rate rse lowerci_cases upperci_cases fips</span></span>
-<span><span class="co">#&gt; 1           NA           NA  NA            NA            NA   01</span></span>
-<span><span class="co">#&gt; 2           NA           NA  NA            NA            NA   02</span></span>
-<span><span class="co">#&gt; 3           NA           NA  NA            NA            NA   04</span></span>
-<span><span class="co">#&gt; 4           NA           NA  NA            NA            NA   05</span></span>
-<span><span class="co">#&gt; 5           NA           NA  NA            NA            NA   06</span></span>
-<span><span class="co">#&gt; 6           NA           NA  NA            NA            NA   08</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 17</span></span></span>
+<span><span class="co">#&gt;   indicator  year geography  data_status race_ethnicity sex   age   transmission</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Chlamydia  <span style="text-decoration: underline;">2</span>022 Alabama    Not Suppre… All races/eth… Both… All … All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Chlamydia  <span style="text-decoration: underline;">2</span>022 Alaska     Not Suppre… All races/eth… Both… All … All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Chlamydia  <span style="text-decoration: underline;">2</span>022 Arizona    Not Suppre… All races/eth… Both… All … All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> Chlamydia  <span style="text-decoration: underline;">2</span>022 Arkansas   Not Suppre… All races/eth… Both… All … All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> Chlamydia  <span style="text-decoration: underline;">2</span>022 California Not Suppre… All races/eth… Both… All … All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> Chlamydia  <span style="text-decoration: underline;">2</span>022 Colorado   Not Suppre… All races/eth… Both… All … All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 9 more variables: rate100000 &lt;dbl&gt;, cases &lt;dbl&gt;, population &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   lowerci_rate &lt;dbl&gt;, upperci_rate &lt;dbl&gt;, rse &lt;dbl&gt;, lowerci_cases &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   upperci_cases &lt;dbl&gt;, fips &lt;chr&gt;</span></span></span></code></pre></div>
 <p>The returned object is a data frame that can be used directly with
 tidyverse tools.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
@@ -143,15 +134,15 @@ tidyverse tools.</p>
 <span><span class="co">#&gt; $ sex            <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> Both sexes<span style="color: #949494;">, </span>Both sexes<span style="color: #949494;">, </span>Both sexes<span style="color: #949494;">, </span>Both sexes<span style="color: #949494;">, </span>Both se…</span></span>
 <span><span class="co">#&gt; $ age            <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> All age groups<span style="color: #949494;">, </span>All age groups<span style="color: #949494;">, </span>All age groups<span style="color: #949494;">, </span>All age…</span></span>
 <span><span class="co">#&gt; $ transmission   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> All transmission categories<span style="color: #949494;">, </span>All transmission categorie…</span></span>
-<span><span class="co">#&gt; $ rate100000     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> 612.1<span style="color: #949494;">, </span>727.7<span style="color: #949494;">, </span>554.4<span style="color: #949494;">, </span>588.3<span style="color: #949494;">, </span>493.6<span style="color: #949494;">, </span>456.3<span style="color: #949494;">, </span>351.3<span style="color: #949494;">, </span>508.3<span style="color: #949494;">,</span>…</span></span>
-<span><span class="co">#&gt; $ cases          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> 31060<span style="color: #949494;">, </span>5338<span style="color: #949494;">, </span>40796<span style="color: #949494;">, </span>17918<span style="color: #949494;">, </span>192647<span style="color: #949494;">, </span>26646<span style="color: #949494;">, </span>12738<span style="color: #949494;">, </span>5177<span style="color: #949494;">, </span>…</span></span>
+<span><span class="co">#&gt; $ rate100000     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> 612.1<span style="color: #949494;">, </span>727.7<span style="color: #949494;">, </span>554.4<span style="color: #949494;">, </span>588.3<span style="color: #949494;">, </span>493.6<span style="color: #949494;">, </span>456.3<span style="color: #949494;">, </span>143.8<span style="color: #949494;">, </span>593.9<span style="color: #949494;">,</span>…</span></span>
+<span><span class="co">#&gt; $ cases          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> 31060<span style="color: #949494;">, </span>5338<span style="color: #949494;">, </span>40796<span style="color: #949494;">, </span>17918<span style="color: #949494;">, </span>192647<span style="color: #949494;">, </span>26646<span style="color: #949494;">, </span>4633<span style="color: #949494;">, </span>626<span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span>…</span></span>
 <span><span class="co">#&gt; $ population     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> 5074296<span style="color: #949494;">, </span>733583<span style="color: #949494;">, </span>7359197<span style="color: #949494;">, </span>3045637<span style="color: #949494;">, </span>39029342<span style="color: #949494;">, </span>5839926<span style="color: #949494;">, </span>3…</span></span>
 <span><span class="co">#&gt; $ lowerci_rate   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">,</span>…</span></span>
 <span><span class="co">#&gt; $ upperci_rate   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">,</span>…</span></span>
 <span><span class="co">#&gt; $ rse            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">,</span>…</span></span>
 <span><span class="co">#&gt; $ lowerci_cases  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">,</span>…</span></span>
 <span><span class="co">#&gt; $ upperci_cases  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">, </span><span style="color: #BB0000;">NA</span><span style="color: #949494;">,</span>…</span></span>
-<span><span class="co">#&gt; $ fips           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "01"<span style="color: #949494;">, </span>"02"<span style="color: #949494;">, </span>"04"<span style="color: #949494;">, </span>"05"<span style="color: #949494;">, </span>"06"<span style="color: #949494;">, </span>"08"<span style="color: #949494;">, </span>"09"<span style="color: #949494;">, </span>"10"<span style="color: #949494;">, </span>"11"<span style="color: #949494;">, </span>"…</span></span></code></pre></div>
+<span><span class="co">#&gt; $ fips           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "01"<span style="color: #949494;">, </span>"02"<span style="color: #949494;">, </span>"04"<span style="color: #949494;">, </span>"05"<span style="color: #949494;">, </span>"06"<span style="color: #949494;">, </span>"08"<span style="color: #949494;">, </span>"72"<span style="color: #949494;">, </span>"78"<span style="color: #949494;">, </span>"70"<span style="color: #949494;">, </span>"…</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="plot-state-level-rates">Plot state-level rates<a class="anchor" aria-label="anchor" href="#plot-state-level-rates"></a>
@@ -182,27 +173,18 @@ diseases.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">chlamydia_county</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   indicator year          geography    data_status        race_ethnicity</span></span>
-<span><span class="co">#&gt; 1 Chlamydia 2022 Autauga County, AL Not Suppressed All races/ethnicities</span></span>
-<span><span class="co">#&gt; 2 Chlamydia 2022 Baldwin County, AL Not Suppressed All races/ethnicities</span></span>
-<span><span class="co">#&gt; 3 Chlamydia 2022 Barbour County, AL Not Suppressed All races/ethnicities</span></span>
-<span><span class="co">#&gt; 4 Chlamydia 2022    Bibb County, AL Not Suppressed All races/ethnicities</span></span>
-<span><span class="co">#&gt; 5 Chlamydia 2022  Blount County, AL Not Suppressed All races/ethnicities</span></span>
-<span><span class="co">#&gt; 6 Chlamydia 2022 Bullock County, AL Not Suppressed All races/ethnicities</span></span>
-<span><span class="co">#&gt;          sex            age                transmission rate100000 cases</span></span>
-<span><span class="co">#&gt; 1 Both sexes All age groups All transmission categories      497.0   297</span></span>
-<span><span class="co">#&gt; 2 Both sexes All age groups All transmission categories      336.8   830</span></span>
-<span><span class="co">#&gt; 3 Both sexes All age groups All transmission categories      809.5   200</span></span>
-<span><span class="co">#&gt; 4 Both sexes All age groups All transmission categories      418.1    92</span></span>
-<span><span class="co">#&gt; 5 Both sexes All age groups All transmission categories      305.8   182</span></span>
-<span><span class="co">#&gt; 6 Both sexes All age groups All transmission categories      735.1    75</span></span>
-<span><span class="co">#&gt;   population lowerci_rate upperci_rate rse lowerci_cases upperci_cases  fips</span></span>
-<span><span class="co">#&gt; 1      59759           NA           NA  NA            NA            NA 01001</span></span>
-<span><span class="co">#&gt; 2     246435           NA           NA  NA            NA            NA 01003</span></span>
-<span><span class="co">#&gt; 3      24706           NA           NA  NA            NA            NA 01005</span></span>
-<span><span class="co">#&gt; 4      22005           NA           NA  NA            NA            NA 01007</span></span>
-<span><span class="co">#&gt; 5      59512           NA           NA  NA            NA            NA 01009</span></span>
-<span><span class="co">#&gt; 6      10202           NA           NA  NA            NA            NA 01011</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 17</span></span></span>
+<span><span class="co">#&gt;   indicator  year geography  data_status race_ethnicity sex   age   transmission</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Chlamydia  <span style="text-decoration: underline;">2</span>022 Autauga C… Not Suppre… All races/eth… Both… All … All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Chlamydia  <span style="text-decoration: underline;">2</span>022 Baldwin C… Not Suppre… All races/eth… Both… All … All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Chlamydia  <span style="text-decoration: underline;">2</span>022 Barbour C… Not Suppre… All races/eth… Both… All … All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> Chlamydia  <span style="text-decoration: underline;">2</span>022 Bibb Coun… Not Suppre… All races/eth… Both… All … All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> Chlamydia  <span style="text-decoration: underline;">2</span>022 Blount Co… Not Suppre… All races/eth… Both… All … All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> Chlamydia  <span style="text-decoration: underline;">2</span>022 Bullock C… Not Suppre… All races/eth… Both… All … All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 9 more variables: rate100000 &lt;dbl&gt;, cases &lt;dbl&gt;, population &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   lowerci_rate &lt;dbl&gt;, upperci_rate &lt;dbl&gt;, rse &lt;dbl&gt;, lowerci_cases &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   upperci_cases &lt;dbl&gt;, fips &lt;chr&gt;</span></span></span></code></pre></div>
 <p>A common workflow is to identify counties with the highest reported
 rates.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
@@ -211,17 +193,19 @@ rates.</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/desc.html" class="external-link">desc</a></span><span class="op">(</span><span class="va">rate100000</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">geography</span>, <span class="va">cases</span>, <span class="va">rate100000</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                       geography cases rate100000</span></span>
-<span><span class="co">#&gt; 1             Reeves County, TX   552     4277.4</span></span>
-<span><span class="co">#&gt; 2               Todd County, SD   340     3687.6</span></span>
-<span><span class="co">#&gt; 3      Kusilvak Census Area, AK   287     3467.0</span></span>
-<span><span class="co">#&gt; 4              Dewey County, SD   174     3385.2</span></span>
-<span><span class="co">#&gt; 5        Bethel Census Area, AK   528     2892.0</span></span>
-<span><span class="co">#&gt; 6          Nome Census Area, AK   281     2857.1</span></span>
-<span><span class="co">#&gt; 7      Oglala Lakota County, SD   359     2655.5</span></span>
-<span><span class="co">#&gt; 8           Mellette County, SD    40     2114.2</span></span>
-<span><span class="co">#&gt; 9  Northwest Arctic Borough, AK   150     2020.7</span></span>
-<span><span class="co">#&gt; 10            Tunica County, MS   186     1966.6</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 10 × 3</span></span></span>
+<span><span class="co">#&gt;    geography                    cases rate100000</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>                        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> Reeves County, TX              552      <span style="text-decoration: underline;">4</span>277.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> Todd County, SD                340      <span style="text-decoration: underline;">3</span>688.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> Kusilvak Census Area, AK       287      <span style="text-decoration: underline;">3</span>467 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> Dewey County, SD               174      <span style="text-decoration: underline;">3</span>385.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> Bethel Census Area, AK         528      <span style="text-decoration: underline;">2</span>892 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> Nome Census Area, AK           281      <span style="text-decoration: underline;">2</span>857.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> Oglala Lakota County, SD       359      <span style="text-decoration: underline;">2</span>656.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> Mellette County, SD             40      <span style="text-decoration: underline;">2</span>114.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> Northwest Arctic Borough, AK   150      <span style="text-decoration: underline;">2</span>021.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> Tunica County, MS              186      <span style="text-decoration: underline;">1</span>967.</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="stratification-by-sex">Stratification by sex<a class="anchor" aria-label="anchor" href="#stratification-by-sex"></a>
@@ -237,27 +221,18 @@ retrieve state-level gonorrhea data by sex.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">gonorrhea_sex</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   indicator year geography    data_status        race_ethnicity    sex</span></span>
-<span><span class="co">#&gt; 1 Gonorrhea 2022   Alabama Not Suppressed All races/ethnicities   Male</span></span>
-<span><span class="co">#&gt; 2 Gonorrhea 2022   Alabama Not Suppressed All races/ethnicities Female</span></span>
-<span><span class="co">#&gt; 3 Gonorrhea 2022    Alaska Not Suppressed All races/ethnicities   Male</span></span>
-<span><span class="co">#&gt; 4 Gonorrhea 2022    Alaska Not Suppressed All races/ethnicities Female</span></span>
-<span><span class="co">#&gt; 5 Gonorrhea 2022   Arizona Not Suppressed All races/ethnicities   Male</span></span>
-<span><span class="co">#&gt; 6 Gonorrhea 2022   Arizona Not Suppressed All races/ethnicities Female</span></span>
-<span><span class="co">#&gt;              age                transmission rate100000 cases population</span></span>
-<span><span class="co">#&gt; 1 All age groups All transmission categories      279.7  6901    2467360</span></span>
-<span><span class="co">#&gt; 2 All age groups All transmission categories      238.3  6213    2606936</span></span>
-<span><span class="co">#&gt; 3 All age groups All transmission categories      296.7  1145     385947</span></span>
-<span><span class="co">#&gt; 4 All age groups All transmission categories      333.4  1159     347636</span></span>
-<span><span class="co">#&gt; 5 All age groups All transmission categories      270.1  9936    3679034</span></span>
-<span><span class="co">#&gt; 6 All age groups All transmission categories      177.2  6522    3680163</span></span>
-<span><span class="co">#&gt;   lowerci_rate upperci_rate rse lowerci_cases upperci_cases fips</span></span>
-<span><span class="co">#&gt; 1           NA           NA  NA            NA            NA   01</span></span>
-<span><span class="co">#&gt; 2           NA           NA  NA            NA            NA   01</span></span>
-<span><span class="co">#&gt; 3           NA           NA  NA            NA            NA   02</span></span>
-<span><span class="co">#&gt; 4           NA           NA  NA            NA            NA   02</span></span>
-<span><span class="co">#&gt; 5           NA           NA  NA            NA            NA   04</span></span>
-<span><span class="co">#&gt; 6           NA           NA  NA            NA            NA   04</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 17</span></span></span>
+<span><span class="co">#&gt;   indicator  year geography data_status  race_ethnicity sex   age   transmission</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Gonorrhea  <span style="text-decoration: underline;">2</span>022 Alabama   Not Suppres… All races/eth… Male  All … All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Gonorrhea  <span style="text-decoration: underline;">2</span>022 Alabama   Not Suppres… All races/eth… Fema… All … All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Gonorrhea  <span style="text-decoration: underline;">2</span>022 Alaska    Not Suppres… All races/eth… Male  All … All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> Gonorrhea  <span style="text-decoration: underline;">2</span>022 Alaska    Not Suppres… All races/eth… Fema… All … All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> Gonorrhea  <span style="text-decoration: underline;">2</span>022 Arizona   Not Suppres… All races/eth… Male  All … All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> Gonorrhea  <span style="text-decoration: underline;">2</span>022 Arizona   Not Suppres… All races/eth… Fema… All … All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 9 more variables: rate100000 &lt;dbl&gt;, cases &lt;dbl&gt;, population &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   lowerci_rate &lt;dbl&gt;, upperci_rate &lt;dbl&gt;, rse &lt;dbl&gt;, lowerci_cases &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   upperci_cases &lt;dbl&gt;, fips &lt;chr&gt;</span></span></span></code></pre></div>
 <p>Now we can compare rates by sex within each state.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">gonorrhea_sex</span> <span class="op">|&gt;</span></span>
@@ -291,27 +266,18 @@ disease/geography combinations.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">hiv_age</span><span class="op">)</span></span>
-<span><span class="co">#&gt;       indicator year geography    data_status        race_ethnicity        sex</span></span>
-<span><span class="co">#&gt; 1 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Both sexes</span></span>
-<span><span class="co">#&gt; 2 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Both sexes</span></span>
-<span><span class="co">#&gt; 3 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Both sexes</span></span>
-<span><span class="co">#&gt; 4 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Both sexes</span></span>
-<span><span class="co">#&gt; 5 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Both sexes</span></span>
-<span><span class="co">#&gt; 6 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Both sexes</span></span>
-<span><span class="co">#&gt;     age                transmission rate100000 cases population lowerci_rate</span></span>
-<span><span class="co">#&gt; 1 13-24 All transmission categories       19.6   160     814557           NA</span></span>
-<span><span class="co">#&gt; 2 25-34 All transmission categories       34.4   227     659372           NA</span></span>
-<span><span class="co">#&gt; 3 35-44 All transmission categories       23.0   144     625842           NA</span></span>
-<span><span class="co">#&gt; 4 45-54 All transmission categories       13.6    84     619235           NA</span></span>
-<span><span class="co">#&gt; 5 55-64 All transmission categories        7.7    51     660469           NA</span></span>
-<span><span class="co">#&gt; 6   65+ All transmission categories        1.3    12     903176           NA</span></span>
-<span><span class="co">#&gt;   upperci_rate rse lowerci_cases upperci_cases fips</span></span>
-<span><span class="co">#&gt; 1           NA  NA            NA            NA   01</span></span>
-<span><span class="co">#&gt; 2           NA  NA            NA            NA   01</span></span>
-<span><span class="co">#&gt; 3           NA  NA            NA            NA   01</span></span>
-<span><span class="co">#&gt; 4           NA  NA            NA            NA   01</span></span>
-<span><span class="co">#&gt; 5           NA  NA            NA            NA   01</span></span>
-<span><span class="co">#&gt; 6           NA  NA            NA            NA   01</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 17</span></span></span>
+<span><span class="co">#&gt;   indicator   year geography data_status race_ethnicity sex   age   transmission</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> HIV diagn…  <span style="text-decoration: underline;">2</span>022 Alabama   Not Suppre… All races/eth… Both… 13-24 All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> HIV diagn…  <span style="text-decoration: underline;">2</span>022 Alabama   Not Suppre… All races/eth… Both… 25-34 All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> HIV diagn…  <span style="text-decoration: underline;">2</span>022 Alabama   Not Suppre… All races/eth… Both… 35-44 All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> HIV diagn…  <span style="text-decoration: underline;">2</span>022 Alabama   Not Suppre… All races/eth… Both… 45-54 All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> HIV diagn…  <span style="text-decoration: underline;">2</span>022 Alabama   Not Suppre… All races/eth… Both… 55-64 All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> HIV diagn…  <span style="text-decoration: underline;">2</span>022 Alabama   Not Suppre… All races/eth… Both… 65+   All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 9 more variables: rate100000 &lt;dbl&gt;, cases &lt;dbl&gt;, population &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   lowerci_rate &lt;dbl&gt;, upperci_rate &lt;dbl&gt;, rse &lt;dbl&gt;, lowerci_cases &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   upperci_cases &lt;dbl&gt;, fips &lt;chr&gt;</span></span></span></code></pre></div>
 <p>We can summarize national patterns by aggregating across states.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hiv_age_summary</span> <span class="op">&lt;-</span> <span class="va">hiv_age</span> <span class="op">|&gt;</span></span>
@@ -364,34 +330,18 @@ than separate race and Hispanic ethnicity fields.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">hiv_race</span><span class="op">)</span></span>
-<span><span class="co">#&gt;       indicator year geography    data_status</span></span>
-<span><span class="co">#&gt; 1 HIV diagnoses 2022   Alabama Not Suppressed</span></span>
-<span><span class="co">#&gt; 2 HIV diagnoses 2022   Alabama Not Suppressed</span></span>
-<span><span class="co">#&gt; 3 HIV diagnoses 2022   Alabama Not Suppressed</span></span>
-<span><span class="co">#&gt; 4 HIV diagnoses 2022   Alabama Not Suppressed</span></span>
-<span><span class="co">#&gt; 5 HIV diagnoses 2022   Alabama Not Suppressed</span></span>
-<span><span class="co">#&gt; 6 HIV diagnoses 2022   Alabama Not Suppressed</span></span>
-<span><span class="co">#&gt;                           race_ethnicity        sex                     age</span></span>
-<span><span class="co">#&gt; 1          American Indian/Alaska Native Both sexes Ages 13 years and older</span></span>
-<span><span class="co">#&gt; 2                                  Asian Both sexes Ages 13 years and older</span></span>
-<span><span class="co">#&gt; 3                 Black/African American Both sexes Ages 13 years and older</span></span>
-<span><span class="co">#&gt; 4                        Hispanic/Latino Both sexes Ages 13 years and older</span></span>
-<span><span class="co">#&gt; 5 Native Hawaiian/Other Pacific Islander Both sexes Ages 13 years and older</span></span>
-<span><span class="co">#&gt; 6                                  White Both sexes Ages 13 years and older</span></span>
-<span><span class="co">#&gt;                  transmission rate100000 cases population lowerci_rate</span></span>
-<span><span class="co">#&gt; 1 All transmission categories        7.9     2      25396           NA</span></span>
-<span><span class="co">#&gt; 2 All transmission categories        1.5     1      67008           NA</span></span>
-<span><span class="co">#&gt; 3 All transmission categories       38.2   424    1109782           NA</span></span>
-<span><span class="co">#&gt; 4 All transmission categories       20.6    42     203913           NA</span></span>
-<span><span class="co">#&gt; 5 All transmission categories       45.6     1       2194           NA</span></span>
-<span><span class="co">#&gt; 6 All transmission categories        5.9   166    2817331           NA</span></span>
-<span><span class="co">#&gt;   upperci_rate rse lowerci_cases upperci_cases fips</span></span>
-<span><span class="co">#&gt; 1           NA  NA            NA            NA   01</span></span>
-<span><span class="co">#&gt; 2           NA  NA            NA            NA   01</span></span>
-<span><span class="co">#&gt; 3           NA  NA            NA            NA   01</span></span>
-<span><span class="co">#&gt; 4           NA  NA            NA            NA   01</span></span>
-<span><span class="co">#&gt; 5           NA  NA            NA            NA   01</span></span>
-<span><span class="co">#&gt; 6           NA  NA            NA            NA   01</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 17</span></span></span>
+<span><span class="co">#&gt;   indicator   year geography data_status race_ethnicity sex   age   transmission</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> HIV diagn…  <span style="text-decoration: underline;">2</span>022 Alabama   Not Suppre… American Indi… Both… Ages… All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> HIV diagn…  <span style="text-decoration: underline;">2</span>022 Alaska    Not Suppre… American Indi… Both… Ages… All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> HIV diagn…  <span style="text-decoration: underline;">2</span>022 Arizona   Not Suppre… American Indi… Both… Ages… All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> HIV diagn…  <span style="text-decoration: underline;">2</span>022 Arkansas  Not Suppre… American Indi… Both… Ages… All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> HIV diagn…  <span style="text-decoration: underline;">2</span>022 Californ… Not Suppre… American Indi… Both… Ages… All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> HIV diagn…  <span style="text-decoration: underline;">2</span>022 Colorado  Not Suppre… American Indi… Both… Ages… All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 9 more variables: rate100000 &lt;dbl&gt;, cases &lt;dbl&gt;, population &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   lowerci_rate &lt;dbl&gt;, upperci_rate &lt;dbl&gt;, rse &lt;dbl&gt;, lowerci_cases &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   upperci_cases &lt;dbl&gt;, fips &lt;chr&gt;</span></span></span></code></pre></div>
 <p>A useful first look is to compare total reported cases by
 race/ethnicity.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
@@ -451,27 +401,18 @@ can be queried by both sex and age.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">hiv_age_sex</span><span class="op">)</span></span>
-<span><span class="co">#&gt;       indicator year geography    data_status        race_ethnicity  sex   age</span></span>
-<span><span class="co">#&gt; 1 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Male 13-24</span></span>
-<span><span class="co">#&gt; 2 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Male 25-34</span></span>
-<span><span class="co">#&gt; 3 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Male 35-44</span></span>
-<span><span class="co">#&gt; 4 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Male 45-54</span></span>
-<span><span class="co">#&gt; 5 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Male 55-64</span></span>
-<span><span class="co">#&gt; 6 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Male   65+</span></span>
-<span><span class="co">#&gt;                  transmission rate100000 cases population lowerci_rate</span></span>
-<span><span class="co">#&gt; 1 All transmission categories       34.1   140     411071           NA</span></span>
-<span><span class="co">#&gt; 2 All transmission categories       57.7   188     325836           NA</span></span>
-<span><span class="co">#&gt; 3 All transmission categories       31.9    97     304317           NA</span></span>
-<span><span class="co">#&gt; 4 All transmission categories       18.9    57     301976           NA</span></span>
-<span><span class="co">#&gt; 5 All transmission categories       10.4    33     318526           NA</span></span>
-<span><span class="co">#&gt; 6 All transmission categories        1.3     5     399281           NA</span></span>
-<span><span class="co">#&gt;   upperci_rate rse lowerci_cases upperci_cases fips</span></span>
-<span><span class="co">#&gt; 1           NA  NA            NA            NA   01</span></span>
-<span><span class="co">#&gt; 2           NA  NA            NA            NA   01</span></span>
-<span><span class="co">#&gt; 3           NA  NA            NA            NA   01</span></span>
-<span><span class="co">#&gt; 4           NA  NA            NA            NA   01</span></span>
-<span><span class="co">#&gt; 5           NA  NA            NA            NA   01</span></span>
-<span><span class="co">#&gt; 6           NA  NA            NA            NA   01</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 17</span></span></span>
+<span><span class="co">#&gt;   indicator   year geography data_status race_ethnicity sex   age   transmission</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> HIV diagn…  <span style="text-decoration: underline;">2</span>022 Alabama   Not Suppre… All races/eth… Male  13-24 All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> HIV diagn…  <span style="text-decoration: underline;">2</span>022 Alabama   Not Suppre… All races/eth… Male  25-34 All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> HIV diagn…  <span style="text-decoration: underline;">2</span>022 Alabama   Not Suppre… All races/eth… Male  35-44 All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> HIV diagn…  <span style="text-decoration: underline;">2</span>022 Alabama   Not Suppre… All races/eth… Male  45-54 All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> HIV diagn…  <span style="text-decoration: underline;">2</span>022 Alabama   Not Suppre… All races/eth… Male  55-64 All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> HIV diagn…  <span style="text-decoration: underline;">2</span>022 Alabama   Not Suppre… All races/eth… Male  65+   All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 9 more variables: rate100000 &lt;dbl&gt;, cases &lt;dbl&gt;, population &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   lowerci_rate &lt;dbl&gt;, upperci_rate &lt;dbl&gt;, rse &lt;dbl&gt;, lowerci_cases &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   upperci_cases &lt;dbl&gt;, fips &lt;chr&gt;</span></span></span></code></pre></div>
 <p>This allows direct comparison of age distributions by sex.</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hiv_age_sex_summary</span> <span class="op">&lt;-</span> <span class="va">hiv_age_sex</span> <span class="op">|&gt;</span></span>
@@ -521,34 +462,18 @@ can be queried by both sex and age.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">syphilis_years</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                        indicator year geography    data_status</span></span>
-<span><span class="co">#&gt; 1 Primary and Secondary Syphilis 2018   Alabama Not Suppressed</span></span>
-<span><span class="co">#&gt; 2 Primary and Secondary Syphilis 2019   Alabama Not Suppressed</span></span>
-<span><span class="co">#&gt; 3 Primary and Secondary Syphilis 2020   Alabama Not Suppressed</span></span>
-<span><span class="co">#&gt; 4 Primary and Secondary Syphilis 2021   Alabama Not Suppressed</span></span>
-<span><span class="co">#&gt; 5 Primary and Secondary Syphilis 2022   Alabama Not Suppressed</span></span>
-<span><span class="co">#&gt; 6 Primary and Secondary Syphilis 2018    Alaska Not Suppressed</span></span>
-<span><span class="co">#&gt;          race_ethnicity        sex            age                transmission</span></span>
-<span><span class="co">#&gt; 1 All races/ethnicities Both sexes All age groups All transmission categories</span></span>
-<span><span class="co">#&gt; 2 All races/ethnicities Both sexes All age groups All transmission categories</span></span>
-<span><span class="co">#&gt; 3 All races/ethnicities Both sexes All age groups All transmission categories</span></span>
-<span><span class="co">#&gt; 4 All races/ethnicities Both sexes All age groups All transmission categories</span></span>
-<span><span class="co">#&gt; 5 All races/ethnicities Both sexes All age groups All transmission categories</span></span>
-<span><span class="co">#&gt; 6 All races/ethnicities Both sexes All age groups All transmission categories</span></span>
-<span><span class="co">#&gt;   rate100000 cases population lowerci_rate upperci_rate rse lowerci_cases</span></span>
-<span><span class="co">#&gt; 1        9.8   477    4887681           NA           NA  NA            NA</span></span>
-<span><span class="co">#&gt; 2       12.6   618    4903185           NA           NA  NA            NA</span></span>
-<span><span class="co">#&gt; 3       10.5   529    5024279           NA           NA  NA            NA</span></span>
-<span><span class="co">#&gt; 4       15.1   761    5039877           NA           NA  NA            NA</span></span>
-<span><span class="co">#&gt; 5       23.5  1190    5074296           NA           NA  NA            NA</span></span>
-<span><span class="co">#&gt; 6        7.5    55     735139           NA           NA  NA            NA</span></span>
-<span><span class="co">#&gt;   upperci_cases fips</span></span>
-<span><span class="co">#&gt; 1            NA   01</span></span>
-<span><span class="co">#&gt; 2            NA   01</span></span>
-<span><span class="co">#&gt; 3            NA   01</span></span>
-<span><span class="co">#&gt; 4            NA   01</span></span>
-<span><span class="co">#&gt; 5            NA   01</span></span>
-<span><span class="co">#&gt; 6            NA   02</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 17</span></span></span>
+<span><span class="co">#&gt;   indicator   year geography data_status race_ethnicity sex   age   transmission</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Primary a…  <span style="text-decoration: underline;">2</span>018 Alabama   Not Suppre… All races/eth… Both… All … All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Primary a…  <span style="text-decoration: underline;">2</span>019 Alabama   Not Suppre… All races/eth… Both… All … All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Primary a…  <span style="text-decoration: underline;">2</span>020 Alabama   Not Suppre… All races/eth… Both… All … All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> Primary a…  <span style="text-decoration: underline;">2</span>021 Alabama   Not Suppre… All races/eth… Both… All … All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> Primary a…  <span style="text-decoration: underline;">2</span>022 Alabama   Not Suppre… All races/eth… Both… All … All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> Primary a…  <span style="text-decoration: underline;">2</span>018 Alaska    Not Suppre… All races/eth… Both… All … All transmi…</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 9 more variables: rate100000 &lt;dbl&gt;, cases &lt;dbl&gt;, population &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   lowerci_rate &lt;dbl&gt;, upperci_rate &lt;dbl&gt;, rse &lt;dbl&gt;, lowerci_cases &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   upperci_cases &lt;dbl&gt;, fips &lt;chr&gt;</span></span></span></code></pre></div>
 <p>For example, compare national totals by year.</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">syphilis_trend</span> <span class="op">&lt;-</span> <span class="va">syphilis_years</span> <span class="op">|&gt;</span></span>
@@ -603,8 +528,10 @@ or <code>rate100000</code> may be missing.</p>
 <span>    missing_cases <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">cases</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>    missing_rates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">rate100000</span><span class="op">)</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 3</span></span></span>
 <span><span class="co">#&gt;   n_rows missing_cases missing_rates</span></span>
-<span><span class="co">#&gt; 1   3231            19            19</span></span></code></pre></div>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>   <span style="text-decoration: underline;">3</span>231            19            19</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="choosing-diseases-and-stratification-variables">Choosing diseases and stratification variables<a class="anchor" aria-label="anchor" href="#choosing-diseases-and-stratification-variables"></a>

@@ -45,27 +45,18 @@ chlamydia_state <- get_atlas(
 )
 
 head(chlamydia_state)
-#>   indicator year  geography    data_status        race_ethnicity        sex
-#> 1 Chlamydia 2022    Alabama Not Suppressed All races/ethnicities Both sexes
-#> 2 Chlamydia 2022     Alaska Not Suppressed All races/ethnicities Both sexes
-#> 3 Chlamydia 2022    Arizona Not Suppressed All races/ethnicities Both sexes
-#> 4 Chlamydia 2022   Arkansas Not Suppressed All races/ethnicities Both sexes
-#> 5 Chlamydia 2022 California Not Suppressed All races/ethnicities Both sexes
-#> 6 Chlamydia 2022   Colorado Not Suppressed All races/ethnicities Both sexes
-#>              age                transmission rate100000  cases population
-#> 1 All age groups All transmission categories      612.1  31060    5074296
-#> 2 All age groups All transmission categories      727.7   5338     733583
-#> 3 All age groups All transmission categories      554.4  40796    7359197
-#> 4 All age groups All transmission categories      588.3  17918    3045637
-#> 5 All age groups All transmission categories      493.6 192647   39029342
-#> 6 All age groups All transmission categories      456.3  26646    5839926
-#>   lowerci_rate upperci_rate rse lowerci_cases upperci_cases fips
-#> 1           NA           NA  NA            NA            NA   01
-#> 2           NA           NA  NA            NA            NA   02
-#> 3           NA           NA  NA            NA            NA   04
-#> 4           NA           NA  NA            NA            NA   05
-#> 5           NA           NA  NA            NA            NA   06
-#> 6           NA           NA  NA            NA            NA   08
+#> # A tibble: 6 × 17
+#>   indicator  year geography  data_status race_ethnicity sex   age   transmission
+#>   <fct>     <dbl> <fct>      <fct>       <fct>          <fct> <fct> <fct>       
+#> 1 Chlamydia  2022 Alabama    Not Suppre… All races/eth… Both… All … All transmi…
+#> 2 Chlamydia  2022 Alaska     Not Suppre… All races/eth… Both… All … All transmi…
+#> 3 Chlamydia  2022 Arizona    Not Suppre… All races/eth… Both… All … All transmi…
+#> 4 Chlamydia  2022 Arkansas   Not Suppre… All races/eth… Both… All … All transmi…
+#> 5 Chlamydia  2022 California Not Suppre… All races/eth… Both… All … All transmi…
+#> 6 Chlamydia  2022 Colorado   Not Suppre… All races/eth… Both… All … All transmi…
+#> # ℹ 9 more variables: rate100000 <dbl>, cases <dbl>, population <dbl>,
+#> #   lowerci_rate <dbl>, upperci_rate <dbl>, rse <dbl>, lowerci_cases <dbl>,
+#> #   upperci_cases <dbl>, fips <chr>
 ```
 
 The returned object is a data frame that can be used directly with
@@ -84,15 +75,15 @@ glimpse(chlamydia_state)
 #> $ sex            <fct> Both sexes, Both sexes, Both sexes, Both sexes, Both se…
 #> $ age            <fct> All age groups, All age groups, All age groups, All age…
 #> $ transmission   <fct> All transmission categories, All transmission categorie…
-#> $ rate100000     <dbl> 612.1, 727.7, 554.4, 588.3, 493.6, 456.3, 351.3, 508.3,…
-#> $ cases          <dbl> 31060, 5338, 40796, 17918, 192647, 26646, 12738, 5177, …
+#> $ rate100000     <dbl> 612.1, 727.7, 554.4, 588.3, 493.6, 456.3, 143.8, 593.9,…
+#> $ cases          <dbl> 31060, 5338, 40796, 17918, 192647, 26646, 4633, 626, NA…
 #> $ population     <dbl> 5074296, 733583, 7359197, 3045637, 39029342, 5839926, 3…
 #> $ lowerci_rate   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
 #> $ upperci_rate   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
 #> $ rse            <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
 #> $ lowerci_cases  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
 #> $ upperci_cases  <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
-#> $ fips           <chr> "01", "02", "04", "05", "06", "08", "09", "10", "11", "…
+#> $ fips           <chr> "01", "02", "04", "05", "06", "08", "72", "78", "70", "…
 ```
 
 ## Plot state-level rates
@@ -126,27 +117,18 @@ chlamydia_county <- get_atlas(
 )
 
 head(chlamydia_county)
-#>   indicator year          geography    data_status        race_ethnicity
-#> 1 Chlamydia 2022 Autauga County, AL Not Suppressed All races/ethnicities
-#> 2 Chlamydia 2022 Baldwin County, AL Not Suppressed All races/ethnicities
-#> 3 Chlamydia 2022 Barbour County, AL Not Suppressed All races/ethnicities
-#> 4 Chlamydia 2022    Bibb County, AL Not Suppressed All races/ethnicities
-#> 5 Chlamydia 2022  Blount County, AL Not Suppressed All races/ethnicities
-#> 6 Chlamydia 2022 Bullock County, AL Not Suppressed All races/ethnicities
-#>          sex            age                transmission rate100000 cases
-#> 1 Both sexes All age groups All transmission categories      497.0   297
-#> 2 Both sexes All age groups All transmission categories      336.8   830
-#> 3 Both sexes All age groups All transmission categories      809.5   200
-#> 4 Both sexes All age groups All transmission categories      418.1    92
-#> 5 Both sexes All age groups All transmission categories      305.8   182
-#> 6 Both sexes All age groups All transmission categories      735.1    75
-#>   population lowerci_rate upperci_rate rse lowerci_cases upperci_cases  fips
-#> 1      59759           NA           NA  NA            NA            NA 01001
-#> 2     246435           NA           NA  NA            NA            NA 01003
-#> 3      24706           NA           NA  NA            NA            NA 01005
-#> 4      22005           NA           NA  NA            NA            NA 01007
-#> 5      59512           NA           NA  NA            NA            NA 01009
-#> 6      10202           NA           NA  NA            NA            NA 01011
+#> # A tibble: 6 × 17
+#>   indicator  year geography  data_status race_ethnicity sex   age   transmission
+#>   <fct>     <dbl> <fct>      <fct>       <fct>          <fct> <fct> <fct>       
+#> 1 Chlamydia  2022 Autauga C… Not Suppre… All races/eth… Both… All … All transmi…
+#> 2 Chlamydia  2022 Baldwin C… Not Suppre… All races/eth… Both… All … All transmi…
+#> 3 Chlamydia  2022 Barbour C… Not Suppre… All races/eth… Both… All … All transmi…
+#> 4 Chlamydia  2022 Bibb Coun… Not Suppre… All races/eth… Both… All … All transmi…
+#> 5 Chlamydia  2022 Blount Co… Not Suppre… All races/eth… Both… All … All transmi…
+#> 6 Chlamydia  2022 Bullock C… Not Suppre… All races/eth… Both… All … All transmi…
+#> # ℹ 9 more variables: rate100000 <dbl>, cases <dbl>, population <dbl>,
+#> #   lowerci_rate <dbl>, upperci_rate <dbl>, rse <dbl>, lowerci_cases <dbl>,
+#> #   upperci_cases <dbl>, fips <chr>
 ```
 
 A common workflow is to identify counties with the highest reported
@@ -159,17 +141,19 @@ chlamydia_county |>
   arrange(desc(rate100000)) |>
   select(geography, cases, rate100000) |>
   head(10)
-#>                       geography cases rate100000
-#> 1             Reeves County, TX   552     4277.4
-#> 2               Todd County, SD   340     3687.6
-#> 3      Kusilvak Census Area, AK   287     3467.0
-#> 4              Dewey County, SD   174     3385.2
-#> 5        Bethel Census Area, AK   528     2892.0
-#> 6          Nome Census Area, AK   281     2857.1
-#> 7      Oglala Lakota County, SD   359     2655.5
-#> 8           Mellette County, SD    40     2114.2
-#> 9  Northwest Arctic Borough, AK   150     2020.7
-#> 10            Tunica County, MS   186     1966.6
+#> # A tibble: 10 × 3
+#>    geography                    cases rate100000
+#>    <fct>                        <dbl>      <dbl>
+#>  1 Reeves County, TX              552      4277.
+#>  2 Todd County, SD                340      3688.
+#>  3 Kusilvak Census Area, AK       287      3467 
+#>  4 Dewey County, SD               174      3385.
+#>  5 Bethel Census Area, AK         528      2892 
+#>  6 Nome Census Area, AK           281      2857.
+#>  7 Oglala Lakota County, SD       359      2656.
+#>  8 Mellette County, SD             40      2114.
+#>  9 Northwest Arctic Borough, AK   150      2021.
+#> 10 Tunica County, MS              186      1967.
 ```
 
 ## Stratification by sex
@@ -187,27 +171,18 @@ gonorrhea_sex <- get_atlas(
 )
 
 head(gonorrhea_sex)
-#>   indicator year geography    data_status        race_ethnicity    sex
-#> 1 Gonorrhea 2022   Alabama Not Suppressed All races/ethnicities   Male
-#> 2 Gonorrhea 2022   Alabama Not Suppressed All races/ethnicities Female
-#> 3 Gonorrhea 2022    Alaska Not Suppressed All races/ethnicities   Male
-#> 4 Gonorrhea 2022    Alaska Not Suppressed All races/ethnicities Female
-#> 5 Gonorrhea 2022   Arizona Not Suppressed All races/ethnicities   Male
-#> 6 Gonorrhea 2022   Arizona Not Suppressed All races/ethnicities Female
-#>              age                transmission rate100000 cases population
-#> 1 All age groups All transmission categories      279.7  6901    2467360
-#> 2 All age groups All transmission categories      238.3  6213    2606936
-#> 3 All age groups All transmission categories      296.7  1145     385947
-#> 4 All age groups All transmission categories      333.4  1159     347636
-#> 5 All age groups All transmission categories      270.1  9936    3679034
-#> 6 All age groups All transmission categories      177.2  6522    3680163
-#>   lowerci_rate upperci_rate rse lowerci_cases upperci_cases fips
-#> 1           NA           NA  NA            NA            NA   01
-#> 2           NA           NA  NA            NA            NA   01
-#> 3           NA           NA  NA            NA            NA   02
-#> 4           NA           NA  NA            NA            NA   02
-#> 5           NA           NA  NA            NA            NA   04
-#> 6           NA           NA  NA            NA            NA   04
+#> # A tibble: 6 × 17
+#>   indicator  year geography data_status  race_ethnicity sex   age   transmission
+#>   <fct>     <dbl> <fct>     <fct>        <fct>          <fct> <fct> <fct>       
+#> 1 Gonorrhea  2022 Alabama   Not Suppres… All races/eth… Male  All … All transmi…
+#> 2 Gonorrhea  2022 Alabama   Not Suppres… All races/eth… Fema… All … All transmi…
+#> 3 Gonorrhea  2022 Alaska    Not Suppres… All races/eth… Male  All … All transmi…
+#> 4 Gonorrhea  2022 Alaska    Not Suppres… All races/eth… Fema… All … All transmi…
+#> 5 Gonorrhea  2022 Arizona   Not Suppres… All races/eth… Male  All … All transmi…
+#> 6 Gonorrhea  2022 Arizona   Not Suppres… All races/eth… Fema… All … All transmi…
+#> # ℹ 9 more variables: rate100000 <dbl>, cases <dbl>, population <dbl>,
+#> #   lowerci_rate <dbl>, upperci_rate <dbl>, rse <dbl>, lowerci_cases <dbl>,
+#> #   upperci_cases <dbl>, fips <chr>
 ```
 
 Now we can compare rates by sex within each state.
@@ -248,27 +223,18 @@ hiv_age <- get_atlas(
 )
 
 head(hiv_age)
-#>       indicator year geography    data_status        race_ethnicity        sex
-#> 1 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Both sexes
-#> 2 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Both sexes
-#> 3 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Both sexes
-#> 4 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Both sexes
-#> 5 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Both sexes
-#> 6 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Both sexes
-#>     age                transmission rate100000 cases population lowerci_rate
-#> 1 13-24 All transmission categories       19.6   160     814557           NA
-#> 2 25-34 All transmission categories       34.4   227     659372           NA
-#> 3 35-44 All transmission categories       23.0   144     625842           NA
-#> 4 45-54 All transmission categories       13.6    84     619235           NA
-#> 5 55-64 All transmission categories        7.7    51     660469           NA
-#> 6   65+ All transmission categories        1.3    12     903176           NA
-#>   upperci_rate rse lowerci_cases upperci_cases fips
-#> 1           NA  NA            NA            NA   01
-#> 2           NA  NA            NA            NA   01
-#> 3           NA  NA            NA            NA   01
-#> 4           NA  NA            NA            NA   01
-#> 5           NA  NA            NA            NA   01
-#> 6           NA  NA            NA            NA   01
+#> # A tibble: 6 × 17
+#>   indicator   year geography data_status race_ethnicity sex   age   transmission
+#>   <fct>      <dbl> <fct>     <fct>       <fct>          <fct> <fct> <fct>       
+#> 1 HIV diagn…  2022 Alabama   Not Suppre… All races/eth… Both… 13-24 All transmi…
+#> 2 HIV diagn…  2022 Alabama   Not Suppre… All races/eth… Both… 25-34 All transmi…
+#> 3 HIV diagn…  2022 Alabama   Not Suppre… All races/eth… Both… 35-44 All transmi…
+#> 4 HIV diagn…  2022 Alabama   Not Suppre… All races/eth… Both… 45-54 All transmi…
+#> 5 HIV diagn…  2022 Alabama   Not Suppre… All races/eth… Both… 55-64 All transmi…
+#> 6 HIV diagn…  2022 Alabama   Not Suppre… All races/eth… Both… 65+   All transmi…
+#> # ℹ 9 more variables: rate100000 <dbl>, cases <dbl>, population <dbl>,
+#> #   lowerci_rate <dbl>, upperci_rate <dbl>, rse <dbl>, lowerci_cases <dbl>,
+#> #   upperci_cases <dbl>, fips <chr>
 ```
 
 We can summarize national patterns by aggregating across states.
@@ -331,34 +297,18 @@ hiv_race <- get_atlas(
 )
 
 head(hiv_race)
-#>       indicator year geography    data_status
-#> 1 HIV diagnoses 2022   Alabama Not Suppressed
-#> 2 HIV diagnoses 2022   Alabama Not Suppressed
-#> 3 HIV diagnoses 2022   Alabama Not Suppressed
-#> 4 HIV diagnoses 2022   Alabama Not Suppressed
-#> 5 HIV diagnoses 2022   Alabama Not Suppressed
-#> 6 HIV diagnoses 2022   Alabama Not Suppressed
-#>                           race_ethnicity        sex                     age
-#> 1          American Indian/Alaska Native Both sexes Ages 13 years and older
-#> 2                                  Asian Both sexes Ages 13 years and older
-#> 3                 Black/African American Both sexes Ages 13 years and older
-#> 4                        Hispanic/Latino Both sexes Ages 13 years and older
-#> 5 Native Hawaiian/Other Pacific Islander Both sexes Ages 13 years and older
-#> 6                                  White Both sexes Ages 13 years and older
-#>                  transmission rate100000 cases population lowerci_rate
-#> 1 All transmission categories        7.9     2      25396           NA
-#> 2 All transmission categories        1.5     1      67008           NA
-#> 3 All transmission categories       38.2   424    1109782           NA
-#> 4 All transmission categories       20.6    42     203913           NA
-#> 5 All transmission categories       45.6     1       2194           NA
-#> 6 All transmission categories        5.9   166    2817331           NA
-#>   upperci_rate rse lowerci_cases upperci_cases fips
-#> 1           NA  NA            NA            NA   01
-#> 2           NA  NA            NA            NA   01
-#> 3           NA  NA            NA            NA   01
-#> 4           NA  NA            NA            NA   01
-#> 5           NA  NA            NA            NA   01
-#> 6           NA  NA            NA            NA   01
+#> # A tibble: 6 × 17
+#>   indicator   year geography data_status race_ethnicity sex   age   transmission
+#>   <fct>      <dbl> <fct>     <fct>       <fct>          <fct> <fct> <fct>       
+#> 1 HIV diagn…  2022 Alabama   Not Suppre… American Indi… Both… Ages… All transmi…
+#> 2 HIV diagn…  2022 Alaska    Not Suppre… American Indi… Both… Ages… All transmi…
+#> 3 HIV diagn…  2022 Arizona   Not Suppre… American Indi… Both… Ages… All transmi…
+#> 4 HIV diagn…  2022 Arkansas  Not Suppre… American Indi… Both… Ages… All transmi…
+#> 5 HIV diagn…  2022 Californ… Not Suppre… American Indi… Both… Ages… All transmi…
+#> 6 HIV diagn…  2022 Colorado  Not Suppre… American Indi… Both… Ages… All transmi…
+#> # ℹ 9 more variables: rate100000 <dbl>, cases <dbl>, population <dbl>,
+#> #   lowerci_rate <dbl>, upperci_rate <dbl>, rse <dbl>, lowerci_cases <dbl>,
+#> #   upperci_cases <dbl>, fips <chr>
 ```
 
 A useful first look is to compare total reported cases by
@@ -428,27 +378,18 @@ hiv_age_sex <- get_atlas(
 )
 
 head(hiv_age_sex)
-#>       indicator year geography    data_status        race_ethnicity  sex   age
-#> 1 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Male 13-24
-#> 2 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Male 25-34
-#> 3 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Male 35-44
-#> 4 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Male 45-54
-#> 5 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Male 55-64
-#> 6 HIV diagnoses 2022   Alabama Not Suppressed All races/ethnicities Male   65+
-#>                  transmission rate100000 cases population lowerci_rate
-#> 1 All transmission categories       34.1   140     411071           NA
-#> 2 All transmission categories       57.7   188     325836           NA
-#> 3 All transmission categories       31.9    97     304317           NA
-#> 4 All transmission categories       18.9    57     301976           NA
-#> 5 All transmission categories       10.4    33     318526           NA
-#> 6 All transmission categories        1.3     5     399281           NA
-#>   upperci_rate rse lowerci_cases upperci_cases fips
-#> 1           NA  NA            NA            NA   01
-#> 2           NA  NA            NA            NA   01
-#> 3           NA  NA            NA            NA   01
-#> 4           NA  NA            NA            NA   01
-#> 5           NA  NA            NA            NA   01
-#> 6           NA  NA            NA            NA   01
+#> # A tibble: 6 × 17
+#>   indicator   year geography data_status race_ethnicity sex   age   transmission
+#>   <fct>      <dbl> <fct>     <fct>       <fct>          <fct> <fct> <fct>       
+#> 1 HIV diagn…  2022 Alabama   Not Suppre… All races/eth… Male  13-24 All transmi…
+#> 2 HIV diagn…  2022 Alabama   Not Suppre… All races/eth… Male  25-34 All transmi…
+#> 3 HIV diagn…  2022 Alabama   Not Suppre… All races/eth… Male  35-44 All transmi…
+#> 4 HIV diagn…  2022 Alabama   Not Suppre… All races/eth… Male  45-54 All transmi…
+#> 5 HIV diagn…  2022 Alabama   Not Suppre… All races/eth… Male  55-64 All transmi…
+#> 6 HIV diagn…  2022 Alabama   Not Suppre… All races/eth… Male  65+   All transmi…
+#> # ℹ 9 more variables: rate100000 <dbl>, cases <dbl>, population <dbl>,
+#> #   lowerci_rate <dbl>, upperci_rate <dbl>, rse <dbl>, lowerci_cases <dbl>,
+#> #   upperci_cases <dbl>, fips <chr>
 ```
 
 This allows direct comparison of age distributions by sex.
@@ -508,34 +449,18 @@ syphilis_years <- get_atlas(
 )
 
 head(syphilis_years)
-#>                        indicator year geography    data_status
-#> 1 Primary and Secondary Syphilis 2018   Alabama Not Suppressed
-#> 2 Primary and Secondary Syphilis 2019   Alabama Not Suppressed
-#> 3 Primary and Secondary Syphilis 2020   Alabama Not Suppressed
-#> 4 Primary and Secondary Syphilis 2021   Alabama Not Suppressed
-#> 5 Primary and Secondary Syphilis 2022   Alabama Not Suppressed
-#> 6 Primary and Secondary Syphilis 2018    Alaska Not Suppressed
-#>          race_ethnicity        sex            age                transmission
-#> 1 All races/ethnicities Both sexes All age groups All transmission categories
-#> 2 All races/ethnicities Both sexes All age groups All transmission categories
-#> 3 All races/ethnicities Both sexes All age groups All transmission categories
-#> 4 All races/ethnicities Both sexes All age groups All transmission categories
-#> 5 All races/ethnicities Both sexes All age groups All transmission categories
-#> 6 All races/ethnicities Both sexes All age groups All transmission categories
-#>   rate100000 cases population lowerci_rate upperci_rate rse lowerci_cases
-#> 1        9.8   477    4887681           NA           NA  NA            NA
-#> 2       12.6   618    4903185           NA           NA  NA            NA
-#> 3       10.5   529    5024279           NA           NA  NA            NA
-#> 4       15.1   761    5039877           NA           NA  NA            NA
-#> 5       23.5  1190    5074296           NA           NA  NA            NA
-#> 6        7.5    55     735139           NA           NA  NA            NA
-#>   upperci_cases fips
-#> 1            NA   01
-#> 2            NA   01
-#> 3            NA   01
-#> 4            NA   01
-#> 5            NA   01
-#> 6            NA   02
+#> # A tibble: 6 × 17
+#>   indicator   year geography data_status race_ethnicity sex   age   transmission
+#>   <fct>      <dbl> <fct>     <fct>       <fct>          <fct> <fct> <fct>       
+#> 1 Primary a…  2018 Alabama   Not Suppre… All races/eth… Both… All … All transmi…
+#> 2 Primary a…  2019 Alabama   Not Suppre… All races/eth… Both… All … All transmi…
+#> 3 Primary a…  2020 Alabama   Not Suppre… All races/eth… Both… All … All transmi…
+#> 4 Primary a…  2021 Alabama   Not Suppre… All races/eth… Both… All … All transmi…
+#> 5 Primary a…  2022 Alabama   Not Suppre… All races/eth… Both… All … All transmi…
+#> 6 Primary a…  2018 Alaska    Not Suppre… All races/eth… Both… All … All transmi…
+#> # ℹ 9 more variables: rate100000 <dbl>, cases <dbl>, population <dbl>,
+#> #   lowerci_rate <dbl>, upperci_rate <dbl>, rse <dbl>, lowerci_cases <dbl>,
+#> #   upperci_cases <dbl>, fips <chr>
 ```
 
 For example, compare national totals by year.
@@ -601,7 +526,9 @@ chlamydia_county |>
     missing_cases = sum(is.na(cases)),
     missing_rates = sum(is.na(rate100000))
   )
+#> # A tibble: 1 × 3
 #>   n_rows missing_cases missing_rates
+#>    <int>         <int>         <int>
 #> 1   3231            19            19
 ```
 

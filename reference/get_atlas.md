@@ -27,8 +27,8 @@ get_atlas(
 
 - geography:
 
-  Character scalar. One of `"national"`, `"state"`, `"county"`, or
-  `"msa"`. Region-level queries are not supported yet.
+  Character scalar. One of `"national"`, `"region"` (HIV estimates
+  only), `"state"`, `"county"`, or `"msa"`.
 
 - year:
 
@@ -154,6 +154,12 @@ and then
 **Geography**
 
 - `"national"`
+
+- `"region"`: the four Census regions (Northeast, Midwest, South, West)
+  and U.S. territories and freely associated states. Only for
+  `disease = "estimate"`: CDC returns regions only for its HIV
+  estimates. The `fips` column holds CDC's own codes for these, not
+  Census FIPS codes.
 
 - `"state"`
 

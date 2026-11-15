@@ -95,7 +95,8 @@ extrapolate_from_county(
   Ages the Census populations cover:
 
   - `"auto"` (default): 13 and older for HIV indicators (as CDC reports
-    them), all ages otherwise.
+    them), all ages otherwise, decided indicator by indicator, so `x`
+    can combine HIV with other diseases.
 
   - `"13+"` or `"all"`: set it yourself.
 
