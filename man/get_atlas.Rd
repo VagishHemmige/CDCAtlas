@@ -16,8 +16,8 @@ get_atlas(
 \item{disease}{A single disease name (e.g. \code{"gonorrhea"}).
 Multiple diseases are not currently supported in a single request.}
 
-\item{geography}{Character scalar. One of \code{"national"}, \code{"state"},
-\code{"county"}, or \code{"msa"}. Region-level queries are not supported yet.}
+\item{geography}{Character scalar. One of \code{"national"}, \code{"region"} (HIV
+estimates only), \code{"state"}, \code{"county"}, or \code{"msa"}.}
 
 \item{year}{Integer vector of years, from 2000 to the latest year in the
 package's copy of CDC's code table (2025 in this version). CDC lists a year
@@ -92,6 +92,10 @@ tracts <- extrapolate_from_county(county)
 \strong{Geography}
 \itemize{
 \item \code{"national"}
+\item \code{"region"}: the four Census regions (Northeast, Midwest, South, West) and
+U.S. territories and freely associated states. Only for
+\code{disease = "estimate"}: CDC returns regions only for its HIV estimates.
+The \code{fips} column holds CDC's own codes for these, not Census FIPS codes.
 \item \code{"state"}
 \item \code{"county"}
 \item \code{"msa"} (metropolitan statistical area)
