@@ -65,7 +65,7 @@ test_that("region HIV estimates return the four regions and the territories, 202
     )
   }
   northeast <- out[out$geography == "Northeast" & out$indicator == "Estimated HIV incidence", ]
-  expect_equal(northeast$cases, 4100)
+  expect_equal(northeast$cases, 4100, ignore_attr = "label")
 })
 
 test_that("national HIV request returns both indicators, 2017", {
