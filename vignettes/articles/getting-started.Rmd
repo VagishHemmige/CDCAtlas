@@ -245,7 +245,11 @@ hiv_age_sex |>
 
 ## Comparing years
 
-You can also query multiple years and compare trends over time.
+You can also query multiple years and compare trends over time. AtlasPlus
+warns that "due to the impact of the COVID-19 pandemic, data for 2020 and 2021
+may need to be interpreted with caution"
+([AtlasPlus](https://gis.cdc.gov/grasp/nchhstpatlas/main.html)), so read
+changes across those years carefully.
 
 ```{r}
 syphilis_trend <- get_atlas(

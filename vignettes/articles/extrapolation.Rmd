@@ -59,9 +59,16 @@ You can install `tidycensus` (version 1.8.0 or later) from CRAN:
 install.packages("tidycensus")
 ```
 
-Then request a free Census API key from the U.S. Census Bureau and install it
-using `tidycensus::census_api_key()`, which saves it as `CENSUS_API_KEY` in
-your `.Renviron` file.
+Then request a free Census API key from the U.S. Census Bureau and save it
+with `tidycensus::census_api_key()`. With `install = TRUE` it is written to your
+`.Renviron` file as `CENSUS_API_KEY`, so it is there in future sessions:
+
+```{r, eval=FALSE}
+tidycensus::census_api_key("YOUR KEY HERE", install = TRUE)
+readRenviron("~/.Renviron") # or restart R
+```
+
+Without `install = TRUE`, the key lasts only for the current session.
 
 See [https://walker-data.com/tidycensus/](https://walker-data.com/tidycensus/) for further details.
 
