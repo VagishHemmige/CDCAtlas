@@ -134,6 +134,7 @@ test_that("a state request is still one CDC request", {
 test_that("a failed request passes on CDC's message without the server trace", {
   local_mocked_bindings(.request_atlas = .request_atlas_internal)
   local_mocked_bindings(client_rate = function() invisible(NULL))
+  local_mocked_bindings(.atlas_sleep = function(seconds) invisible(NULL))
   local_mocked_bindings(
     POST = function(...) structure(list(), class = "fake_response"),
     status_code = function(res) 400L,
@@ -207,7 +208,7 @@ test_that("a request that can't reach CDC says so", {
   local_mocked_bindings(.request_atlas = .request_atlas_internal)
   local_mocked_bindings(client_rate = function() invisible(NULL))
   local_mocked_bindings(
-    POST = function(...) stop("Timeout was reached: Operation timed out"),
+    POST = function(...) stop("Could not resolve host: gis.cdc.gov"),
     .package = "httr"
   )
   expect_snapshot(error = TRUE, get_atlas("hiv", "state", 2017))
@@ -223,4 +224,79 @@ test_that("an empty response says what may be wrong", {
     .package = "httr"
   )
   expect_snapshot(error = TRUE, get_atlas("hiv", "state", 2017))
+})
+
+# Retries (#13) ----------------------------------------------------------------
+
+# Made-up outcomes for one request: a response, or a failure to reach CDC.
+cdc_ok <- function(body) list(status = 200L, text = fake_cdc_response(body))
+cdc_timeout <- function(body) {
+  list(status = 400L, text = paste0(
+    '{"success":false,"message":"Execution Timeout Expired.  The timeout period ',
+    'elapsed prior to completion of the operation or the server is not responding."}'
+  ))
+}
+cdc_not_found <- function(body) list(status = 404L, text = "<html>Not Found</html>")
+network_timeout <- function(body) stop("Timeout was reached: Operation timed out")
+no_host <- function(body) stop("Could not resolve host: gis.cdc.gov")
+
+# Replace CDC with `outcomes`, one per request (the last one repeats), and
+# record the requests made and the waits between them.
+local_cdc_outcomes <- function(outcomes, env = parent.frame()) {
+  calls <- new.env()
+  calls$n <- 0
+  calls$waits <- numeric()
+  local_mocked_bindings(.request_atlas = .request_atlas_internal, .env = env)
+  local_mocked_bindings(client_rate = function() invisible(NULL), .env = env)
+  local_mocked_bindings(
+    .atlas_sleep = function(seconds) calls$waits <- c(calls$waits, seconds),
+    .env = env
+  )
+  local_mocked_bindings(
+    POST = function(url, body, ...) {
+      calls$n <- calls$n + 1
+      outcome <- outcomes[[min(calls$n, length(outcomes))]]
+      structure(outcome(body), class = "fake_response")
+    },
+    status_code = function(res) res$status,
+    content = function(res, ...) as.character(res$text),
+    .package = "httr",
+    .env = env
+  )
+  calls
+}
+
+test_that("a CDC timeout is retried twice, then fails", {
+  calls <- local_cdc_outcomes(list(cdc_timeout))
+  expect_snapshot(error = TRUE, get_atlas("hiv", "state", 2017))
+  expect_equal(calls$n, 3)
+  expect_equal(calls$waits, c(10, 30))
+})
+
+test_that("a request that works on a retry returns the data", {
+  expected <- local({
+    local_cdc_outcomes(list(cdc_ok))
+    suppressMessages(get_atlas("hiv", "state", 2017))
+  })
+  calls <- local_cdc_outcomes(list(cdc_timeout, cdc_ok))
+  out <- suppressMessages(get_atlas("hiv", "state", 2017))
+  expect_equal(calls$n, 2)
+  expect_equal(calls$waits, 10)
+  expect_identical(out, expected)
+})
+
+test_that("a network timeout is retried", {
+  calls <- local_cdc_outcomes(list(network_timeout, network_timeout, cdc_ok))
+  suppressMessages(get_atlas("hiv", "state", 2017))
+  expect_equal(calls$n, 3)
+  expect_equal(calls$waits, c(10, 30))
+})
+
+test_that("other failures are not retried", {
+  for (outcome in list(cdc_not_found, no_host)) {
+    calls <- local_cdc_outcomes(list(outcome, cdc_ok))
+    expect_error(get_atlas("hiv", "state", 2017))
+    expect_equal(calls$n, 1)
+    expect_equal(calls$waits, numeric())
+  }
 })

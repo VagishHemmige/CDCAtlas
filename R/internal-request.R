@@ -14,23 +14,24 @@
 #Url for CDC Atlas
 url_data <- "https://gis.cdc.gov/api/AtlasPlus/qtOutputData"
 
-#Rate limiter
-client_rate()  # <-- Invoke the rate limiter
-
-#Call CDC site, with a time limit; a network failure gets a plain message
-res <- .atlas_call(httr::POST(
-  url_data,
-  body = payload,
-  encode = "json",
-  .atlas_headers(),
-  httr::timeout(.atlas_timeout_seconds)
-))
-
-#Error handling: pass on CDC's own explanation when it gives one
-status <- httr::status_code(res)
-if (status != 200) {
-  .abort_cdc_status(res, status)
-}
+#Call CDC site, rate limited and with a time limit. A network failure gets a
+#plain message, a failed request CDC's own explanation, and a timeout is
+#retried (#13).
+res <- .with_atlas_retries(function() {
+  client_rate()
+  res <- .atlas_call(httr::POST(
+    url_data,
+    body = payload,
+    encode = "json",
+    .atlas_headers(),
+    httr::timeout(.atlas_timeout_seconds)
+  ))
+  status <- httr::status_code(res)
+  if (status != 200) {
+    .abort_cdc_status(res, status)
+  }
+  res
+})
 
 #Encode JSON
 dat <- jsonlite::fromJSON(httr::content(res, "text", encoding = "UTF-8"))
@@ -88,19 +89,46 @@ return(df)
 }
 
 
-# Short form of CDC's error message, without the server's stack trace.
-# Returns NULL when the response has no readable message.
 # Seconds to wait for CDC. One state's counties usually come back in a few
 # seconds, but CDC's database can be slow; its own timeout is reported as an
 # HTTP 400 (see .abort_cdc_status()).
 .atlas_timeout_seconds <- 120
 
+# Seconds to wait before each retry of a request that timed out (#13).
+.atlas_retry_waits <- c(10, 30)
+
+# Calls `send()`, and calls it again after each wait in .atlas_retry_waits if
+# CDC or the network times out (errors of class "cdcatlas_timeout"). Other
+# errors, and a timeout on the last try, stop at once.
+.with_atlas_retries <- function(send) {
+  waits <- .atlas_retry_waits
+  for (retry in seq_along(waits)) {
+    result <- tryCatch(send(), cdcatlas_timeout = function(cnd) cnd)
+    if (!inherits(result, "cdcatlas_timeout")) {
+      return(result)
+    }
+    cli::cli_inform(c(
+      "!" = "CDC AtlasPlus timed out. Trying again in {waits[retry]} seconds
+             (retry {retry} of {length(waits)})."
+    ))
+    .atlas_sleep(waits[retry])
+  }
+  send()
+}
+
+# Kept separate so tests can skip the waiting.
+.atlas_sleep <- function(seconds) {
+  Sys.sleep(seconds)
+}
+
 # Runs an httr request, turning a failure to reach CDC (no connection, DNS,
-# time limit) into a message that says so (#13).
+# time limit) into a message that says so (#13). Running out of time is
+# classed "cdcatlas_timeout", so it can be retried.
 .atlas_call <- function(request) {
   tryCatch(
     request,
     error = function(e) {
+      timed_out <- grepl("Timeout was reached", conditionMessage(e), fixed = TRUE)
       cli::cli_abort(
         c(
           "Couldn't reach CDC AtlasPlus.",
@@ -108,6 +136,7 @@ return(df)
           "i" = "Check your internet connection, or try again later; CDC's
                  site is sometimes slow or down."
         ),
+        class = if (timed_out) "cdcatlas_timeout",
         call = NULL
       )
     }
@@ -116,7 +145,7 @@ return(df)
 
 # Stops with CDC's own explanation when it gives one. CDC reports its database
 # timing out as HTTP 400 "Execution Timeout Expired", which is usually
-# temporary.
+# temporary; that error is classed "cdcatlas_timeout", so it can be retried.
 .abort_cdc_status <- function(res, status) {
   cdc_message <- .cdc_error_message(res)
   timed_out <- !is.null(cdc_message) &&
@@ -133,10 +162,13 @@ return(df)
          report it at {.url https://github.com/VagishHemmige/CDCAtlas/issues}."
       }
     ),
+    class = if (timed_out) "cdcatlas_timeout",
     call = NULL
   )
 }
 
+# Short form of CDC's error message, without the server's stack trace.
+# Returns NULL when the response has no readable message.
 .cdc_error_message <- function(res) {
   message <- tryCatch(
     jsonlite::fromJSON(httr::content(res, "text", encoding = "UTF-8"))$message,
