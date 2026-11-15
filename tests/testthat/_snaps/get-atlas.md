@@ -113,3 +113,139 @@
       * HIV prevalence 2025
       i CDC may not have released them yet, or may not offer them for this geography and stratification.
 
+# `disease` must be one known disease name
+
+    Code
+      get_atlas(c("hiv", "gonorrhea"), "state", 2022)
+    Condition
+      Error in `get_atlas()`:
+      ! `disease` must be a single character string.
+      x You supplied a <character> of length 2.
+
+---
+
+    Code
+      get_atlas(1, "state", 2022)
+    Condition
+      Error in `get_atlas()`:
+      ! `disease` must be a single character string.
+      x You supplied a <numeric> of length 1.
+
+---
+
+    Code
+      get_atlas("measles", "state", 2022)
+    Condition
+      Error in `get_atlas()`:
+      ! `disease` must be one of "chlamydia", "gonorrhea", "adult syphilis", "congenital syphilis", "tuberculosis", "hiv", "estimate", or "hepatitis".
+      x You supplied "measles".
+
+# `geography` must be one known geography
+
+    Code
+      get_atlas("hiv", c("state", "county"), 2022)
+    Condition
+      Error in `get_atlas()`:
+      ! `geography` must be a single character string.
+      x You supplied a <character> of length 2.
+
+---
+
+    Code
+      get_atlas("hiv", "zip", 2022)
+    Condition
+      Error in `get_atlas()`:
+      ! `geography` must be one of "national", "region", "state", "county", or "msa".
+      x You supplied "zip".
+
+# `year` must be whole numbers
+
+    Code
+      get_atlas("hiv", "state", "2022")
+    Condition
+      Error in `get_atlas()`:
+      ! `year` must be a numeric vector, such as 2022 or 2018:2022.
+      x You supplied a <character>.
+
+---
+
+    Code
+      get_atlas("hiv", "state", numeric(0))
+    Condition
+      Error in `get_atlas()`:
+      ! `year` must contain at least one year.
+
+---
+
+    Code
+      get_atlas("hiv", "state", c(2021, NA))
+    Condition
+      Error in `get_atlas()`:
+      ! `year` cannot contain missing values.
+
+---
+
+    Code
+      get_atlas("hiv", "state", Inf)
+    Condition
+      Error in `get_atlas()`:
+      ! `year` must contain finite years, such as 2022 or 2018:2022.
+
+---
+
+    Code
+      get_atlas("hiv", "state", 2021.5)
+    Condition
+      Error in `get_atlas()`:
+      ! `year` must contain whole years, such as 2022 or 2018:2022.
+
+# `stratify_by` must be one or two of age, race and sex
+
+    Code
+      get_atlas("hiv", "state", 2022, stratify_by = 1)
+    Condition
+      Error in `get_atlas()`:
+      ! `stratify_by` must be NULL or a character vector.
+      x You supplied a <numeric>.
+
+---
+
+    Code
+      get_atlas("hiv", "state", 2022, stratify_by = character(0))
+    Condition
+      Error in `get_atlas()`:
+      ! `stratify_by` must be NULL or contain at least one stratification variable.
+
+---
+
+    Code
+      get_atlas("hiv", "state", 2022, stratify_by = c("sex", NA))
+    Condition
+      Error in `get_atlas()`:
+      ! `stratify_by` cannot contain missing values.
+
+---
+
+    Code
+      get_atlas("hiv", "state", 2022, stratify_by = c("age", "race", "sex"))
+    Condition
+      Error in `get_atlas()`:
+      ! `stratify_by` can currently contain at most two variables.
+
+---
+
+    Code
+      get_atlas("hiv", "state", 2022, stratify_by = "income")
+    Condition
+      Error in `get_atlas()`:
+      ! `stratify_by` must contain only "age", "race", and "sex".
+      x Invalid value: "income".
+
+---
+
+    Code
+      get_atlas("hiv", "state", 2022, stratify_by = c("sex", "sex"))
+    Condition
+      Error in `get_atlas()`:
+      ! `stratify_by` cannot contain duplicate values.
+

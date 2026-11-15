@@ -201,21 +201,16 @@ test_that("negative, infinite or non-numeric counts stop before any request (#11
 
   infinite <- county
   infinite$population[2] <- Inf
-  expect_error(impute_suppressed(infinite), "population")
+  expect_snapshot(error = TRUE, impute_suppressed(infinite))
 
   text <- county
   text$cases <- as.character(text$cases)
-  expect_error(impute_suppressed(text), "cases")
+  expect_snapshot(error = TRUE, impute_suppressed(text))
 
-  for (f in list(no_county_cases, extrapolate_from_county)) {
-    expect_error(
-      f(
-        impute_suppressed(county, method = "zero") |>
-          transform(cases = -cases)
-      ),
-      "negative"
-    )
-  }
+  imputed <- impute_suppressed(county, method = "zero")
+  imputed$cases <- -imputed$cases
+  expect_snapshot(error = TRUE, no_county_cases(imputed))
+  expect_snapshot(error = TRUE, extrapolate_from_county(imputed))
 })
 
 test_that("NA, zero and fractional counts are allowed", {
@@ -373,10 +368,6 @@ test_that("population = 'acs' stops for Knowledge of Status before any request (
   status <- fake_county_atlas(
     suppressed = "01003",
     indicators = c("Estimated HIV incidence", "Knowledge of Status")
-  )
-  expect_error(
-    impute_suppressed(status, population = "acs"),
-    "Knowledge of Status"
   )
   expect_snapshot(
     error = TRUE,

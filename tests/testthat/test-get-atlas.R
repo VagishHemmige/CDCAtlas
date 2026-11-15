@@ -124,3 +124,63 @@ test_that("an indicator whose rows are all suppressed is not reported missing", 
   expect_no_warning(out <- get_atlas("hiv", "county", 2022))
   expect_identical(out, response)
 })
+
+# Input checks ------------------------------------------------------------------
+# Each bad input stops before any request, with a message naming the problem.
+
+no_request <- function(env = parent.frame()) {
+  local_mocked_bindings(
+    .request_atlas_all = function(payloads) stop("CDC was called"),
+    .env = env
+  )
+}
+
+test_that("`disease` must be one known disease name", {
+  no_request()
+  expect_snapshot(error = TRUE, get_atlas(c("hiv", "gonorrhea"), "state", 2022))
+  expect_snapshot(error = TRUE, get_atlas(1, "state", 2022))
+  expect_snapshot(error = TRUE, get_atlas("measles", "state", 2022))
+})
+
+test_that("`geography` must be one known geography", {
+  no_request()
+  expect_snapshot(error = TRUE, get_atlas("hiv", c("state", "county"), 2022))
+  expect_snapshot(error = TRUE, get_atlas("hiv", "zip", 2022))
+})
+
+test_that("`year` must be whole numbers", {
+  no_request()
+  expect_snapshot(error = TRUE, get_atlas("hiv", "state", "2022"))
+  expect_snapshot(error = TRUE, get_atlas("hiv", "state", numeric(0)))
+  expect_snapshot(error = TRUE, get_atlas("hiv", "state", c(2021, NA)))
+  expect_snapshot(error = TRUE, get_atlas("hiv", "state", Inf))
+  expect_snapshot(error = TRUE, get_atlas("hiv", "state", 2021.5))
+})
+
+test_that("`stratify_by` must be one or two of age, race and sex", {
+  no_request()
+  expect_snapshot(
+    error = TRUE,
+    get_atlas("hiv", "state", 2022, stratify_by = 1)
+  )
+  expect_snapshot(
+    error = TRUE,
+    get_atlas("hiv", "state", 2022, stratify_by = character(0))
+  )
+  expect_snapshot(
+    error = TRUE,
+    get_atlas("hiv", "state", 2022, stratify_by = c("sex", NA))
+  )
+  expect_snapshot(
+    error = TRUE,
+    get_atlas("hiv", "state", 2022, stratify_by = c("age", "race", "sex"))
+  )
+  expect_snapshot(
+    error = TRUE,
+    get_atlas("hiv", "state", 2022, stratify_by = "income")
+  )
+  expect_snapshot(
+    error = TRUE,
+    get_atlas("hiv", "state", 2022, stratify_by = c("sex", "sex"))
+  )
+})

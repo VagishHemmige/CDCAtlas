@@ -65,7 +65,7 @@ test_that("there is no area_noncases column (#117)", {
   # Population minus cases means people without the condition only for
   # prevalence; for diagnoses, infections and Knowledge of Status it doesn't.
   tracts <- run_extrapolation(NULL)
-  expect_false("area_noncases" %in% names(tracts))
+  expect_equal(intersect(names(tracts), "area_noncases"), character(0))
   expect_equal(names(tracts)[ncol(tracts)], "area_cases")
 })
 
@@ -461,10 +461,6 @@ test_that("spreading stops for HIV estimates, whose counties are EHE only (#109)
   )
   county <- impute_suppressed(estimate, method = "zero")
 
-  expect_error(
-    extrapolate_from_county(county, no_county = "spread"),
-    "EHE"
-  )
   expect_snapshot(
     error = TRUE,
     extrapolate_from_county(county, no_county = "spread")
@@ -621,7 +617,7 @@ test_that("a duplicated ACS row can't stand in for a missing one (#111)", {
     acs,
     acs[acs$GEOID == "01001000100" & acs$variable == "B01001_006", ]
   )
-  expect_error(run_extrapolation(NULL, acs = acs), "more than once")
+  expect_snapshot(error = TRUE, run_extrapolation(NULL, acs = acs))
 })
 
 test_that("a duplicated ACS tract stops rather than skewing shares (#111)", {
