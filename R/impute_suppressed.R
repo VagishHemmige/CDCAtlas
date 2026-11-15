@@ -200,23 +200,25 @@ impute_suppressed <- function(
 .acs_county_population <- function(x) {
   stratify_by <- .atlas_stratify_by(x)
   stratify_by <- if (length(stratify_by) == 0) NULL else stratify_by
-  ages <- .default_ages(x, stratify_by)
   county <- .county_cases(x)
   county$stratum <- .row_stratum(county, stratify_by)
+  row_ages <- .row_ages(county, stratify_by)
   states <- sort(unique(county$state_fips))
 
   out <- rep(NA_real_, nrow(county))
   for (year in sort(unique(county$year))) {
-    pop <- .area_population(year, states, stratify_by, ages) |>
-      dplyr::summarize(
-        population = sum(.data$area_population_acs),
-        .by = c("county_fips", "stratum")
-      )
-    rows <- county$year == year
-    out[rows] <- pop$population[match(
-      .row_key(county[rows, ], c("county_fips", "stratum")),
-      .row_key(pop, c("county_fips", "stratum"))
-    )]
+    for (universe in unique(row_ages[county$year == year])) {
+      pop <- .area_population(year, states, stratify_by, universe) |>
+        dplyr::summarize(
+          population = sum(.data$area_population_acs),
+          .by = c("county_fips", "stratum")
+        )
+      rows <- county$year == year & row_ages == universe
+      out[rows] <- pop$population[match(
+        .row_key(county[rows, ], c("county_fips", "stratum")),
+        .row_key(pop, c("county_fips", "stratum"))
+      )]
+    }
   }
   out
 }
