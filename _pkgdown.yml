@@ -12,11 +12,20 @@ template:
 home:
   title: "CDCAtlas"
   description: "An R package for accessing and analyzing CDC AtlasPlus public health data."
+  links:
+    # URLs as recorded in reference/web-sources.md. AtlasPlus's Technical
+    # Notes are a panel inside the application, with no URL of their own.
+    - text: CDC AtlasPlus (technical notes in its menu)
+      href: https://gis.cdc.gov/grasp/nchhstpatlas/main.html
+    - text: About AtlasPlus (CDC)
+      href: https://www.cdc.gov/nchhstp/about/atlasplus.html
+    - text: AtlasPlus glossary (PDF)
+      href: https://gis.cdc.gov/grasp/nchhstpatlas/Content/docs/AtlasPlusGlossary.pdf
 
 navbar:
   structure:
     left: [intro, reference, articles]
-    right: [github]
+    right: [search, github]
   components:
     intro:
       text: Get started
@@ -28,10 +37,12 @@ navbar:
 
 reference:
   - title: "Data Access"
+    desc: Download data from CDC AtlasPlus, and manage saved downloads.
     contents:
       - get_atlas
       - clear_atlas_cache
   - title: "Estimates below county level"
+    desc: Fill in suppressed counts, report cases with no county, and share county counts across tracts or block groups.
     contents:
       - impute_suppressed
       - no_county_cases
