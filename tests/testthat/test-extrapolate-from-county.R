@@ -563,6 +563,21 @@ test_that("a missing variable row leaves its county out", {
   )
 })
 
+test_that("a duplicated ACS row can't stand in for a missing one (#111)", {
+  acs <- acs_missing("01001000100", "B01001_005", drop = TRUE)
+  acs <- rbind(
+    acs,
+    acs[acs$GEOID == "01001000100" & acs$variable == "B01001_006", ]
+  )
+  expect_error(run_extrapolation(NULL, acs = acs), "more than once")
+})
+
+test_that("a duplicated ACS tract stops rather than skewing shares (#111)", {
+  acs <- fake_acs()
+  acs <- rbind(acs, acs[acs$GEOID == "01001000100", ])
+  expect_snapshot(error = TRUE, run_extrapolation(NULL, acs = acs))
+})
+
 test_that("a real zero is still a zero, not missing", {
   acs <- fake_acs()
   acs$estimate[acs$GEOID == "01001000100" & acs$variable == "B01001_005"] <- 0

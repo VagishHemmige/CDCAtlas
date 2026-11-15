@@ -72,6 +72,16 @@
       i For example "County 01001 (01001)".
       i See `attr(x, "not_allocated")`.
 
+# a duplicated ACS tract stops rather than skewing shares (#111)
+
+    Code
+      run_extrapolation(NULL, acs = acs)
+    Condition
+      Error:
+      ! The Census returned some ACS variables more than once for the same area.
+      i Area: "01001000100".
+      i This shouldn't happen; please report it at <https://github.com/VagishHemmige/CDCAtlas/issues>.
+
 # missing_population = 'error' stops instead
 
     Code
