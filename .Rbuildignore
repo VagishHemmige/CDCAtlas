@@ -13,3 +13,4 @@
 ^REVIEWING\.md$
 ^vignettes/articles$
 ^\.github$
+^data-raw$

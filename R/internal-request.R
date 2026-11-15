@@ -22,12 +22,7 @@ res <- httr::POST(
   url_data,
   body = payload,
   encode = "json",
-  httr::add_headers(
-    "Accept" = "application/json, text/javascript, */*; q=0.01",
-    "Content-Type" = "application/json; charset=utf-8",
-    "X-Requested-With" = "XMLHttpRequest",
-    "User-Agent" = "R package CDCAtlas (https://github.com/VagishHemmige/CDCAtlas)"
-  )
+  .atlas_headers()
 )
 
 #Error handling: pass on CDC's own explanation when it gives one
@@ -102,6 +97,56 @@ return(df)
   }
   message <- sub("\\s{2,}at\\s.*$", "", message)
   trimws(gsub("\\s+", " ", message))
+}
+
+
+# Headers for every AtlasPlus request.
+.atlas_headers <- function() {
+  httr::add_headers(
+    "Accept" = "application/json, text/javascript, */*; q=0.01",
+    "Content-Type" = "application/json; charset=utf-8",
+    "X-Requested-With" = "XMLHttpRequest",
+    "User-Agent" = "R package CDCAtlas (https://github.com/VagishHemmige/CDCAtlas)"
+  )
+}
+
+
+# CDC's AtlasPlus set-up data: the code table (`varvals`) and the menus the web
+# app is built from. data-raw/DATASET.R builds R/sysdata.rda from it, and the
+# live tests compare it with the stored copy. Not cached: about 2.6 MB, needed
+# only when rebuilding or checking the lookups.
+.atlas_init_data <- function() {
+  client_rate()
+  res <- .atlas_get("https://gis.cdc.gov/api/AtlasPlus/getInitData/00")
+
+  status <- httr::status_code(res)
+  if (status != 200) {
+    cdc_message <- .cdc_error_message(res)
+    cli::cli_abort(
+      c(
+        "CDC AtlasPlus set-up request failed (HTTP status {status}).",
+        "i" = if (!is.null(cdc_message)) "CDC says: {cdc_message}"
+      ),
+      call = NULL
+    )
+  }
+
+  init <- jsonlite::fromJSON(httr::content(res, "text", encoding = "UTF-8"))
+  if (is.null(init$varvals)) {
+    cli::cli_abort(
+      c(
+        "CDC AtlasPlus set-up data has no {.field varvals} code table.",
+        "i" = "CDC may have changed AtlasPlus."
+      ),
+      call = NULL
+    )
+  }
+  init
+}
+
+# The one GET request, kept separate so tests can replace it.
+.atlas_get <- function(url) {
+  httr::GET(url, .atlas_headers())
 }
 
 
