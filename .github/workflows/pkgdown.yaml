@@ -1,8 +1,12 @@
 # Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
 # Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
 #
-# Builds the pkgdown site on PRs (to check it renders) and deploys it to the
-# gh-pages branch on pushes to master, releases and manual runs. The articles
+# Builds the pkgdown site on PRs that change what the site is built from (to
+# check it renders) and deploys it to the gh-pages branch on pushes to master,
+# releases and manual runs. PRs that change only other files (workflows other
+# than this one, tests, data-raw/, reference/, AGENTS.md and the other
+# unlinked root pages) skip the build, which saves the articles' CDC and Census
+# requests; master still rebuilds everything after the merge. The articles
 # call CDC AtlasPlus and the Census API, so the build needs network access and
 # the CENSUS_API_KEY secret (a Dependabot secret too, for Dependabot's PRs).
 # GitHub gives no secrets to PRs from forks, so on those this job fails at the
@@ -11,6 +15,21 @@ on:
   push:
     branches: [main, master]
   pull_request:
+    paths:
+      - "R/**"
+      - "man/**"
+      - "vignettes/**"
+      - "pkgdown/**"
+      - "inst/**"
+      - "_pkgdown.yml"
+      - "DESCRIPTION"
+      - "NAMESPACE"
+      - "README.Rmd"
+      - "README.md"
+      - "NEWS.md"
+      - "LICENSE.md"
+      - "CITATION.cff"
+      - ".github/workflows/pkgdown.yaml"
   release:
     types: [published]
   workflow_dispatch:

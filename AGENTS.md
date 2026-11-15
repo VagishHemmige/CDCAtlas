@@ -157,9 +157,14 @@ Separate source inspection, personally executed synthetic checks, recorded
 responses, live API checks, observed CI and author-reported validation.
 Record live retrieval dates, tested requests and coverage gaps without keys
 or credentials. Supply exact commands for remaining maintainer checks and
-vignette rebuilding when relevant, with prerequisites and side effects.
+article and site rebuilding when relevant, with prerequisites and side effects.
 The established pipeline-validation workflow includes the full live suite
 with `CDCATLAS_LIVE_TESTS=true` and `devtools::test(filter = "live")`.
+`test-live-cdc.R` holds quick checks (a few small requests, about a minute)
+and `test-live-pipeline.R` the county downloads and full pipeline (35 to 45
+minutes). Run the full suite when download, imputation or extrapolation code
+changes, and only the quick checks or the specific affected test otherwise;
+`live-tests.yaml` offers the same choice.
 Before using that workflow, inspect all selected tests, including imputation,
 and their data/cache effects. Run the full suite only when every selected path
 is permitted; otherwise run the permitted subset and report the coverage gap.
