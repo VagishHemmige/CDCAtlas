@@ -76,6 +76,12 @@ test_that("imputation respects the cap and keeps published counts, 2022", {
 #     successors; it has no CDC population and no 2020 tracts.
 #   - Puerto Rico, by race: suppressed municipio rows can't be estimated
 #     (no state rate or municipio population by race from CDC).
+#   - Chlamydia 2022 by age (found 15 Nov 2026, #87):
+#     - suppressed rows of age "Unknown" have no CDC population, so can't be
+#       estimated;
+#     - CDC lists Connecticut's old counties (09001-09015) as "Data
+#       suppressed" with no population in every age group, beside the
+#       planning regions.
 no_area_or_estimate <- c(
   "suppressed, not estimated", "no ACS tracts for this county"
 )
@@ -91,14 +97,23 @@ is_known_left_out <- function(left_out, year) {
   puerto_rico_race <- left_out$reason == "suppressed, not estimated" &
     substr(left_out$county_fips, 1, 2) == "72" &
     left_out$race_ethnicity != "All races/ethnicities"
-  unknown_race | connecticut | valdez_cordova_split | puerto_rico_race
+  unknown_age_suppressed <- left_out$reason == "suppressed, not estimated" &
+    left_out$age == "Unknown"
+  old_connecticut <- year == 2022 &
+    left_out$reason == "suppressed, not estimated" &
+    left_out$county_fips %in% sprintf("090%02d", seq(1, 15, 2))
+  unknown_race | connecticut | valdez_cordova_split | puerto_rico_race |
+    unknown_age_suppressed | old_connecticut
 }
 
-# Warnings the default pipeline is known to give, by year.
+# Warnings the default pipeline is known to give, by year. Chlamydia by age
+# also warns that suppressed rows couldn't be estimated (unknown age and
+# Connecticut's old counties; the rows themselves are checked above).
 known_warnings <- c(
   "2017" = "no matching ACS tracts|Planning Region, CT|Valdez-Cordova|Municipio, PR",
   "2022" = "Valdez-Cordova Census Area, AK|no matching ACS tracts|Municipio, PR"
 )
+known_disease_warnings <- c(chlamydia = "suppressed rows? could not be estimated")
 
 county_groups <- c("county_fips", "indicator", "race_ethnicity", "sex", "age")
 
@@ -181,7 +196,14 @@ for (pipeline_run in pipeline_runs) {
     test_that(paste("only known warnings are given,", label), {
       warnings <- live_pipeline(year, strat, disease = disease)$warnings
       expect_none(
-        warnings[!grepl(known_warnings[[as.character(year)]], warnings)],
+        warnings[!grepl(
+          paste(
+            c(known_warnings[[as.character(year)]],
+              unname(known_disease_warnings[intersect(disease, names(known_disease_warnings))])),
+            collapse = "|"
+          ),
+          warnings
+        )],
         "warnings"
       )
     })
