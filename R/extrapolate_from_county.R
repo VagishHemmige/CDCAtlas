@@ -9,6 +9,13 @@
 #' The estimates are modelled, not observed: they assume the same rate in every
 #' area of a county within a stratum.
 #'
+#' For Knowledge of Status, `county_cases` is the number of people with HIV
+#' who know their status, and it is shared across areas by their residents,
+#' as if people with HIV lived in each area in proportion to its population.
+#' The ACS columns are residents, not people with HIV, so
+#' `area_cases / area_population_acs` is not the percentage who know their
+#' status.
+#'
 #' @param x County data from [get_atlas()] that has been through
 #'   [impute_suppressed()], with at most one stratification variable.
 #' @param to The areas to share county counts across. Both nest inside
@@ -135,8 +142,21 @@
 #'       population"`, `"total population"`, `"equal shares"` or `"none"` (see
 #'       `empty_strata`).}
 #'     \item{area_cases}{Estimated cases in the area.}
-#'     \item{area_noncases}{`area_population_acs - area_cases`, floored at 0.}
 #'   }
+#'
+#'   `area_population_acs - area_cases` means different things by indicator:
+#'   * HIV prevalence (people living with *diagnosed* HIV): residents aged 13
+#'     and older without diagnosed HIV, which includes people with
+#'     undiagnosed HIV.
+#'   * Estimated HIV prevalence (diagnosed and undiagnosed): closer to
+#'     residents without HIV, under the estimate's own assumptions.
+#'   * Other indicators: no such meaning. New diagnoses and incidence need the
+#'     population at risk, which excludes people already living with HIV;
+#'     chlamydia, gonorrhea and syphilis count infections rather than people;
+#'     for Knowledge of Status the population isn't residents.
+#'
+#'   It can be negative where `empty_strata` shares cases into a stratum with
+#'   no ACS population.
 #'
 #'   Two attributes record what was not allocated:
 #'   `attr(result, "no_county_cases")`, the [no_county_cases()] report, and
@@ -331,7 +351,7 @@ extrapolate_from_county <- function(
     "county_cases_spread", "county_cases_unknown", "county_cases_allocated",
     "area_population_acs", "county_population_acs",
     "area_total_population", "county_total_population", "allocation",
-    "area_cases", "area_noncases"
+    "area_cases"
   )])
   attr(out, "no_county_cases") <- report
   attr(out, "not_allocated") <- tibble::as_tibble(not_allocated)
@@ -721,6 +741,7 @@ extrapolate_from_county <- function(
     variable = acs$variable,
     estimate = acs$estimate
   )
+  .check_acs_unique(acs)
 
   # Sum of each area's estimates for the variables in `table`, weighted. A
   # variable can count towards more than one stratum. A missing estimate, or
@@ -741,7 +762,7 @@ extrapolate_from_county <- function(
     ) |>
       dplyr::summarize(
         value = sum(.data$estimate * .data$weight),
-        n_found = dplyr::n(),
+        n_found = dplyr::n_distinct(.data$variable),
         .by = c("geoid", "stratum")
       )
     n_needed <- needed$n_needed[match(sums$stratum, needed$stratum)]
@@ -791,6 +812,27 @@ extrapolate_from_county <- function(
     out <- .apply_tract_crosswalk(out)
   }
   out
+}
+
+# Each area should have each ACS variable once. A repeated row would let a
+# duplicate stand in for a missing variable, or count an area twice and skew
+# the shares, so stop (#111).
+.check_acs_unique <- function(acs) {
+  repeated <- duplicated(acs[c("geoid", "variable")])
+  if (!any(repeated)) {
+    return(invisible())
+  }
+  areas <- unique(acs$geoid[repeated])
+  cli::cli_abort(
+    c(
+      "The Census returned some ACS variables more than once for the same
+       area.",
+      "i" = "{cli::qty(length(areas))}Area{?s}: {.val {areas}}.",
+      "i" = "This shouldn't happen; please report it at
+             {.url https://github.com/VagishHemmige/CDCAtlas/issues}."
+    ),
+    call = NULL
+  )
 }
 
 # ACS 5-year releases on 2010 tracts and block groups (2006-2010 to 2015-2019).
@@ -865,7 +907,10 @@ extrapolate_from_county <- function(
   not_allocated <- county[left_out, setdiff(names(county), "stratum")]
   not_allocated$reason <- dplyr::case_when(
     not_available[left_out] ~ "no CDC data for this county",
-    not_estimated[left_out] ~ "suppressed, not estimated",
+    not_estimated[left_out] &
+      as.character(county$data_status[left_out]) %in% "Data suppressed" ~
+      "suppressed, not estimated",
+    not_estimated[left_out] ~ "no count, not marked suppressed",
     no_areas[left_out] ~ paste("no ACS", .area_plural(to), "for this county"),
     .default = "no Census population for this stratum"
   )
@@ -1063,7 +1108,6 @@ extrapolate_from_county <- function(
             .data$area_total_population
           )
       ),
-      area_noncases = pmax(0, .data$area_population_acs - .data$area_cases),
       .by = dplyr::all_of(.county_groups)
     )
 }
@@ -1167,16 +1211,20 @@ extrapolate_from_county <- function(
 }
 
 # How much of the positive remainder was spread, and how much could not be
-# (no allocated county in that state stratum, or rule "none").
+# (no allocated county in that state stratum, or rule "none"). A county's
+# share counts as spread only if it reached its areas: with empty_strata =
+# "none" a county can be given a share while all its area estimates are NA
+# (#114).
 .announce_spread <- function(areas, report, to) {
   state_keys <- c("state_fips", .atlas_keys)
-  spread <- unique(areas[c(
-    state_keys,
-    "county_fips",
-    "county_cases_spread"
-  )]) |>
+  spread <- areas |>
     dplyr::summarize(
-      spread = sum(.data$county_cases_spread),
+      county_cases_spread = dplyr::first(.data$county_cases_spread),
+      reached = !all(is.na(.data$area_cases)),
+      .by = dplyr::all_of(c(state_keys, "county_fips"))
+    ) |>
+    dplyr::summarize(
+      spread = sum(.data$county_cases_spread[.data$reached]),
       .by = dplyr::all_of(state_keys)
     )
   wanted <- report
@@ -1192,7 +1240,8 @@ extrapolate_from_county <- function(
     plural <- .area_plural(to)
     cli::cli_inform(c(
       "i" = "Cases with no county that could not be spread (no county with
-             {plural} in that state and stratum):",
+             {plural} in that state and stratum, or no {plural} with
+             population there):",
       .lines_by_indicator(wanted[wanted$unspread > 0, ], "unspread")
     ))
   }

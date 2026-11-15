@@ -1,10 +1,20 @@
-# rows marked 'Data not available' with no count are dropped
+# a missing count that isn't suppression gets a warning naming its status
 
     Code
       out <- impute_suppressed(county, method = "zero")
+    Condition
+      Warning:
+      2 rows with no count are not marked "Data suppressed", so they are not filled in and left `NA`.
+      i Data status: "No reported cases".
+      i They are marked `cases_source = "not estimated"`.
+
+# not_available = 'drop' drops rows marked 'Data not available' with no count
+
+    Code
+      out <- impute_suppressed(county, method = "zero", not_available = "drop")
     Message
       i Dropped 2 rows marked "Data not available" with no count.
-        Their cases are still in the state totals; see `no_county_cases()`.
+        Their cases are still in the state totals, and `no_county_cases()` counts them in the remainder for any state group that still has rows.
 
 # suppressed rows with no county population stay NA, with a warning
 
@@ -121,6 +131,15 @@
       ! `x` mixes sex totals with sex strata.
       i Keep either the "Both sexes" rows or the stratified rows.
 
+# negative, infinite or non-numeric counts stop before any request (#115)
+
+    Code
+      impute_suppressed(negative, method = "zero")
+    Condition
+      Error in `impute_suppressed()`:
+      ! cases in `x` must be 0 or more and finite.
+      x 1 row has a negative or infinite value, such as -10.
+
 # state_rate is floored at `floor`
 
     Code
@@ -156,6 +175,16 @@
       ! Census populations don't fit congenital syphilis.
       x Its rates are per 100,000 live births, not per 100,000 people.
       i `population = "cdc"` works for any strata.
+
+# population = 'acs' stops for Knowledge of Status before any request (#108)
+
+    Code
+      impute_suppressed(status, population = "acs")
+    Condition
+      Error in `impute_suppressed()`:
+      ! `population = "acs"` doesn't fit Knowledge of Status.
+      x Its rate is a share of people living with HIV, not of residents.
+      i Use `population = "cdc"`, CDC's estimate of people living with HIV in each county.
 
 # population = 'acs' needs a Census key
 

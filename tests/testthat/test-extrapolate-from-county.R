@@ -45,7 +45,6 @@ for (strat in list(NULL, "sex", "race", "age")) {
     tracts <- run_extrapolation(strat)
     expect_equal(sum(is.na(tracts$area_cases)), 0)
     expect_gte(min(tracts$area_cases), 0)
-    expect_gte(min(tracts$area_noncases), 0)
   })
 }
 
@@ -60,10 +59,14 @@ test_that("tract estimates are county count x tract share of the stratum", {
   share <- one$area_population_acs / sum(one$area_population_acs)
   expect_equal(one$area_cases, 111 * share)
   expect_equal(unique(one$county_population_acs), sum(one$area_population_acs))
-  expect_equal(
-    one$area_noncases,
-    one$area_population_acs - one$area_cases
-  )
+})
+
+test_that("there is no area_noncases column (#117)", {
+  # Population minus cases means people without the condition only for
+  # prevalence; for diagnoses, infections and Knowledge of Status it doesn't.
+  tracts <- run_extrapolation(NULL)
+  expect_false("area_noncases" %in% names(tracts))
+  expect_equal(names(tracts)[ncol(tracts)], "area_cases")
 })
 
 test_that("allocation uses known shares after saving and reordering county rows", {
@@ -390,6 +393,34 @@ test_that("remainders with no county to receive them are reported", {
   )
 })
 
+test_that("spread cases that reach no area are reported as not spread (#114)", {
+  # Two counties with 10 cases each and a state remainder of 20, spread by
+  # cases: 10 to each. County 01001 has no ACS population in the stratum and
+  # empty_strata = "none", so its 10 reach no tract.
+  x <- fake_county_atlas()[1, ]
+  x$cases <- 10
+  county <- .county_cases(transform(x, cases_source = "published"))
+  areas <- county[rep(1, 2), ]
+  areas$county_fips <- c("01001", "01003")
+  areas$county_cases <- c(10, 10)
+  areas$county_cases_unknown <- 0
+  areas$area_population_acs <- c(0, 100)
+  areas$area_total_population <- c(0, 100)
+  areas$geoid <- c("01001000100", "01003000100")
+  report <- data.frame(
+    state_fips = "01",
+    lapply(as.data.frame(x[.atlas_keys]), as.character),
+    no_county_cases = 20
+  )
+  report$year <- as.numeric(report$year)
+
+  out <- .allocate(.spread_no_county(areas, report, "none", "cases"), "none")
+  expect_equal(out$county_cases_spread, c(10, 10))
+  expect_equal(out$area_cases, c(NA_real_, 20))
+  expect_message(.announce_spread(out, report, "tract"), "could not be spread")
+  expect_snapshot(.announce_spread(out, report, "tract"))
+})
+
 test_that("age strata use 13+ total population whatever `ages` says", {
   default <- run_extrapolation("age", acs = acs_without_35_44())
   all_ages <- run_extrapolation("age", acs = acs_without_35_44(), ages = "all")
@@ -584,6 +615,21 @@ test_that("a missing variable row leaves its county out", {
   )
 })
 
+test_that("a duplicated ACS row can't stand in for a missing one (#111)", {
+  acs <- acs_missing("01001000100", "B01001_005", drop = TRUE)
+  acs <- rbind(
+    acs,
+    acs[acs$GEOID == "01001000100" & acs$variable == "B01001_006", ]
+  )
+  expect_error(run_extrapolation(NULL, acs = acs), "more than once")
+})
+
+test_that("a duplicated ACS tract stops rather than skewing shares (#111)", {
+  acs <- fake_acs()
+  acs <- rbind(acs, acs[acs$GEOID == "01001000100", ])
+  expect_snapshot(error = TRUE, run_extrapolation(NULL, acs = acs))
+})
+
 test_that("a real zero is still a zero, not missing", {
   acs <- fake_acs()
   acs$estimate[acs$GEOID == "01001000100" & acs$variable == "B01001_005"] <- 0
@@ -769,6 +815,23 @@ test_that("suppressed rows impute_suppressed() couldn't estimate are left out", 
   expect_equal(unique(tracts$county_fips), "01001")
   check <- county_vs_areas(tracts)
   expect_equal(check$area_cases_sum, check$county_cases, tolerance = 1e-8)
+})
+
+test_that("rows with no count that weren't suppressed are left out with their own reason (#107)", {
+  county <- fake_county_atlas(suppressed = "01003")
+  county$data_status <- factor(ifelse(
+    county$fips == "01003",
+    "No reported cases",
+    as.character(county$data_status)
+  ))
+  local_fake_sources()
+  county <- suppressWarnings(impute_suppressed(county))
+
+  tracts <- suppressMessages(extrapolate_from_county(county))
+  left_out <- attr(tracts, "not_allocated")
+  expect_equal(left_out$county_fips, c("01003", "01003"))
+  expect_equal(unique(left_out$reason), "no count, not marked suppressed")
+  expect_equal(unique(tracts$county_fips), "01001")
 })
 
 test_that("unestimated = 'error' refuses rows impute_suppressed() couldn't estimate", {

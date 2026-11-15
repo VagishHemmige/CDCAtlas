@@ -21,7 +21,7 @@ Every row from `get_atlas()` has a `data_status`:
 |---|---|---|
 | "Not Suppressed" | CDC published the count. | Kept as it is. |
 | "Data suppressed" | CDC withheld a small count. | `impute_suppressed()` fills it in. |
-| "Data not available" | CDC has no data for this row. | Dropped by `impute_suppressed()` if it has no count; kept if it has one. |
+| "Data not available" | CDC has no data for this row. | Kept by `impute_suppressed()`, with or without a count; a row with no count is left out of the tracts, and dropped with `not_available = "drop"`. |
 
 CDC's technical notes give the suppression rules but don't define these
 labels. Their meaning here is inferred from those rules.

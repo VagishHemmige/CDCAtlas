@@ -38,3 +38,14 @@
       Error in `get_atlas()`:
       ! `refresh` must be `TRUE` or `FALSE`.
 
+# an unknown code is kept as 'CDC code <id>', with a warning (#106)
+
+    Code
+      out <- .request_atlas_internal(list(VariableIDs = "210"))
+    Condition
+      Warning:
+      CDC returned codes this version of CDCAtlas doesn't know.
+      * data_status: 9999
+      * race_ethnicity: 9998
+      i They are labelled "CDC code <number>". Please report them at <https://github.com/VagishHemmige/CDCAtlas/issues>.
+
