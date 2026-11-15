@@ -380,3 +380,37 @@ test_that("known codes decode as before", {
   expect_equal(out$year, 2022, ignore_attr = "label")
   expect_equal(out$fips, "01", ignore_attr = "label")
 })
+
+test_that("combining responses keeps 'No reported cases' and unknown labels (#106)", {
+  row <- matrix(
+    c(
+      210,
+      545,
+      5002,
+      414,
+      9998,
+      601,
+      651,
+      801,
+      0,
+      0,
+      100000,
+      NA,
+      NA,
+      NA,
+      NA,
+      NA
+    ),
+    nrow = 1
+  )
+  local_mocked_bindings(
+    .with_atlas_retries = function(send) fake_data_response(row),
+    .request_atlas = .request_atlas_internal
+  )
+  out <- suppressWarnings(.request_atlas_all(
+    list(list(VariableIDs = "210"), list(VariableIDs = "210"))
+  ))
+  expect_equal(as.character(out$data_status), rep("No reported cases", 2))
+  expect_equal(as.character(out$race_ethnicity), rep("CDC code 9998", 2))
+  expect_equal(out$cases, c(0, 0), ignore_attr = "label")
+})

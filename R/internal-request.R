@@ -342,14 +342,17 @@
   }
 
   # Binding puts factor levels in order of first appearance (state by state).
-  # Restore the order a single request gives: CDC's lookup order.
+  # Restore the order a single request gives: CDC's lookup order, then any
+  # label not in it ("No reported cases", "CDC code <id>"), so none becomes
+  # NA (#106).
   combined <- dplyr::bind_rows(results) |>
     dplyr::mutate(dplyr::across(
       dplyr::where(is.factor),
-      ~ factor(
-        as.character(.x),
-        levels = intersect(unique(varvals$name), unique(as.character(.x)))
-      )
+      ~ {
+        observed <- unique(as.character(.x[!is.na(.x)]))
+        known <- intersect(unique(varvals$name), observed)
+        factor(as.character(.x), levels = c(known, setdiff(observed, known)))
+      }
     ))
 
   .label_atlas_columns(combined)
