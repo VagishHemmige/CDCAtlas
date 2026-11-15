@@ -181,13 +181,18 @@
 - **Key points:**
   - Data re-release agreements "require specific levels of cell suppression at
     the state and county level"; no numeric threshold is given on the page.
-  - HIV case definitions classify infection "among persons aged ≥ 13 years";
-    transmission categories are imputed for ages 13 and older.
+  - The HIV case definitions cover both "persons aged ≥ 13 years" and
+    "children < 13 years" (under "Stages of HIV infection — Case
+    definitions"). NHSS itself is not limited to ages 13 and older; AtlasPlus's
+    scope is in its own Technical Notes. Transmission categories are imputed for
+    ages 13 and older.
   - Data are preliminary before a 12-month reporting delay; death data "are
     considered preliminary unless based on a ≥ 18-month reporting delay."
   - "HIV diagnosis data for the year 2020 should be interpreted with caution due
     to the onset of the COVID-19 pandemic." Nothing specific on 2021.
-  - "Data for Guam are not included due to small case numbers."
+  - "Data for Guam are not included due to small case numbers." This is under
+    "Monitoring HIV care outcomes — Laboratory reporting", not a general
+    exclusion of Guam from NHSS.
   - Links the Federal Register notice on Connecticut's county-equivalents:
     https://www.federalregister.gov/documents/2022/06/06/2022-12063/change-to-county-equivalents-in-the-state-of-connecticut
     (not read).
@@ -246,8 +251,10 @@
 
 ### San Francisco Department of Public Health, HIV Epidemiology Annual Report 2025
 
-- **Source:** local copy of the PDF ("2025 San Francisco HIV Epidemiology
-  Annual Report", 117 pages); public URL not recorded.
+- **URL:** https://media.api.sf.gov/documents/AnnualReport2025_Blue_20260917FinalwCoverV2.pdf
+  (found by web search on 2026-11-15; same file name as the copy read).
+- **Source read:** a local copy of that PDF ("2025 San Francisco HIV
+  Epidemiology Annual Report", 117 pages).
 - **Read:** 2026-11-15, Map 17.1 (printed page 76).
 - **Content:** "Geographic distribution of people living with HIV who resided in
   San Francisco as of December 2025", by census tract, in bands 1–29, 30–54,

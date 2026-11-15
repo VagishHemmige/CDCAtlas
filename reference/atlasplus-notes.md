@@ -70,10 +70,17 @@ Recorded from live runs on the dates given; not re-run for this file.
 - **County suppression, HIV prevalence 2022:** 2,776 counties with counts,
   447 "Data suppressed", 8 "Data not available" (Connecticut's old counties).
   [observed 2026-10-29, HIV prevalence, county, 2022]
-- **State totals exceed the sum of their published counties** by far more than
-  suppression allows (at most 4 per suppressed county): for HIV prevalence in
-  2022 the gap is 1,804 in North Carolina, 1,888 in Virginia and 1,555 in
-  Georgia, while the 455 suppressed counties counted in that run could hold at
-  most 1,820 nationwide. [observed 2026-10-29, HIV prevalence, state and county,
-  2022] Most of each gap must therefore be cases with no county of residence.
-  [inference]
+- **State totals exceed the sum of their published counties.** For HIV
+  prevalence in 2022 the gap was 1,804 in North Carolina, 1,888 in Virginia and
+  1,555 in Georgia, with 455 suppressed counties nationwide in that run.
+  [observed 2026-10-29, HIV prevalence, state and county, 2022]
+  - *Hypothesis:* much of each gap is cases with no county of residence.
+  - *Not ruled out:* a suppressed county can hold more than 4 cases, because
+    cells are also suppressed to prevent back-calculation, under re-release
+    agreements, and in counties of 500,000 or more ("CDC, AtlasPlus Technical
+    Notes" in [web-sources.md](web-sources.md)); rows marked "Data not
+    available"; incomplete retrieval; and state and county figures that cover
+    different geographies or releases.
+  - *What would settle it:* CDC documentation of how cases with an unknown
+    county are counted, or a comparison against a CDC source that reports them.
+  - Hidden county counts cannot be recovered from the gap.

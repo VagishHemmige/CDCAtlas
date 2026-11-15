@@ -24,6 +24,13 @@ at a temporary folder, runs Rscript with `--vanilla`, and loads the package with
 `pkgload::load_all()`. It returns nonzero when a check fails. Original package
 tests are not run.
 
+It also points R's HTTP and HTTPS proxy settings at an address that refuses
+connections, so a request that a check forgot to mock fails rather than
+reaching CDC or the Census. This covers httr and curl, which honor the proxy
+variables; it is not a firewall, and code that ignores them could still reach
+the network. Mock every request anyway, and inspect checks before running
+them.
+
 ## Adding checks
 
 - One file per area, `tests/test-<area>.R`, using testthat 3.

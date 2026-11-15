@@ -21,13 +21,15 @@ questions. Entries describe methods, not CDCAtlas code.
 
 ## Cases with no county
 
-- A state's total can exceed the sum of its published and suppressed counties
-  by more than suppression allows ("Responses" in
-  [atlasplus-notes.md](atlasplus-notes.md)). The excess is most likely cases
-  whose county of residence is unknown or not released; CDC's documentation
-  read so far does not say.
-- Spreading those cases across a state's counties assumes they resemble cases
-  with a county. Which counties and in what proportion (population or cases)
+- A state's total can exceed the sum of its published counties by more than its
+  suppressed counties would hold if each held 1–4 cases ("Responses" in
+  [atlasplus-notes.md](atlasplus-notes.md)). One explanation is cases whose
+  county of residence is unknown or not released, but CDC's documentation read
+  so far does not say, and complementary suppression means some suppressed
+  counties hold more than 4. Treating the gap as cases to allocate is an
+  assumption that needs that evidence first.
+- If the gap is cases with no county, spreading them across a state's counties
+  assumes they resemble cases with a county. Which counties and in what proportion (population or cases)
   are assumptions, not documented by CDC. *Not yet sourced.*
 
 ## Geography vintages
@@ -55,12 +57,13 @@ questions. Entries describe methods, not CDCAtlas code.
 
 ## Age universes and partial bands
 
-- HIV surveillance case definitions apply to persons aged 13 and older ("CDC,
-  National HIV Surveillance System" in [web-sources.md](web-sources.md)), and
-  AIDSVu's denominators are the population aged 13 and older. AtlasPlus's
+- "AtlasPlus includes NHSS data for persons aged 13 years and older", and its
+  HIV rates are per 100,000 persons aged 13 and older ("CDC, AtlasPlus Technical
+  Notes" in [web-sources.md](web-sources.md)). NHSS itself also covers children
+  under 13. AIDSVu's denominators are the population aged 13 and older. AtlasPlus's
   code table has "Ages 13 years and older" (650) beside "All age groups" (651)
-  ([atlasplus-notes.md](atlasplus-notes.md)); which one each indicator uses is
-  set per request.
+  ([atlasplus-notes.md](atlasplus-notes.md)). The age universe of each
+  indicator other than HIV is a separate question, to check per indicator.
 - ACS sex-by-age bands do not start at 13: the 10–14 band must be split. Counting
   2/5 of it assumes ages are spread evenly within the band; that is an
   assumption, not a Census figure.

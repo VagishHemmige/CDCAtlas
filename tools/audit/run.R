@@ -6,7 +6,9 @@ pattern <- if (length(args) >= 3 && nzchar(args[[3]])) args[[3]] else NULL
 
 stopifnot(
   identical(Sys.getenv("CDCATLAS_LIVE_TESTS"), "false"),
-  identical(Sys.getenv("CENSUS_API_KEY"), "")
+  identical(Sys.getenv("CENSUS_API_KEY"), ""),
+  identical(Sys.getenv("https_proxy"), "http://127.0.0.1:9"),
+  identical(Sys.getenv("no_proxy"), "")
 )
 
 files <- list.files(tests_dir, pattern = "^test-.*\\.R$")
