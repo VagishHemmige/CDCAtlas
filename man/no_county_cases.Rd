@@ -49,10 +49,13 @@ the "About CDC AtlasPlus data" article.
 \details{
 Downloads the state data matching \code{x} (same diseases, years and
 stratification) from CDC AtlasPlus. The remainder also includes any county
-without a count in \code{x}: "Data not available" rows (whether
-\code{\link[=impute_suppressed]{impute_suppressed()}} dropped or kept them) and counties removed by
+without a count in \code{x}: "Data not available" rows, counties removed by
 filtering \code{x}, and suppressed rows \code{\link[=impute_suppressed]{impute_suppressed()}} couldn't estimate
 (marked \code{cases_source = "not estimated"}), which count as 0 imputed cases.
+The report has a row only for state groups (state, indicator, year and
+stratum) with at least one row in \code{x}: if
+\code{impute_suppressed(not_available = "drop")} or filtering removed every row
+of a group, its state total is not reported.
 }
 \examples{
 \dontrun{
