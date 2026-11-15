@@ -87,10 +87,20 @@ test_that("reported counts have no confidence intervals and estimates do, 2021",
   )
   counts <- estimated[estimated$indicator != "Knowledge of Status", ]
   expect_equal(sum(is.na(as.matrix(counts[c("lowerci_cases", "upperci_cases")]))), 0)
+  expect_equal(unique(estimated$year), 2021)
+  expect_equal(as.character(unique(estimated$geography)), "United States")
+
+  # Knowledge of Status: the percentage is in rate100000, with its bounds in
+  # the rate CI columns; cases are those who know their status, out of
+  # estimated prevalence (population); there are no count CIs.
   status <- estimated[estimated$indicator == "Knowledge of Status", ]
   expect_equal(nrow(status), 1)
-  values <- unlist(status[c("cases", "rate100000")])
-  expect_equal(any(values > 0 & values <= 100, na.rm = TRUE), TRUE)
+  expect_gt(status$rate100000, 50)
+  expect_lte(status$rate100000, 100)
+  expect_lt(status$lowerci_rate, status$rate100000)
+  expect_gt(status$upperci_rate, status$rate100000)
+  expect_equal(status$rate100000, 100 * status$cases / status$population, tolerance = 0.01)
+  expect_equal(sum(!is.na(c(status$lowerci_cases, status$upperci_cases))), 0)
 })
 
 test_that("stored codes still match CDC's code table", {

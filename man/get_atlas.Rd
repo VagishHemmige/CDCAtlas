@@ -39,15 +39,21 @@ A tibble with the following columns:
 \item{sex}{Sex category (factor, if stratified)}
 \item{age}{Age group (factor, if stratified)}
 \item{transmission}{Transmission category (factor)}
-\item{rate100000}{Rate per 100,000 population (numeric)}
-\item{cases}{Case count (numeric)}
-\item{population}{Population denominator (numeric)}
-\item{lowerci_rate, upperci_rate}{95\% CI bounds for rate (numeric). Usually
-empty (\code{NA}) for reported cases; given for the modeled estimates.}
+\item{rate100000}{Rate per 100,000 population (numeric): per 100,000
+people aged 13 and older for HIV, and per 100,000 live births for
+congenital syphilis. For Knowledge of Status, the percentage of people
+with HIV who know their status.}
+\item{cases}{Case count (numeric). For Knowledge of Status, the number
+who know their status.}
+\item{population}{Population denominator (numeric). For Knowledge of
+Status, estimated HIV prevalence.}
+\item{lowerci_rate, upperci_rate}{95\% CI bounds for \code{rate100000}
+(numeric); for Knowledge of Status, of the percentage. Usually empty
+(\code{NA}) for reported cases; given for the modeled estimates.}
 \item{rse}{Relative standard error (numeric)}
-\item{lowerci_cases, upperci_cases}{95\% CI bounds for cases (numeric).
-Usually empty (\code{NA}) for reported cases; given for the modeled
-estimates.}
+\item{lowerci_cases, upperci_cases}{95\% CI bounds for \code{cases} (numeric).
+Given for estimated HIV incidence and prevalence; usually empty (\code{NA})
+for reported cases and for Knowledge of Status.}
 \item{fips}{FIPS code (character)}
 }
 
