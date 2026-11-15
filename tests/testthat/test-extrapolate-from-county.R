@@ -664,12 +664,18 @@ test_that("unestimated = 'error' refuses rows impute_suppressed() couldn't estim
 
 test_that("block group estimates add up to county counts", {
   for (strat in list(NULL, "sex", "race", "age")) {
+    case <- strat %||% "unstratified"
     areas <- run_extrapolation(strat, to = "block group")
     check <- county_vs_areas(areas)
 
-    expect_equal(check$area_cases_sum, check$county_cases, tolerance = 1e-8)
-    expect_equal(unique(nchar(areas$geoid)), 12)
-    expect_equal(unique(areas$area_type), "block group")
+    expect_equal(
+      check$area_cases_sum,
+      check$county_cases,
+      tolerance = 1e-8,
+      label = paste("block group sums,", case)
+    )
+    expect_equal(unique(nchar(areas$geoid)), 12, label = paste("GEOID length,", case))
+    expect_equal(unique(areas$area_type), "block group", label = paste("area type,", case))
   }
 })
 
