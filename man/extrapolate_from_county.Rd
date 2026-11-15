@@ -177,8 +177,14 @@ whole population at the same ages.}
 \item{allocation}{How the county's count was shared: \code{"stratum population"}, \code{"total population"}, \code{"equal shares"} or \code{"none"} (see
 \code{empty_strata}).}
 \item{area_cases}{Estimated cases in the area.}
-\item{area_noncases}{\code{area_population_acs - area_cases}, floored at 0.}
 }
+
+For HIV prevalence (including CDC's estimated prevalence), people without
+HIV in an area can be estimated as \code{area_population_acs - area_cases}.
+That doesn't hold for the other indicators: new diagnoses and incidence
+need the population at risk, which excludes people already living with
+HIV; chlamydia, gonorrhea and syphilis count infections rather than
+people; and for Knowledge of Status the population isn't residents.
 
 Two attributes record what was not allocated:
 \code{attr(result, "no_county_cases")}, the \code{\link[=no_county_cases]{no_county_cases()}} report, and
