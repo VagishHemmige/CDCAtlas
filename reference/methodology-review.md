@@ -6,11 +6,10 @@ questions. Entries describe methods, not CDCAtlas code.
 
 ## Small counts and suppression
 
-- AtlasPlus suppresses some state and county values under data re-release
-  agreements; CDC advises caution for numbers under 12. ("CDC, ReadMe for the
-  AtlasPlus historical data extract" in [web-sources.md](web-sources.md).) The
-  numeric threshold for current county suppression is not stated there; check
-  the in-application Technical Notes.
+- State and county values are suppressed under data re-release agreements
+  ("CDC, National HIV Surveillance System" in [web-sources.md](web-sources.md)),
+  and the historical-extract ReadMe advises caution for numbers under 12.
+  Neither states the numeric threshold for current county suppression.
 - A suppressed county is known only to lie in a range (for example 1 to 4), so
   any filled value is an assumption. Possible approaches include a fixed value,
   a state rate applied to the county population and capped at the range, and
@@ -33,11 +32,11 @@ questions. Entries describe methods, not CDCAtlas code.
 - Counties change: Connecticut adopted planning regions as county-equivalents
   in the 2020s, and several Alaska, South Dakota and Virginia areas changed in
   the 2010s ("Census county changes" entries in [web-sources.md](web-sources.md)).
-- An ACS release uses one tract vintage (2010 tracts in earlier releases, 2020
-  tracts in later ones). Counts on a newer county map need a relationship file
-  to reach older tracts. *Not yet verified:* the first ACS release on 2020
-  tracts; see "ACS geography boundaries by year" in
-  [web-sources.md](web-sources.md).
+- An ACS release uses one tract vintage: 2010 tracts through the 2019 ACS
+  (2015–2019 5-year), 2020 tracts from the 2020 ACS (2016–2020 5-year) on
+  ("ACS geography boundaries by year" in [web-sources.md](web-sources.md)).
+  Counts on a newer county map need a relationship file to reach older tracts
+  ("2020 relationship files").
 
 ## Allocation to small areas
 
@@ -53,9 +52,12 @@ questions. Entries describe methods, not CDCAtlas code.
 
 ## Age universes and partial bands
 
-- HIV indicators are usually reported for ages 13 and older; AIDSVu uses the
-  population aged 13 and older as its denominator. *Not yet verified* for
-  AtlasPlus's own HIV indicators.
+- HIV surveillance case definitions apply to persons aged 13 and older ("CDC,
+  National HIV Surveillance System" in [web-sources.md](web-sources.md)), and
+  AIDSVu's denominators are the population aged 13 and older. AtlasPlus's
+  code table has "Ages 13 years and older" (650) beside "All age groups" (651)
+  ([atlasplus-notes.md](atlasplus-notes.md)); which one each indicator uses is
+  set per request.
 - ACS sex-by-age bands do not start at 13: the 10–14 band must be split. Counting
   2/5 of it assumes ages are spread evenly within the band; that is an
   assumption, not a Census figure.
