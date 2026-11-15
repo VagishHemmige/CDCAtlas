@@ -191,7 +191,17 @@ for (pipeline_run in pipeline_runs) {
         expect_equal(check$area_cases_sum, check$county_cases, tolerance = 1e-6)
         expect_equal(sum(is.na(areas$area_cases)), 0)
         expect_gte(min(areas$area_cases), 0)
-        expect_equal(sum(duplicated(areas[c("geoid", county_groups[-1])])), 0)
+        # An area appears once per county and stratum. The one 2010 tract
+        # the crosswalk splits between two counties (#30) appears in each.
+        expect_equal(sum(duplicated(areas[c("geoid", county_groups)])), 0)
+        keys <- areas[c("geoid", county_groups[-1])]
+        in_two <- unique(areas$geoid[duplicated(keys)])
+        crosswalk <- .tract_crosswalk()
+        split <- crosswalk$tract_2010[duplicated(crosswalk$tract_2010)]
+        expect_none(
+          setdiff(substr(in_two, 1, 11), split),
+          "areas in two counties"
+        )
       }
     )
 
