@@ -69,6 +69,8 @@ test_that("imputation respects the cap and keeps published counts, 2022", {
 # County rows the default pipeline is known to leave out. Anything else in
 # attr(, "not_allocated") is new and fails the test below. Found by running
 # these tests on 30 October 2026.
+#   - "Data not available" with no count: CDC has no data for the county;
+#     kept by impute_suppressed() since #110 and left out here.
 #   - Race or age "Unknown": no Census population for it.
 #   - CDC reports every year on its current county map. Since #30, 2010
 #     tracts are moved to the current counties by a crosswalk, so 2017
@@ -109,7 +111,9 @@ is_known_left_out <- function(left_out, year) {
   old_connecticut <- year == 2022 &
     left_out$reason == "suppressed, not estimated" &
     left_out$county_fips %in% sprintf("090%02d", seq(1, 15, 2))
-  unknown_race |
+  no_cdc_data <- left_out$reason == "no CDC data for this county"
+  no_cdc_data |
+    unknown_race |
     connecticut |
     valdez_cordova_split |
     puerto_rico_race |

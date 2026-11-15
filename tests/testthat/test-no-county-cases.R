@@ -105,12 +105,15 @@ test_that("kept 'Data not available' rows count towards the remainder", {
   local_fake_sources()
 
   kept <- no_county_cases(impute_suppressed(county, not_available = "keep"))
-  dropped <- no_county_cases(suppressMessages(impute_suppressed(county)))
+  dropped <- no_county_cases(suppressMessages(
+    impute_suppressed(county, not_available = "drop")
+  ))
 
   expect_equal(kept, dropped)
   expect_equal(kept$no_county_cases, c(21, 121))
 })
 
+<<<<<<< HEAD
 test_that("for HIV estimates the report says the remainder includes non-EHE counties (#109)", {
   indicator <- "Estimated HIV incidence"
   local_fake_sources(
@@ -129,4 +132,39 @@ test_that("reported data get no EHE message", {
   local_fake_sources()
   county <- impute_suppressed(fake_county_atlas(), method = "zero")
   expect_no_message(no_county_cases(county))
+=======
+# Two states: Alabama (01001) has a count; Alaska's only county (02003) is
+# "Data not available" with no count, so its whole state total is unpublished.
+two_states_one_unavailable <- function() {
+  county <- fake_county_atlas()
+  county$fips[county$fips == "01003"] <- "02003"
+  county$cases[county$fips == "02003"] <- NA
+  county$data_status[county$fips == "02003"] <- "Data not available"
+  alabama <- fake_state_atlas()
+  alaska <- alabama
+  alaska$fips <- "02"
+  alaska$geography <- "Alaska"
+  alaska$cases <- c(100, 200)
+  list(county = county, state = rbind(alabama, alaska))
+}
+
+test_that("a state whose only rows are unavailable keeps its remainder (#110)", {
+  data <- two_states_one_unavailable()
+  local_fake_sources(state = data$state)
+
+  report <- no_county_cases(impute_suppressed(data$county))
+  alaska <- report[report$state_fips == "02", ]
+  expect_equal(alaska$no_county_cases, c(100, 200))
+  expect_equal(alaska$published_cases, c(0, 0))
+})
+
+test_that("not_available = 'drop' warns when it removes a whole state's rows (#110)", {
+  data <- two_states_one_unavailable()
+  local_fake_sources(state = data$state)
+
+  expect_snapshot(
+    county <- impute_suppressed(data$county, not_available = "drop")
+  )
+  expect_equal(unique(county$fips), "01001")
+>>>>>>> claude/keep-not-available
 })

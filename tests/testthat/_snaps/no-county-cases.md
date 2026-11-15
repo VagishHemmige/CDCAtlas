@@ -3,7 +3,7 @@
     Code
       report <- no_county_cases(not_estimated)
     Message
-      i 2 rows with no count that `impute_suppressed()` couldn't estimate were counted in the remainder with no county.
+      i 2 suppressed rows that `impute_suppressed()` couldn't estimate were counted in the remainder with no county.
         County: "County 01003".
 
 # no_county_cases() refuses published rows with no count and state data
@@ -25,11 +25,17 @@
       ! `x` must be county data.
       i Use `get_atlas(geography = "county")`.
 
-# for HIV estimates the report says the remainder includes non-EHE counties (#109)
+# not_available = 'drop' warns when it removes a whole state's rows (#110)
 
     Code
-      report <- no_county_cases(county)
+      county <- impute_suppressed(data$county, not_available = "drop")
+    Condition
+      Warning:
+      Dropping rows marked "Data not available" removed every row of 2 state groups (indicator, year and stratum).
+      i State: "Alaska".
+      ! Their state totals are no longer counted by `no_county_cases()` or spread by `extrapolate_from_county()`.
+      i Use `not_available = "keep"` (the default) to keep them.
     Message
-      i CDC's county data for "Estimated HIV incidence" cover only Ending the HIV Epidemic (EHE) counties.
-        Their remainder is mostly people in counties outside EHE coverage, not cases with no county.
+      i Dropped 2 rows marked "Data not available" with no count.
+        Their cases are still in the state totals; see `no_county_cases()`.
 
