@@ -112,7 +112,9 @@
 - **Content:** the application says "Refer to technical notes for each
   indicator" and links its Technical Notes to the NHSS page (next entry). It
   says "CDC has postponed release of estimates for HIV incidence, HIV
-  prevalence, and PrEP coverage." "Glossary" appears only as a menu item. The
+  prevalence, and PrEP coverage." It also says "Due to the impact of the
+  COVID-19 pandemic, data for 2020 and 2021 may need to be interpreted with
+  caution" (rechecked 2026-11-15). "Glossary" appears only as a menu item. The
   "About" page describes county-level maps, charts and tables and links only the
   historical-extract ReadMe; neither page states a suppression threshold.
 
