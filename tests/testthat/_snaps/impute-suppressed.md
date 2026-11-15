@@ -157,6 +157,16 @@
       x Its rates are per 100,000 live births, not per 100,000 people.
       i `population = "cdc"` works for any strata.
 
+# population = 'acs' stops for Knowledge of Status before any request (#108)
+
+    Code
+      impute_suppressed(status, population = "acs")
+    Condition
+      Error in `impute_suppressed()`:
+      ! `population = "acs"` doesn't fit Knowledge of Status.
+      x Its rate is a share of people living with HIV, not of residents.
+      i Use `population = "cdc"`, CDC's estimate of people living with HIV in each county.
+
 # population = 'acs' needs a Census key
 
     Code

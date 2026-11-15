@@ -9,6 +9,13 @@
 #' The estimates are modelled, not observed: they assume the same rate in every
 #' area of a county within a stratum.
 #'
+#' For Knowledge of Status, `county_cases` is the number of people with HIV
+#' who know their status, and it is shared across areas by their residents,
+#' as if people with HIV lived in each area in proportion to its population.
+#' The ACS columns are residents, not people with HIV, so
+#' `area_cases / area_population_acs` is not the percentage who know their
+#' status.
+#'
 #' @param x County data from [get_atlas()] that has been through
 #'   [impute_suppressed()], with at most one stratification variable.
 #' @param to The areas to share county counts across. Both nest inside

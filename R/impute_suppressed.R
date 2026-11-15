@@ -39,8 +39,9 @@
 #'
 #'   `"acs"` accepts the same input as [extrapolate_from_county()]: at most
 #'   one stratification variable, and no congenital syphilis (whose rates are
-#'   per 100,000 live births). Other input stops before anything is
-#'   downloaded; use `"cdc"` for it.
+#'   per 100,000 live births). It also refuses Knowledge of Status, whose
+#'   denominator is people living with HIV, not residents. Other input stops
+#'   before anything is downloaded; use `"cdc"` for it.
 #'
 #'   CDC gives Connecticut's 2017 planning regions no population, so `"cdc"`
 #'   can't estimate them; `"acs"` can, from 2010 tracts assigned to the
@@ -155,6 +156,20 @@ impute_suppressed <- function(
       call,
       hint = c("i" = "{.code population = \"cdc\"} works for any strata.")
     )
+    # The state rate for Knowledge of Status is a share of people living with
+    # HIV (CDC's population for it), so it can't multiply ACS residents (#108).
+    if ("Knowledge of Status" %in% as.character(x$indicator)) {
+      cli::cli_abort(
+        c(
+          "{.code population = \"acs\"} doesn't fit Knowledge of Status.",
+          "x" = "Its rate is a share of people living with HIV, not of
+                 residents.",
+          "i" = "Use {.code population = \"cdc\"}, CDC's estimate of people
+                 living with HIV in each county."
+        ),
+        call = call
+      )
+    }
     .check_census_ready(call)
   }
   state <- .fetch_state_totals(x)

@@ -249,6 +249,43 @@ test_that("population = 'acs' stops for congenital syphilis", {
   )
 })
 
+test_that("Knowledge of Status uses CDC's denominator, people with HIV (#108)", {
+  # State: 80 of 100 people with HIV know their status. County: 10 people with
+  # HIV, 1,000 residents. The estimate is 0.8 x 10 = 8, not 0.8 x 1,000.
+  status <- fake_county_atlas(
+    suppressed = "01003",
+    indicators = "Knowledge of Status"
+  )
+  status$population[status$fips == "01003"] <- 10
+  state <- fake_state_atlas(indicators = "Knowledge of Status")
+  state$cases <- 80
+  state$population <- 100
+  local_fake_sources(state = state)
+
+  out <- impute_suppressed(status, cap = Inf)
+  expect_equal(out$cases[out$fips == "01003"], 8)
+})
+
+test_that("population = 'acs' stops for Knowledge of Status before any request (#108)", {
+  local_mocked_bindings(
+    .request_atlas = function(payload) stop("CDC was called"),
+    .check_census_ready = function(call) invisible(),
+    .get_acs_areas = function(...) stop("the Census was called")
+  )
+  status <- fake_county_atlas(
+    suppressed = "01003",
+    indicators = c("Estimated HIV incidence", "Knowledge of Status")
+  )
+  expect_error(
+    impute_suppressed(status, population = "acs"),
+    "Knowledge of Status"
+  )
+  expect_snapshot(
+    error = TRUE,
+    impute_suppressed(status, population = "acs")
+  )
+})
+
 test_that("population = 'acs' works on age strata for chlamydia", {
   chlamydia <- fake_county_atlas(
     "age",
