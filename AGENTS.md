@@ -160,6 +160,13 @@ API checks separately when useful and permitted; mocks establish code
 behavior, not current service compatibility. Report actual runtime and
 network availability rather than assuming either.
 
+Integrate useful review-created checks into the existing owning test files with
+the corresponding approved fix. Strengthen existing tests before adding parallel
+coverage. Keep failing reproducers with their issue or review deliverable until
+the fix is ready; do not install known failures, expected-failure assertions or
+unjustified skips as standing CI. Retire temporary duplicates once integrated.
+Keep methodological comparisons separate until the maintainer selects a contract.
+
 Separate source inspection, personally executed synthetic checks, recorded
 responses, live API checks, observed CI and author-reported validation.
 Record live retrieval dates, tested requests and coverage gaps without keys
@@ -219,8 +226,9 @@ scientific logic, verify claims against the cited sources, and follow its
 placement and citation rules: code may cite a reference entry by its heading;
 reference entries never name package functions or issues.
 [PACKAGE_REVIEW.md](PACKAGE_REVIEW.md) is the protocol for a whole-package
-review, used only when the maintainer commissions one; `tools/audit/` holds that
-review's synthetic checks.
+review, used only when the maintainer commissions one. `tools/audit/` provides
+an optional local execution runner; standing checks belong in the existing
+package tests and workflows.
 
 `.Rbuildignore` excludes AGENTS.md, REVIEWING.md, PACKAGE_REVIEW.md,
 `reference/` and `tools/` from package builds, not from pkgdown. The three root
