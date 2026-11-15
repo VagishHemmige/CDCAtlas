@@ -181,3 +181,46 @@ test_that("requests identify the package with a working link", {
     "R package CDCAtlas (https://github.com/VagishHemmige/CDCAtlas)"
   )
 })
+
+# Request problems (#13) -------------------------------------------------------
+
+test_that("requests have a time limit", {
+  seen <- NULL
+  local_mocked_bindings(.request_atlas = .request_atlas_internal)
+  local_mocked_bindings(client_rate = function() invisible(NULL))
+  local_mocked_bindings(
+    POST = function(url, ...) {
+      seen <<- list(...)
+      structure(list(), class = "fake_response")
+    },
+    status_code = function(res) 404L,
+    content = function(res, ...) "",
+    .package = "httr"
+  )
+  try(get_atlas("hiv", "state", 2017), silent = TRUE)
+  configs <- Filter(function(x) inherits(x, "request"), seen)
+  timeouts <- unlist(lapply(configs, function(x) x$options$timeout_ms))
+  expect_equal(unname(timeouts), .atlas_timeout_seconds * 1000)
+})
+
+test_that("a request that can't reach CDC says so", {
+  local_mocked_bindings(.request_atlas = .request_atlas_internal)
+  local_mocked_bindings(client_rate = function() invisible(NULL))
+  local_mocked_bindings(
+    POST = function(...) stop("Timeout was reached: Operation timed out"),
+    .package = "httr"
+  )
+  expect_snapshot(error = TRUE, get_atlas("hiv", "state", 2017))
+})
+
+test_that("an empty response says what may be wrong", {
+  local_mocked_bindings(.request_atlas = .request_atlas_internal)
+  local_mocked_bindings(client_rate = function() invisible(NULL))
+  local_mocked_bindings(
+    POST = function(...) structure(list(), class = "fake_response"),
+    status_code = function(res) 200L,
+    content = function(res, ...) '{"sourcedata": null}',
+    .package = "httr"
+  )
+  expect_snapshot(error = TRUE, get_atlas("hiv", "state", 2017))
+})

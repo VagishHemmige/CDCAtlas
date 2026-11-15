@@ -17,33 +17,36 @@ url_data <- "https://gis.cdc.gov/api/AtlasPlus/qtOutputData"
 #Rate limiter
 client_rate()  # <-- Invoke the rate limiter
 
-#Call CDC site
-res <- httr::POST(
+#Call CDC site, with a time limit; a network failure gets a plain message
+res <- .atlas_call(httr::POST(
   url_data,
   body = payload,
   encode = "json",
-  .atlas_headers()
-)
+  .atlas_headers(),
+  httr::timeout(.atlas_timeout_seconds)
+))
 
 #Error handling: pass on CDC's own explanation when it gives one
 status <- httr::status_code(res)
 if (status != 200) {
-  cdc_message <- .cdc_error_message(res)
-  cli::cli_abort(
-    c(
-      "CDC AtlasPlus request failed (HTTP status {status}).",
-      "i" = if (!is.null(cdc_message)) "CDC says: {cdc_message}",
-      "i" = "If this keeps happening, CDC may have changed AtlasPlus. Please report it at {.url https://github.com/VagishHemmige/CDCAtlas/issues}."
-    ),
-    call = NULL
-  )
+  .abort_cdc_status(res, status)
 }
 
 #Encode JSON
 dat <- jsonlite::fromJSON(httr::content(res, "text", encoding = "UTF-8"))
 
-if (is.null(dat$sourcedata))
-  stop("No data returned. Check payload IDs.")
+if (is.null(dat$sourcedata)) {
+  cli::cli_abort(
+    c(
+      "CDC AtlasPlus returned no data for this request.",
+      "i" = "CDC may not have released this year for this disease yet, or
+             may not report this combination of geography and strata.",
+      "i" = "Check what AtlasPlus offers at
+             {.url https://gis.cdc.gov/grasp/nchhstpatlas/main.html}."
+    ),
+    call = NULL
+  )
+}
 
 # --- Convert to a data frame and label columns --
 #Uses internal package data varvals
@@ -87,6 +90,53 @@ return(df)
 
 # Short form of CDC's error message, without the server's stack trace.
 # Returns NULL when the response has no readable message.
+# Seconds to wait for CDC. One state's counties usually come back in a few
+# seconds, but CDC's database can be slow; its own timeout is reported as an
+# HTTP 400 (see .abort_cdc_status()).
+.atlas_timeout_seconds <- 120
+
+# Runs an httr request, turning a failure to reach CDC (no connection, DNS,
+# time limit) into a message that says so (#13).
+.atlas_call <- function(request) {
+  tryCatch(
+    request,
+    error = function(e) {
+      cli::cli_abort(
+        c(
+          "Couldn't reach CDC AtlasPlus.",
+          "x" = "{conditionMessage(e)}",
+          "i" = "Check your internet connection, or try again later; CDC's
+                 site is sometimes slow or down."
+        ),
+        call = NULL
+      )
+    }
+  )
+}
+
+# Stops with CDC's own explanation when it gives one. CDC reports its database
+# timing out as HTTP 400 "Execution Timeout Expired", which is usually
+# temporary.
+.abort_cdc_status <- function(res, status) {
+  cdc_message <- .cdc_error_message(res)
+  timed_out <- !is.null(cdc_message) &&
+    grepl("Execution Timeout Expired", cdc_message, fixed = TRUE)
+  cli::cli_abort(
+    c(
+      "CDC AtlasPlus request failed (HTTP status {status}).",
+      "i" = if (!is.null(cdc_message)) "CDC says: {cdc_message}",
+      "i" = if (timed_out) {
+        "CDC's database timed out. This is usually temporary: try again in a
+         few minutes."
+      } else {
+        "If this keeps happening, CDC may have changed AtlasPlus. Please
+         report it at {.url https://github.com/VagishHemmige/CDCAtlas/issues}."
+      }
+    ),
+    call = NULL
+  )
+}
+
 .cdc_error_message <- function(res) {
   message <- tryCatch(
     jsonlite::fromJSON(httr::content(res, "text", encoding = "UTF-8"))$message,
@@ -146,7 +196,9 @@ return(df)
 
 # The one GET request, kept separate so tests can replace it.
 .atlas_get <- function(url) {
-  httr::GET(url, .atlas_headers())
+  .atlas_call(httr::GET(
+    url, .atlas_headers(), httr::timeout(.atlas_timeout_seconds)
+  ))
 }
 
 
