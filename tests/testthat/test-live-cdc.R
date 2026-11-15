@@ -100,6 +100,29 @@ test_that("stored codes still match CDC's code table", {
   }
 })
 
+test_that("each disease's age codes are ones CDC offers for its indicators (#11)", {
+  # CDC's set-up data list, for each indicator, every combination of codes
+  # AtlasPlus offers; `data_structure` names the variable type in each column.
+  combo <- .atlas_init_data()$combo
+  age_column <- match("7", combo$data_structure)
+  offered <- do.call(rbind, lapply(combo$diseases$combinations, function(m) {
+    m <- if (is.matrix(m)) m else do.call(rbind, m)
+    data.frame(indicator = m[, 1], age = m[, age_column])
+  }))
+  lookup <- .disease_indicators()
+  for (disease in unique(lookup$disease)) {
+    ids <- varvals$id[varvals$vtid == 1 &
+      varvals$name %in% lookup$indicator[lookup$disease == disease]]
+    codes <- .atlas_age_codes(disease, by_age = FALSE)
+    if (disease != "congenital syphilis") {
+      codes <- c(codes, .atlas_age_codes(disease, by_age = TRUE))
+    }
+    for (id in ids) {
+      expect_contains(offered$age[offered$indicator == id], codes)
+    }
+  }
+})
+
 for (year in c(2017, 2022)) {
   test_that(paste("Census variable codes have the expected labels,", year), {
     skip_if_not_installed("tidycensus")

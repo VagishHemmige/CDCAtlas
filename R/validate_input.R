@@ -191,6 +191,18 @@
         call = call
       )
     }
+
+    # AtlasPlus offers congenital syphilis only as a total: its set-up data
+    # list no race, sex or age groups for it (#10).
+    if (identical(disease, "congenital syphilis")) {
+      cli::cli_abort(
+        c(
+          "CDC doesn't report congenital syphilis by race, sex or age.",
+          "i" = "Use {.code stratify_by = NULL}."
+        ),
+        call = call
+      )
+    }
   }
 
   invisible(TRUE)

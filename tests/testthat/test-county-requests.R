@@ -65,6 +65,38 @@ test_that("the order and repeats of years don't change the requests", {
   )
 })
 
+age_ids <- varvals$id[varvals$vtid == 7]
+
+test_that("age-stratified requests ask for each disease's own age groups (#11)", {
+  hiv <- c(656, 662, 665, 668, 669, 672)
+  sti <- c(654, 657, 660, 661, 663, 664, 666, 668, 669, 672)
+  expected <- list(
+    "hiv" = hiv,
+    "estimate" = hiv,
+    "chlamydia" = c(sti, 673),
+    "gonorrhea" = c(sti, 673),
+    "adult syphilis" = c(sti, 673),
+    "tuberculosis" = sti,
+    "hepatitis" = sti
+  )
+  for (disease in names(expected)) {
+    ids <- payload_ids(.build_payload(disease, "state", 2022, stratify_by = "age"))
+    expect_setequal(intersect(ids, age_ids), expected[[disease]])
+  }
+})
+
+test_that("unstratified requests ask for each disease's own age total", {
+  expected <- c(
+    "hiv" = 650, "estimate" = 650, "chlamydia" = 651, "gonorrhea" = 651,
+    "adult syphilis" = 651, "congenital syphilis" = 651,
+    "tuberculosis" = 651, "hepatitis" = 651
+  )
+  for (disease in names(expected)) {
+    ids <- payload_ids(.build_payload(disease, "state", 2022))
+    expect_equal(intersect(ids, age_ids), expected[[disease]], label = disease)
+  }
+})
+
 test_that("national requests use CDC's United States code, 5000", {
   ids <- payload_ids(.build_payload("hiv", "national", 2022))
   expect_contains(ids, 5000)

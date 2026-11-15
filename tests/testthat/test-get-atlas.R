@@ -23,3 +23,15 @@ test_that("an old positional extrapolate_to_tract still stops before any request
   expect_snapshot(get_atlas("hiv", "county", 2022, NULL, TRUE), error = TRUE)
   expect_snapshot(get_atlas("hiv", "county", 2022, NULL, FALSE), error = TRUE)
 })
+
+test_that("congenital syphilis can't be stratified", {
+  local_mocked_bindings(.request_atlas_all = function(p) stop("CDC was called"))
+  expect_snapshot(
+    error = TRUE,
+    get_atlas("congenital syphilis", "state", 2022, stratify_by = "age")
+  )
+  expect_snapshot(
+    error = TRUE,
+    get_atlas("congenital syphilis", "state", 2022, stratify_by = "sex")
+  )
+})

@@ -142,12 +142,11 @@
 ---
 
     Code
-      extrapolate_from_county(chlamydia)
+      extrapolate_from_county(congenital)
     Condition
       Error in `extrapolate_from_county()`:
-      ! Age-stratified estimates support only HIV diagnoses and prevalence.
-      x `x` has "chlamydia" data.
-      i CDC's age groups for other diseases aren't matched to Census ages yet.
+      ! Census populations don't fit congenital syphilis.
+      x Its rates are per 100,000 live births, not per 100,000 people.
 
 ---
 
@@ -246,4 +245,12 @@
       i Cases of unknown race shared across known race groups:
       * HIV diagnoses 2022: 10
       * HIV prevalence 2022: 10
+
+# unknown_age is checked
+
+    Code
+      extrapolate_from_county(county, unknown_age = "spread")
+    Condition
+      Error in `extrapolate_from_county()`:
+      ! `unknown_age` must be one of "report" or "redistribute", not "spread".
 
