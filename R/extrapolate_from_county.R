@@ -23,7 +23,13 @@
 #'   * `"report"` (default): left out of the estimates, with a message giving
 #'     the total. The report is kept in `attr(result, "no_county_cases")`.
 #'   * `"spread"`: shared across the state's counties in `x` by their ACS
-#'     population in the same stratum, then across areas as usual. Negative
+#'     population in the same stratum, then across areas as usual. `x` must
+#'     hold every county CDC reports in each of its states, for each
+#'     indicator, year and stratum it has (rows CDC lists as "Data not
+#'     available" with no count aside), or the counties left out would have
+#'     their cases spread too; to study part of a state, spread first and
+#'     filter the result. Checking needs CDC's county table, which comes from
+#'     the cache when `x` was downloaded in this session. Negative
 #'     remainders are not spread, nor are remainders in a state with no
 #'     allocated county in that stratum; the message says how many cases
 #'     could not be spread.
@@ -44,7 +50,8 @@
 #'   * `"none"`: leave the estimates `NA`, with a warning.
 #' @param ages Ages the Census populations cover:
 #'   * `"auto"` (default): 13 and older for HIV indicators (as CDC reports
-#'     them), all ages otherwise.
+#'     them), all ages otherwise, decided indicator by indicator, so `x` can
+#'     combine HIV with other diseases.
 #'   * `"13+"` or `"all"`: set it yourself.
 #'
 #'   When `x` is stratified by age, the age groups set the ages, so 13 and
@@ -75,6 +82,15 @@
 #'     and listed in `attr(result, "not_allocated")`. Their cases count towards
 #'     the state's remainder with no county.
 #'   * `"error"`: stop with an error.
+#' @param missing_population What to do when the ACS population is missing
+#'   (an `NA` estimate, or a variable the Census didn't return) for some
+#'   area of a county:
+#'   * `"leave out"` (default): leave that county stratum out, with a warning,
+#'     and list it in `attr(result, "not_allocated")` with reason `"missing
+#'     ACS population"`. Sharing over the other areas would move cases.
+#'   * `"error"`: stop instead.
+#'
+#'   A population of 0 is not missing; see `empty_strata`.
 #' @param acs_year The last year of the ACS 5-year estimates. `NULL` (default)
 #'   uses each data year. A single year can be given only if `x` has one year.
 #' @param weights Not yet supported; for sub-county weights later (#1).
@@ -165,12 +181,14 @@ extrapolate_from_county <- function(
   race_table = c("B03002", "B01001"),
   unknown_race = c("report", "redistribute"),
   unestimated = c("leave out", "error"),
+  missing_population = c("leave out", "error"),
   acs_year = NULL,
   weights = NULL
 ) {
   call <- rlang::current_env()
   .check_county_data(x, arg = "x", call = call)
   unestimated <- rlang::arg_match(unestimated)
+  missing_population <- rlang::arg_match(missing_population)
   .check_imputed(x, arg = "x", call = call, unestimated = unestimated)
   to <- rlang::arg_match(to)
   no_county <- rlang::arg_match(no_county)
@@ -184,33 +202,7 @@ extrapolate_from_county <- function(
     cli::cli_abort("{.arg weights} is not supported yet (#1).", call = call)
   }
 
-  stratify_by <- .atlas_stratify_by(x)
-  if (length(stratify_by) > 1) {
-    cli::cli_abort(
-      c(
-        "{.arg x} can have at most one stratification variable.",
-        "x" = "It is stratified by {.val {stratify_by}}."
-      ),
-      call = call
-    )
-  }
-  if (length(stratify_by) == 0) {
-    stratify_by <- NULL
-  }
-
-  diseases <- .atlas_diseases(x)
-  if (identical(stratify_by, "age") && !identical(diseases, "hiv")) {
-    cli::cli_abort(
-      c(
-        "Age-stratified estimates support only HIV diagnoses and prevalence.",
-        "x" = "{.arg x} has {.val {setdiff(diseases, 'hiv')}} data.",
-        "i" = "CDC's age groups for other diseases aren't matched to Census
-               ages yet."
-      ),
-      call = call
-    )
-  }
-  ages <- .default_ages(x, stratify_by, ages)
+  stratify_by <- .check_census_strata(x, call)
 
   years <- sort(unique(as.numeric(as.character(x$year))))
   if (!is.null(acs_year)) {
@@ -231,6 +223,9 @@ extrapolate_from_county <- function(
 
   .check_census_ready(call)
 
+  if (no_county == "spread") {
+    .check_whole_states(x, call)
+  }
   report <- .no_county_cases(x, .fetch_state_totals(x))
 
   county <- .county_cases(x)
@@ -241,21 +236,33 @@ extrapolate_from_county <- function(
     redistributed <- attr(county, "redistributed")
   }
   states <- sort(unique(county$state_fips))
-  pieces <- lapply(years, function(year) {
+  row_ages <- .row_ages(county, stratify_by, ages)
+  pieces <- list()
+  for (year in years) {
     acs <- acs_year %||% year
-    pop <- .area_population(acs, states, stratify_by, ages, to, race_table)
-    pop$acs_year <- acs
-    .join_areas(county[county$year == year, ], pop, stratify_by, to)
-  })
+    for (universe in unique(row_ages[county$year == year])) {
+      pop <- .area_population(acs, states, stratify_by, universe, to, race_table)
+      pop$acs_year <- acs
+      rows <- county$year == year & row_ages == universe
+      pieces[[length(pieces) + 1]] <- .join_areas(
+        county[rows, ], pop, stratify_by, to
+      )
+    }
+  }
   areas <- dplyr::bind_rows(lapply(pieces, `[[`, "areas"))
   not_allocated <- dplyr::bind_rows(lapply(pieces, `[[`, "not_allocated"))
+  missing_pop <- .leave_out_missing_population(
+    areas, missing_population, call
+  )
+  areas <- missing_pop$areas
+  not_allocated <- dplyr::bind_rows(not_allocated, missing_pop$not_allocated)
 
-  areas$county_cases_spread <- 0
+  areas$county_cases_spread <- rep(0, nrow(areas))
   if (no_county == "spread") {
     areas <- .spread_no_county(areas, report, empty_strata, spread_by)
   }
   areas <- .allocate(areas, empty_strata)
-  areas$area_type <- to
+  areas$area_type <- rep(to, nrow(areas))
 
   out <- tibble::as_tibble(areas[c(
     "year", "acs_year", "area_type", "geoid", "area_name", "county_fips",
@@ -293,6 +300,45 @@ extrapolate_from_county <- function(
 # Checks --------------------------------------------------------------------------
 
 # Say what is missing before any request is made.
+# no_county = "spread" shares each state's remainder (state total minus the
+# counties in `x`) across the counties in `x`. If `x` leaves out counties CDC
+# reports, their own cases would be counted in the remainder and moved to the
+# counties kept (#54). Checked within each state, indicator, year and stratum
+# that `x` has; rows CDC lists as "Data not available" with no count don't
+# count, as impute_suppressed() drops those.
+.check_whole_states <- function(x, call) {
+  with_state <- function(df) {
+    df$state_fips <- substr(as.character(df$fips), 1, 2)
+    df
+  }
+  x <- with_state(x)
+  cdc <- with_state(.fetch_county_totals(x))
+  groups <- c("state_fips", .atlas_keys)
+  no_count <- is.na(cdc$cases) &
+    as.character(cdc$data_status) == "Data not available"
+  cdc <- cdc[!no_count & .row_key(cdc, groups) %in% .row_key(x, groups), ]
+  keys <- c("fips", .atlas_keys)
+  missing <- cdc[!.row_key(cdc, keys) %in% .row_key(x, keys), ]
+  if (nrow(missing) == 0) {
+    return(invisible())
+  }
+  counties <- unique(as.character(missing$fips))
+  states <- unique(substr(counties, 1, 2))
+  cli::cli_abort(
+    c(
+      "{.arg no_county = \"spread\"} needs every county CDC reports in each
+       state of {.arg x}.",
+      "x" = "{.arg x} is missing {length(counties)} count{?y/ies} in state{?s}
+             {.val {states}}, for example {.val {utils::head(counties, 3)}}.",
+      "i" = "Their cases would be spread to the counties in {.arg x} as if
+             they had no county.",
+      "i" = "Run {.fn extrapolate_from_county} on whole states and filter the
+             result, or use {.code no_county = \"report\"}."
+    ),
+    call = call
+  )
+}
+
 .check_census_ready <- function(call) {
   if (!nzchar(Sys.getenv("CENSUS_API_KEY"))) {
     cli::cli_abort(
@@ -507,22 +553,39 @@ extrapolate_from_county <- function(
     estimate = acs$estimate
   )
 
-  # Sum of each area's estimates for the variables in `table`, weighted.
+  # Sum of each area's estimates for the variables in `table`, weighted. A
+  # missing estimate, or a variable row the area lacks, makes the sum NA
+  # rather than an undercount (#52).
   weighted_sum <- function(table, by_stratum = FALSE) {
+    table <- table[table$weight != 0, ]
     rows <- match(acs$variable, table$variable)
     keep <- !is.na(rows)
-    data.frame(
+    needed <- table |>
+      dplyr::summarize(
+        n_needed = dplyr::n(),
+        .by = if (by_stratum) "stratum" else character()
+      )
+    sums <- data.frame(
       geoid = acs$geoid[keep],
       stratum = if (by_stratum) table$stratum[rows[keep]] else NA_character_,
       value = acs$estimate[keep] * table$weight[rows[keep]]
     ) |>
       dplyr::summarize(
-        value = sum(.data$value, na.rm = TRUE),
+        value = sum(.data$value),
+        n_found = dplyr::n(),
         .by = c("geoid", "stratum")
       )
+    n_needed <- if (by_stratum) {
+      needed$n_needed[match(sums$stratum, needed$stratum)]
+    } else {
+      needed$n_needed
+    }
+    sums$value[sums$n_found < n_needed] <- NA_real_
+    sums[c("geoid", "stratum", "value")]
   }
+  # An area with no rows at all for these variables has a missing value too.
   lookup_value <- function(sums, geoid) {
-    dplyr::coalesce(sums$value[match(geoid, sums$geoid)], 0)
+    sums$value[match(geoid, sums$geoid)]
   }
 
   areas <- unique(acs[c("geoid", "area_name")])
@@ -534,13 +597,10 @@ extrapolate_from_county <- function(
   in_stratum <- weighted_sum(denominators, by_stratum = TRUE)
   strata <- unique(denominators["stratum"])
   out <- merge(areas, strata, by = NULL)
-  out$area_population_acs <- dplyr::coalesce(
-    in_stratum$value[match(
-      .row_key(out, c("geoid", "stratum")),
-      .row_key(in_stratum, c("geoid", "stratum"))
-    )],
-    0
-  )
+  out$area_population_acs <- in_stratum$value[match(
+    .row_key(out, c("geoid", "stratum")),
+    .row_key(in_stratum, c("geoid", "stratum"))
+  )]
 
   if (identical(stratify_by, "race") && race_table == "B03002" &&
     ages == "13+") {
@@ -548,7 +608,7 @@ extrapolate_from_county <- function(
     all_ages <- acs[acs$variable == "B01001_001", c("geoid", "estimate")]
     names(all_ages)[2] <- "value"
     total_all <- lookup_value(all_ages, out$geoid)
-    share_13 <- ifelse(total_all > 0, total_13 / total_all, 0)
+    share_13 <- dplyr::if_else(total_all > 0, total_13 / total_all, 0)
     out$area_population_acs <- out$area_population_acs * share_13
   }
 
@@ -609,6 +669,48 @@ extrapolate_from_county <- function(
 }
 
 .county_groups <- c("county_fips", .atlas_keys)
+
+# A county stratum where any area's ACS population is missing (an NA
+# estimate or a missing variable row) can't be shared fairly: sharing over the
+# other areas would move cases. It is left out and listed, or stops the run
+# (#52). Real zeros are not missing.
+.leave_out_missing_population <- function(areas, missing_population, call) {
+  missing <- is.na(areas$area_population_acs) |
+    is.na(areas$area_total_population)
+  if (!any(missing)) {
+    return(list(areas = areas, not_allocated = NULL))
+  }
+  keys <- .row_key(areas, .county_groups)
+  affected <- keys %in% keys[missing]
+  rows <- areas[affected & !duplicated(keys), ]
+  counties <- unique(paste0(rows$county_name, " (", rows$county_fips, ")"))
+  if (missing_population == "error") {
+    cli::cli_abort(
+      c(
+        "The ACS population is missing for some areas of
+         {length(counties)} count{?y/ies}.",
+        "x" = "For example {.val {utils::head(counties, 3)}}.",
+        "i" = "Use {.code missing_population = \"leave out\"} to leave
+               those county strata out instead."
+      ),
+      call = call
+    )
+  }
+  cli::cli_warn(c(
+    "{nrow(rows)} county stratum row{?s} in {length(counties)}
+     count{?y/ies} left out: the ACS population is missing for some of
+     {?its/their} areas.",
+    "i" = "For example {.val {utils::head(counties, 3)}}.",
+    "i" = "See {.code attr(x, \"not_allocated\")}."
+  ))
+  pop_columns <- c(
+    "geoid", "area_name", "stratum", "area_population_acs",
+    "area_total_population", "acs_year"
+  )
+  not_allocated <- rows[setdiff(names(rows), pop_columns)]
+  not_allocated$reason <- "missing ACS population"
+  list(areas = areas[!affected, ], not_allocated = not_allocated)
+}
 
 # Share each county's race "Unknown" cases across its known race groups in
 # proportion to their counts, within indicator and year. Unknown rows that are

@@ -53,14 +53,22 @@ you do not need to set up `tidycensus`. However, if you use
 2. a Census API key
 3. the API key saved in your R environment
 
-You can install `tidycensus` from CRAN:
+You can install `tidycensus` (version 1.8.0 or later) from CRAN:
 
 ```{r, eval=FALSE}
 install.packages("tidycensus")
 ```
 
-Then request a free Census API key from the U.S. Census Bureau and install it
-using `tidycensus::census_api_key()`.
+Then request a free Census API key from the U.S. Census Bureau and save it
+with `tidycensus::census_api_key()`. With `install = TRUE` it is written to your
+`.Renviron` file as `CENSUS_API_KEY`, so it is there in future sessions:
+
+```{r, eval=FALSE}
+tidycensus::census_api_key("YOUR KEY HERE", install = TRUE)
+readRenviron("~/.Renviron") # or restart R
+```
+
+Without `install = TRUE`, the key lasts only for the current session.
 
 See [https://walker-data.com/tidycensus/](https://walker-data.com/tidycensus/) for further details.
 
@@ -99,8 +107,9 @@ hiv_tract <- get_atlas(
 not estimate or allocate. Those messages are shown here on purpose: they say
 which cases are missing from the tract estimates.
 
-The returned data contain one row per tract, with the county-level AtlasPlus
-count allocated to tracts.
+The returned data contain one row per tract and indicator (here, HIV
+diagnoses and HIV prevalence), with the county-level AtlasPlus count
+allocated to tracts.
 
 ```{r}
 head(hiv_tract)
@@ -112,17 +121,19 @@ A typical output includes columns such as:
 names(hiv_tract)
 ```
 
-You should expect columns identifying:
+The main columns are:
 
-- the tract
-- the parent county
-- the AtlasPlus disease and year
-- the county-level cases, and the cases shared across the county's tracts
-  (`county_cases_allocated`)
-- the tract denominator
-- the county denominator
-- the tract share of the county denominator
-- the extrapolated tract cases
+- `geoid` and `area_name`: the tract
+- `county_fips` and `county_name`: the county it is in
+- `indicator` and `year`: what was counted, and when; `acs_year` is the ACS
+  year of the population figures
+- `county_cases`: the county's count, and `county_cases_allocated`: the cases
+  shared across the county's tracts
+- `area_population_acs` and `county_population_acs`: the ACS population of
+  the tract and of the county's tracts
+- `area_cases`: the estimated cases in the tract
+
+See `?extrapolate_from_county` for every column.
 
 The key calculation is:
 
@@ -215,7 +226,7 @@ $$
 \frac{\text{tract population}_{\text{female}}}
 {\text{county population}_{\text{female}}}
 $$
-The resulting data should include one row per tract per sex stratum.
+The resulting data should include one row per tract, indicator and sex.
 
 ```{r, message = TRUE, warning = TRUE}
 hiv_tract_sex |>
@@ -254,7 +265,7 @@ hiv_tract_age <- get_atlas(
   extrapolate_from_county()
 ```
 
-The output contains one row per tract per age stratum.
+The output contains one row per tract, indicator and age group.
 
 ```{r, message = TRUE, warning = TRUE}
 hiv_tract_age |>

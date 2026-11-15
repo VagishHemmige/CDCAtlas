@@ -9,15 +9,16 @@ get_atlas(
   geography,
   year,
   stratify_by = NULL,
-  extrapolate_to_tract = deprecated()
+  extrapolate_to_tract = deprecated(),
+  refresh = FALSE
 )
 }
 \arguments{
 \item{disease}{A single disease name (e.g. \code{"gonorrhea"}).
 Multiple diseases are not currently supported in a single request.}
 
-\item{geography}{Character scalar. One of \code{"national"}, \code{"state"},
-\code{"county"}, or \code{"msa"}. Region-level queries are not supported yet.}
+\item{geography}{Character scalar. One of \code{"national"}, \code{"region"} (HIV
+estimates only), \code{"state"}, \code{"county"}, or \code{"msa"}.}
 
 \item{year}{Integer vector of years. Valid values are from 2000 to 2023.
 Can be a single year (e.g., \code{2022}) or a sequence (e.g., \code{2018:2022}).}
@@ -27,6 +28,12 @@ Can be a single year (e.g., \code{2022}) or a sequence (e.g., \code{2018:2022}).
 
 \item{extrapolate_to_tract}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} No longer
 supported. Use \code{\link[=impute_suppressed]{impute_suppressed()}} and then \code{\link[=extrapolate_from_county]{extrapolate_from_county()}}.}
+
+\item{refresh}{If \code{TRUE}, download the data again from CDC even if a saved
+copy is less than 30 days old, and save the new copy. For county data
+this also drops the saved state totals that \code{\link[=impute_suppressed]{impute_suppressed()}},
+\code{\link[=no_county_cases]{no_county_cases()}} and \code{\link[=extrapolate_from_county]{extrapolate_from_county()}} use with them, so
+those are downloaded again too. Default \code{FALSE}.}
 }
 \value{
 A tibble with the following columns:
@@ -90,6 +97,10 @@ tracts <- extrapolate_from_county(county)
 \strong{Geography}
 \itemize{
 \item \code{"national"}
+\item \code{"region"}: the four Census regions (Northeast, Midwest, South, West) and
+U.S. territories and freely associated states. Only for
+\code{disease = "estimate"}: CDC returns regions only for its HIV estimates.
+The \code{fips} column holds CDC's own codes for these, not Census FIPS codes.
 \item \code{"state"}
 \item \code{"county"}
 \item \code{"msa"} (metropolitan statistical area)
@@ -111,6 +122,17 @@ This function is a reverse-engineered wrapper around the AtlasPlus
 public query system. The CDC does not publish an official API specification,
 and internal identifiers may change without notice. If the CDC modifies the
 backend schema, requests may fail. Please report issues via GitHub.
+\subsection{Saved downloads}{
+
+Data are requested from CDC one disease and one year at a time (and for
+counties, one state at a time). Each response is saved in the folder given
+by \code{tools::R_user_dir("CDCAtlas", "cache")} and reused for 30 days, so data
+already downloaded, alone or as part of a larger request, aren't downloaded
+again. After 30 days the data are
+downloaded again, which picks up any revisions CDC has made. Use
+\code{refresh = TRUE} to download them sooner, or \code{\link[=clear_atlas_cache]{clear_atlas_cache()}} to delete
+every saved response.
+}
 }
 \examples{
 \dontrun{

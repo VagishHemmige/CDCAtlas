@@ -34,6 +34,10 @@
 #'
 #' **Geography**
 #' - `"national"`
+#' - `"region"`: the four Census regions (Northeast, Midwest, South, West) and
+#'   U.S. territories and freely associated states. Only for
+#'   `disease = "estimate"`: CDC returns regions only for its HIV estimates.
+#'   The `fips` column holds CDC's own codes for these, not Census FIPS codes.
 #' - `"state"`
 #' - `"county"`
 #' - `"msa"` (metropolitan statistical area)
@@ -50,14 +54,19 @@
 #'
 #' @param disease A single disease name (e.g. `"gonorrhea"`).
 #' Multiple diseases are not currently supported in a single request.
-#' @param geography Character scalar. One of `"national"`, `"state"`,
-#' `"county"`, or `"msa"`. Region-level queries are not supported yet.
+#' @param geography Character scalar. One of `"national"`, `"region"` (HIV
+#' estimates only), `"state"`, `"county"`, or `"msa"`.
 #' @param extrapolate_to_tract `r lifecycle::badge("deprecated")` No longer
 #'   supported. Use [impute_suppressed()] and then [extrapolate_from_county()].
 #' @param year Integer vector of years. Valid values are from 2000 to 2023.
 #' Can be a single year (e.g., `2022`) or a sequence (e.g., `2018:2022`).
 #' @param stratify_by Optional character vector. Zero, one, or two of
 #' `"age"`, `"race"`, `"sex"`. If `NULL`, totals (unstratified) are returned.
+#' @param refresh If `TRUE`, download the data again from CDC even if a saved
+#'   copy is less than 30 days old, and save the new copy. For county data
+#'   this also drops the saved state totals that [impute_suppressed()],
+#'   [no_county_cases()] and [extrapolate_from_county()] use with them, so
+#'   those are downloaded again too. Default `FALSE`.
 #'
 #' @return A tibble with the following columns:
 #' \describe{
@@ -88,6 +97,17 @@
 #' and internal identifiers may change without notice. If the CDC modifies the
 #' backend schema, requests may fail. Please report issues via GitHub.
 #'
+#' ## Saved downloads
+#'
+#' Data are requested from CDC one disease and one year at a time (and for
+#' counties, one state at a time). Each response is saved in the folder given
+#' by `tools::R_user_dir("CDCAtlas", "cache")` and reused for 30 days, so data
+#' already downloaded, alone or as part of a larger request, aren't downloaded
+#' again. After 30 days the data are
+#' downloaded again, which picks up any revisions CDC has made. Use
+#' `refresh = TRUE` to download them sooner, or [clear_atlas_cache()] to delete
+#' every saved response.
+#'
 #' @seealso [impute_suppressed()] and [extrapolate_from_county()] for tract
 #'   and block group estimates from county data.
 #'
@@ -116,7 +136,8 @@ get_atlas <- function(
     geography,
     year,
     stratify_by=NULL,
-    extrapolate_to_tract=deprecated())
+    extrapolate_to_tract=deprecated(),
+    refresh=FALSE)
 {
 
   if (lifecycle::is_present(extrapolate_to_tract)) {
@@ -136,6 +157,9 @@ get_atlas <- function(
     stratify_by = stratify_by,
     call = rlang::current_call()
   )
+  if (!isTRUE(refresh) && !isFALSE(refresh)) {
+    cli::cli_abort("{.arg refresh} must be {.code TRUE} or {.code FALSE}.")
+  }
 
 
 
@@ -148,5 +172,13 @@ payloads <- .build_payloads(
     stratify_by=stratify_by
   )
 
+if (refresh) {
+  .forget_atlas_requests(payloads)
+  # The later pipeline steps compare county data with state totals
+  # (.fetch_state_totals()); refresh those too, so both are equally new.
+  if (geography == "county") {
+    .forget_atlas_requests(.build_payloads(disease, "state", year, stratify_by))
+  }
+}
 .request_atlas_all(payloads)
 }
