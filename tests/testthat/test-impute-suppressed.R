@@ -52,12 +52,24 @@ test_that("zero fills suppressed counties with 0 and makes no request", {
   expect_equal(unique(out$cases_source[out$fips == "01003"]), "zero")
 })
 
-test_that("rows marked 'Data not available' with no count are dropped", {
+test_that("rows marked 'Data not available' with no count are kept by default (#110)", {
   county <- fake_county_atlas()
   county$cases[county$fips == "01003"] <- NA
   county$data_status[county$fips == "01003"] <- "Data not available"
 
-  expect_snapshot(out <- impute_suppressed(county, method = "zero"))
+  expect_no_message(out <- impute_suppressed(county, method = "zero"))
+  expect_equal(nrow(out), nrow(county))
+  expect_equal(unique(out$cases_source[out$fips == "01003"]), "not available")
+})
+
+test_that("not_available = 'drop' drops rows marked 'Data not available' with no count", {
+  county <- fake_county_atlas()
+  county$cases[county$fips == "01003"] <- NA
+  county$data_status[county$fips == "01003"] <- "Data not available"
+
+  expect_snapshot(
+    out <- impute_suppressed(county, method = "zero", not_available = "drop")
+  )
   expect_equal(unique(out$fips), "01001")
 })
 

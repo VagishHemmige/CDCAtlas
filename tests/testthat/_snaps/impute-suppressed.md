@@ -1,7 +1,7 @@
-# rows marked 'Data not available' with no count are dropped
+# not_available = 'drop' drops rows marked 'Data not available' with no count
 
     Code
-      out <- impute_suppressed(county, method = "zero")
+      out <- impute_suppressed(county, method = "zero", not_available = "drop")
     Message
       i Dropped 2 rows marked "Data not available" with no count.
         Their cases are still in the state totals; see `no_county_cases()`.

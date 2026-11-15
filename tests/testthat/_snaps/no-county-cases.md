@@ -25,3 +25,17 @@
       ! `x` must be county data.
       i Use `get_atlas(geography = "county")`.
 
+# not_available = 'drop' warns when it removes a whole state's rows (#110)
+
+    Code
+      county <- impute_suppressed(data$county, not_available = "drop")
+    Condition
+      Warning:
+      Dropping rows marked "Data not available" removed every row of 2 state groups (indicator, year and stratum).
+      i State: "Alaska".
+      ! Their state totals are no longer counted by `no_county_cases()` or spread by `extrapolate_from_county()`.
+      i Use `not_available = "keep"` (the default) to keep them.
+    Message
+      i Dropped 2 rows marked "Data not available" with no count.
+        Their cases are still in the state totals; see `no_county_cases()`.
+
