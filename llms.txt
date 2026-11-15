@@ -93,7 +93,7 @@ Use the date you downloaded the data.
 ## Data Access
 
 - [`get_atlas()`](https://vagishhemmige.github.io/CDCAtlas/reference/get_atlas.md)
-  : Retrieve STI surveillance data from CDC AtlasPlus
+  : Retrieve surveillance data from CDC AtlasPlus
 - [`clear_atlas_cache()`](https://vagishhemmige.github.io/CDCAtlas/reference/clear_atlas_cache.md)
   : Delete saved CDC downloads
 

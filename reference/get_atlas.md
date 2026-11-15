@@ -1,10 +1,10 @@
-# Retrieve STI surveillance data from CDC AtlasPlus
+# Retrieve surveillance data from CDC AtlasPlus
 
 `get_atlas()` provides a programmatic interface to the CDC AtlasPlus
-platform, returning case counts, population denominators, and rate
-estimates for sexually transmitted infection (STI) surveillance. The
-function submits a payload to the AtlasPlus data endpoint and parses the
-response into a tidy tibble.
+platform, returning case counts, population denominators, and rates for
+HIV, sexually transmitted infections (STIs), viral hepatitis and
+tuberculosis surveillance. The function submits a payload to the
+AtlasPlus data endpoint and parses the response into a tidy tibble.
 
 ## Usage
 
@@ -33,8 +33,10 @@ get_atlas(
 
 - year:
 
-  Integer vector of years. Valid values are from 2000 to 2023. Can be a
-  single year (e.g., `2022`) or a sequence (e.g., `2018:2022`).
+  Integer vector of years, from 2000 to the latest year in the package's
+  copy of CDC's code table (2025 in this version). CDC lists a year
+  before every disease has data for it; such a request returns no data.
+  Can be a single year (e.g., `2022`) or a sequence (e.g., `2018:2022`).
 
 - stratify_by:
 
@@ -97,19 +99,26 @@ A tibble with the following columns:
 
 - rate100000:
 
-  Incidence rate per 100,000 (numeric)
+  Rate per 100,000 population (numeric): per 100,000 people aged 13 and
+  older for HIV, and per 100,000 live births for congenital syphilis.
+  For Knowledge of Status, the percentage of people with HIV who know
+  their status.
 
 - cases:
 
-  Case count (numeric)
+  Case count (numeric). For Knowledge of Status, the number who know
+  their status.
 
 - population:
 
-  Population denominator (numeric)
+  Population denominator (numeric). For Knowledge of Status, estimated
+  HIV prevalence.
 
 - lowerci_rate, upperci_rate:
 
-  95% CI bounds for rate (numeric)
+  95% CI bounds for `rate100000` (numeric); for Knowledge of Status, of
+  the percentage. Usually empty (`NA`) for reported cases; given for the
+  modeled estimates.
 
 - rse:
 
@@ -117,7 +126,9 @@ A tibble with the following columns:
 
 - lowerci_cases, upperci_cases:
 
-  95% CI bounds for cases (numeric)
+  95% CI bounds for `cases` (numeric). Given for estimated HIV incidence
+  and prevalence; usually empty (`NA`) for reported cases and for
+  Knowledge of Status.
 
 - fips:
 
@@ -147,21 +158,36 @@ and then
 
 **Supported diseases**
 
+Some values return more than one indicator; the `indicator` column says
+which row is which.
+
 - `"chlamydia"`
 
 - `"gonorrhea"`
 
-- `"adult syphilis"`
+- `"adult syphilis"`: three indicators, one per stage: primary and
+  secondary syphilis; early non-primary, non-secondary syphilis; and
+  syphilis of unknown duration or late syphilis.
 
 - `"congenital syphilis"`
 
 - `"tuberculosis"`
 
-- `"hiv"` (will provide confirmed diagnoses)
+- `"hiv"`: two indicators, HIV diagnoses (new diagnoses in the year) and
+  HIV prevalence (people living with diagnosed HIV).
 
-- `"estimate"` (estimated HIV counts)
+- `"estimate"`: three modeled HIV indicators: estimated HIV incidence,
+  estimated HIV prevalence (diagnosed and undiagnosed), and Knowledge of
+  Status. Knowledge of Status is a percentage, not a count. AtlasPlus
+  says CDC has postponed release of estimates for HIV incidence and HIV
+  prevalence, so recent years may be missing; check AtlasPlus for what
+  is available.
 
-- `"hepatitis"`
+- `"hepatitis"`: three indicators: hepatitis A, acute hepatitis B and
+  acute hepatitis C.
+
+HIV indicators cover people aged 13 and older; the other diseases cover
+all ages.
 
 **Geography**
 
