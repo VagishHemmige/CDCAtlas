@@ -21,6 +21,7 @@ extrapolate_from_county(
   ages = c("auto", "13+", "all"),
   race_table = c("B03002", "B01001"),
   unknown_race = c("report", "redistribute"),
+  unknown_age = c("report", "redistribute"),
   unestimated = c("leave out", "error"),
   missing_population = c("leave out", "error"),
   acs_year = NULL,
@@ -107,9 +108,10 @@ extrapolate_from_county(
 
   - `"13+"` or `"all"`: set it yourself.
 
-  When `x` is stratified by age, the age groups set the ages, so 13 and
-  older is used for the total population (the `"total"` fallback for
-  empty strata).
+  When `x` is stratified by age, the age groups set the ages and `ages`
+  is ignored: HIV groups start at 13, so the total population (the
+  `"total"` fallback for empty strata) is ages 13 and older; other
+  diseases' groups cover all ages.
 
 - race_table:
 
@@ -137,6 +139,19 @@ extrapolate_from_county(
     proportion to their counts, within each indicator and year, then
     across areas as usual. A county with no cases of known race keeps
     its unknown cases unallocated.
+
+- unknown_age:
+
+  Cases CDC reports with age "Unknown" (chlamydia, gonorrhea and
+  syphilis), when `x` is stratified by age:
+
+  - `"report"` (default): left out, with a message, and listed in
+    `attr(result, "not_allocated")`.
+
+  - `"redistribute"`: shared across the county's known age groups in
+    proportion to their counts, within each indicator and year, then
+    across areas as usual. A county with no cases of known age keeps its
+    unknown cases unallocated.
 
 - unestimated:
 
@@ -207,8 +222,8 @@ A tibble with one row per area, indicator, year and stratum:
 
 - county_cases_unknown:
 
-  Cases of unknown race added to this race group
-  (`unknown_race = "redistribute"`); 0 otherwise.
+  Cases of unknown race or age added to this group (`unknown_race` or
+  `unknown_age = "redistribute"`); 0 otherwise.
 
 - county_cases_allocated:
 
@@ -251,13 +266,17 @@ up to `county_cases_allocated` in every county stratum.
 
 Census populations come from ACS tables requested by variable code:
 B01001 (sex by age) for all ages, sex and age, and for race the table
-set by `race_table`. For ages 13 and older, 2/5 of the 10 to 14 band is
-counted, assuming ages are spread evenly within it.
+set by `race_table`. Each CDC age group counts the share of each B01001
+age band that its ages cover, assuming ages are spread evenly within a
+band: for ages 13 and older (and HIV's 13-24 group), 2/5 of the 10 to 14
+band.
+[`get_atlas()`](https://vagishhemmige.github.io/CDCAtlas/reference/get_atlas.md)
+requests each disease's own age groups, which cover its ages once.
 
 County rows with no Census denominator are left out and listed in
-`attr(result, "not_allocated")`: race "Other", race "Unknown" (unless
-redistributed), age groups other than CDC's HIV age groups, suppressed
-rows with no estimate (see `unestimated`), rows kept by
+`attr(result, "not_allocated")`: race "Other", race or age "Unknown"
+(unless redistributed), suppressed rows with no estimate (see
+`unestimated`), rows kept by
 `impute_suppressed(not_available = "keep")`, and counties with no ACS
 areas (such as Connecticut's planning regions with 2010 tracts, until
 \#30 adds a crosswalk).
@@ -272,9 +291,8 @@ Needs the tidycensus package and a Census API key in the
 Also downloads the matching state data from CDC AtlasPlus for the
 no-county report.
 
-Age-stratified extrapolation supports only HIV diagnoses and prevalence,
-because CDC's age groups for other diseases aren't matched to Census
-ages yet.
+Congenital syphilis isn't supported: its rates are per 100,000 live
+births, so Census populations are the wrong denominator.
 
 ## See also
 

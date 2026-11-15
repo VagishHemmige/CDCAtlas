@@ -82,10 +82,11 @@ impute_suppressed(
     [`extrapolate_from_county()`](https://vagishhemmige.github.io/CDCAtlas/reference/extrapolate_from_county.md)
     does. Needs tidycensus and a Census API key.
 
-  `"acs"` accepts the same strata as
+  `"acs"` accepts the same input as
   [`extrapolate_from_county()`](https://vagishhemmige.github.io/CDCAtlas/reference/extrapolate_from_county.md):
-  at most one stratification variable, and age only for HIV. Other input
-  stops before anything is downloaded; use `"cdc"` for it.
+  at most one stratification variable, and no congenital syphilis (whose
+  rates are per 100,000 live births). Other input stops before anything
+  is downloaded; use `"cdc"` for it.
 
   Neither covers Connecticut's 2017 planning regions: CDC gives them no
   population, and 2017 ACS tracts belong to the old counties (#30).

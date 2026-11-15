@@ -89,7 +89,11 @@ Can be a single year (e.g., <code>2022</code>) or a sequence (e.g., <code>2018:2
 
 <dt id="arg-stratify-by">stratify_by<a class="anchor" aria-label="anchor" href="#arg-stratify-by"></a></dt>
 <dd><p>Optional character vector. Zero, one, or two of
-<code>"age"</code>, <code>"race"</code>, <code>"sex"</code>. If <code>NULL</code>, totals (unstratified) are returned.</p></dd>
+<code>"age"</code>, <code>"race"</code>, <code>"sex"</code>. If <code>NULL</code>, totals (unstratified) are returned.
+Each disease has its own age groups, as AtlasPlus offers them: 13-24 to 65+
+for <code>"hiv"</code> and <code>"estimate"</code>; 0-14, 15-19 and so on to 65+ for the other
+diseases, plus "Unknown" for chlamydia, gonorrhea and adult syphilis.
+Congenital syphilis can't be stratified.</p></dd>
 
 
 <dt id="arg-extrapolate-to-tract">extrapolate_to_tract<a class="anchor" aria-label="anchor" href="#arg-extrapolate-to-tract"></a></dt>

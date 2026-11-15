@@ -65,6 +65,7 @@ area of a county within a stratum.</p>
 <span>  ages <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"13+"</span>, <span class="st">"all"</span><span class="op">)</span>,</span>
 <span>  race_table <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"B03002"</span>, <span class="st">"B01001"</span><span class="op">)</span>,</span>
 <span>  unknown_race <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"redistribute"</span><span class="op">)</span>,</span>
+<span>  unknown_age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"redistribute"</span><span class="op">)</span>,</span>
 <span>  unestimated <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"leave out"</span>, <span class="st">"error"</span><span class="op">)</span>,</span>
 <span>  missing_population <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"leave out"</span>, <span class="st">"error"</span><span class="op">)</span>,</span>
 <span>  acs_year <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -131,9 +132,10 @@ county with no residents of one age group):</p><ul><li><p><code>"total"</code> (
 them), all ages otherwise, decided indicator by indicator, so <code>x</code> can
 combine HIV with other diseases.</p></li>
 <li><p><code>"13+"</code> or <code>"all"</code>: set it yourself.</p></li>
-</ul><p>When <code>x</code> is stratified by age, the age groups set the ages, so 13 and
-older is used for the total population (the <code>"total"</code> fallback for
-empty strata).</p></dd>
+</ul><p>When <code>x</code> is stratified by age, the age groups set the ages and <code>ages</code> is
+ignored: HIV groups start at 13, so the total population (the <code>"total"</code>
+fallback for empty strata) is ages 13 and older; other diseases' groups
+cover all ages.</p></dd>
 
 
 <dt id="arg-race-table">race_table<a class="anchor" aria-label="anchor" href="#arg-race-table"></a></dt>
@@ -156,6 +158,17 @@ stratified by race:</p><ul><li><p><code>"report"</code> (default): left out, wit
 <li><p><code>"redistribute"</code>: shared across the county's known race groups in
 proportion to their counts, within each indicator and year, then
 across areas as usual. A county with no cases of known race keeps its
+unknown cases unallocated.</p></li>
+</ul></dd>
+
+
+<dt id="arg-unknown-age">unknown_age<a class="anchor" aria-label="anchor" href="#arg-unknown-age"></a></dt>
+<dd><p>Cases CDC reports with age "Unknown" (chlamydia,
+gonorrhea and syphilis), when <code>x</code> is stratified by age:</p><ul><li><p><code>"report"</code> (default): left out, with a message, and listed in
+<code>attr(result, "not_allocated")</code>.</p></li>
+<li><p><code>"redistribute"</code>: shared across the county's known age groups in
+proportion to their counts, within each indicator and year, then
+across areas as usual. A county with no cases of known age keeps its
 unknown cases unallocated.</p></li>
 </ul></dd>
 
@@ -214,8 +227,9 @@ county population.</p></dd>
 (<code>no_county = "spread"</code>); 0 otherwise.</p></dd>
 
 <dt>county_cases_unknown</dt>
-<dd><p>Cases of unknown race added to this race
-group (<code>unknown_race = "redistribute"</code>); 0 otherwise.</p></dd>
+<dd><p>Cases of unknown race or age added to this
+group (<code>unknown_race</code> or <code>unknown_age = "redistribute"</code>); 0
+otherwise.</p></dd>
 
 <dt>county_cases_allocated</dt>
 <dd><p><code>county_cases + county_cases_spread + county_cases_unknown</code>: what the county's areas add up to.</p></dd>
@@ -249,12 +263,14 @@ whole population at the same ages.</p></dd>
 to <code>county_cases_allocated</code> in every county stratum.</p>
 <p>Census populations come from ACS tables requested by variable code:
 B01001 (sex by age) for all ages, sex and age, and for race the table set
-by <code>race_table</code>. For ages 13 and older, 2/5 of the 10 to 14 band is
-counted, assuming ages are spread evenly within it.</p>
+by <code>race_table</code>. Each CDC age group counts the share of each B01001 age
+band that its ages cover, assuming ages are spread evenly within a band:
+for ages 13 and older (and HIV's 13-24 group), 2/5 of the 10 to 14 band.
+<code><a href="get_atlas.html">get_atlas()</a></code> requests each disease's own age groups, which cover its ages
+once.</p>
 <p>County rows with no Census denominator are left out and listed in
-<code>attr(result, "not_allocated")</code>: race "Other", race "Unknown" (unless
-redistributed), age groups
-other than CDC's HIV age groups, suppressed rows with no estimate (see
+<code>attr(result, "not_allocated")</code>: race "Other", race or age "Unknown"
+(unless redistributed), suppressed rows with no estimate (see
 <code>unestimated</code>), rows kept by
 <code>impute_suppressed(not_available = "keep")</code>, and counties with no ACS areas
 (such as Connecticut's planning regions with 2010 tracts, until #30 adds a
@@ -265,9 +281,8 @@ can't be compared area by area.</p>
 <p>Needs the tidycensus package and a Census API key in the <code>CENSUS_API_KEY</code>
 environment variable (see <code><a href="https://walker-data.com/tidycensus/reference/census_api_key.html" class="external-link">tidycensus::census_api_key()</a></code>). Also downloads
 the matching state data from CDC AtlasPlus for the no-county report.</p>
-<p>Age-stratified extrapolation supports only HIV diagnoses and prevalence,
-because CDC's age groups for other diseases aren't matched to Census ages
-yet.</p>
+<p>Congenital syphilis isn't supported: its rates are per 100,000 live
+births, so Census populations are the wrong denominator.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

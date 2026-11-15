@@ -41,7 +41,11 @@ get_atlas(
 - stratify_by:
 
   Optional character vector. Zero, one, or two of `"age"`, `"race"`,
-  `"sex"`. If `NULL`, totals (unstratified) are returned.
+  `"sex"`. If `NULL`, totals (unstratified) are returned. Each disease
+  has its own age groups, as AtlasPlus offers them: 13-24 to 65+ for
+  `"hiv"` and `"estimate"`; 0-14, 15-19 and so on to 65+ for the other
+  diseases, plus "Unknown" for chlamydia, gonorrhea and adult syphilis.
+  Congenital syphilis can't be stratified.
 
 - extrapolate_to_tract:
 
