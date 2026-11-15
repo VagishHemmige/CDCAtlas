@@ -50,7 +50,7 @@ test_that("national requests use CDC's United States code, 5000", {
 })
 
 test_that("region requests use CDC's four Census regions and the territories", {
-  ids <- payload_ids(.build_payload("hiv", "region", 2022))
+  ids <- payload_ids(.build_payload("estimate", "region", 2022))
   regions <- c(8453:8457)
 
   expect_contains(ids, regions)
@@ -64,14 +64,21 @@ test_that("region requests use CDC's four Census regions and the territories", {
   )
 })
 
-test_that("get_atlas() accepts geography = \"region\"", {
+test_that("get_atlas() accepts geography = \"region\" for HIV estimates", {
   local_mocked_bindings(.request_atlas_all = function(payloads) payloads)
-  payloads <- get_atlas("hiv", "region", 2022)
+  payloads <- get_atlas("estimate", "region", 2022)
   expect_length(payloads, 1)
 })
 
+test_that("region requests for reported data stop before asking CDC", {
+  # CDC returns no region rows for reported indicators: AtlasPlus asks for
+  # the states and adds them up in the browser.
+  local_mocked_bindings(.request_atlas_all = function(payloads) stop("CDC was called"))
+  expect_snapshot(get_atlas("hiv", "region", 2022), error = TRUE)
+})
+
 test_that("other geographies are still sent as one payload", {
-  for (geography in c("national", "region", "state", "msa")) {
+  for (geography in c("national", "state", "msa")) {
     payloads <- .build_payloads("hiv", geography, 2022)
     expect_length(payloads, 1)
     expect_identical(payloads[[1]], .build_payload("hiv", geography, 2022))

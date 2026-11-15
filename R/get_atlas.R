@@ -35,8 +35,9 @@
 #' **Geography**
 #' - `"national"`
 #' - `"region"`: the four Census regions (Northeast, Midwest, South, West) and
-#'   U.S. territories and freely associated states. The `fips` column holds
-#'   CDC's own codes for these, not Census FIPS codes.
+#'   U.S. territories and freely associated states. Only for
+#'   `disease = "estimate"`: CDC returns regions only for its HIV estimates.
+#'   The `fips` column holds CDC's own codes for these, not Census FIPS codes.
 #' - `"state"`
 #' - `"county"`
 #' - `"msa"` (metropolitan statistical area)
@@ -53,8 +54,8 @@
 #'
 #' @param disease A single disease name (e.g. `"gonorrhea"`).
 #' Multiple diseases are not currently supported in a single request.
-#' @param geography Character scalar. One of `"national"`, `"region"`,
-#' `"state"`, `"county"`, or `"msa"`.
+#' @param geography Character scalar. One of `"national"`, `"region"` (HIV
+#' estimates only), `"state"`, `"county"`, or `"msa"`.
 #' @param extrapolate_to_tract `r lifecycle::badge("deprecated")` No longer
 #'   supported. Use [impute_suppressed()] and then [extrapolate_from_county()].
 #' @param year Integer vector of years. Valid values are from 2000 to 2023.

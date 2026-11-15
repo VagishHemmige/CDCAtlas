@@ -75,6 +75,20 @@
     )
   }
 
+  # CDC's data endpoint returns regions only for the HIV estimates. For reported
+  # indicators AtlasPlus requests the member states and adds them up in the
+  # browser, and a region request returns no rows.
+  if (identical(geography, "region") && !identical(disease, "estimate")) {
+    cli::cli_abort(
+      c(
+        "{.code geography = \"region\"} is only available for {.code disease = \"estimate\"}.",
+        "i" = "CDC doesn't return regions for reported data such as {.val {disease}}.",
+        "i" = "Use {.code geography = \"state\"} and add up the states you need."
+      ),
+      call = call
+    )
+  }
+
   # year ------------------------------------------------------------------
 
   if (!is.numeric(year)) {
