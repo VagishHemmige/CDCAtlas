@@ -163,9 +163,10 @@ pass in. `extrapolate_from_county()` leaves the remainder out by default
 (`no_county = "report"`). `no_county = "spread"` shares it across the state's
 counties; that treats it as cases with no county, which is an assumption.
 
-For the HIV estimates, the counties are EHE counties only, so most of the
-remainder is people in the state's other counties. `no_county_cases()` says
-so, and `no_county = "spread"` is refused for them.
+For the HIV estimates, the counties are EHE counties only, so the remainder
+can include people in the state's other counties; it isn't cases with no
+county. `no_county_cases()` says so, and `no_county = "spread"` is refused
+for them.
 
 ## CDC's county map
 

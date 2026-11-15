@@ -49,7 +49,7 @@
     Condition
       Error in `extrapolate_from_county()`:
       ! `no_county = "spread"` doesn't work for "Estimated HIV incidence".
-      x CDC's county data for them cover only Ending the HIV Epidemic (EHE) counties, so the state remainder is mostly people in other counties, not cases with no county.
+      x CDC's county data for them cover only Ending the HIV Epidemic (EHE) counties, so the state remainder can include people in other counties and isn't cases with no county.
       i Use `no_county = "report"`.
 
 # the no-county total is announced

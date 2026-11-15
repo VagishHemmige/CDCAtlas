@@ -24,7 +24,7 @@
 #'     the total. The report is kept in `attr(result, "no_county_cases")`.
 #'
 #'     For CDC's HIV estimates, whose county data cover only the Ending the
-#'     HIV Epidemic (EHE) counties, the remainder is mostly people in
+#'     HIV Epidemic (EHE) counties, the remainder can include people in
 #'     counties outside EHE coverage, and a message says so.
 #'   * `"spread"`: shared across the state's counties in `x` by their ACS
 #'     population in the same stratum, then across areas as usual. `x` must
@@ -257,8 +257,8 @@ extrapolate_from_county <- function(
         c(
           "{.code no_county = \"spread\"} doesn't work for {.val {ehe}}.",
           "x" = "CDC's county data for them cover only Ending the HIV Epidemic
-                 (EHE) counties, so the state remainder is mostly people in
-                 other counties, not cases with no county.",
+                 (EHE) counties, so the state remainder can include people
+                 in other counties and isn't cases with no county.",
           "i" = "Use {.code no_county = \"report\"}."
         ),
         call = call

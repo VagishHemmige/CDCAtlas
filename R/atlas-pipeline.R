@@ -37,8 +37,9 @@
 
 # CDC's county-level HIV estimates (incidence, prevalence and Knowledge of
 # Status) cover only the Ending the HIV Epidemic (EHE) counties (AtlasPlus
-# Technical Notes, 1.4.1), so a state's remainder for them is mostly people in
-# counties CDC doesn't estimate, not cases with no county (#109).
+# Technical Notes, 1.1 and 1.4.1), so a state's remainder for them can include
+# people in counties CDC doesn't estimate and isn't cases with no county. How
+# much of it is not computed (#109).
 .ehe_only_indicators <- function(x) {
   estimates <- .disease_indicators()
   estimates <- estimates$indicator[estimates$disease == "estimate"]
@@ -53,8 +54,8 @@
   cli::cli_inform(c(
     "i" = "CDC's county data for {.val {indicators}} cover only Ending the
            HIV Epidemic (EHE) counties.",
-    " " = "Their remainder is mostly people in counties outside EHE coverage,
-           not cases with no county."
+    " " = "Their remainder can include people in counties outside EHE
+           coverage, so it isn't cases with no county."
   ))
 }
 
