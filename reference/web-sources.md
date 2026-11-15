@@ -116,6 +116,64 @@
   "About" page describes county-level maps, charts and tables and links only the
   historical-extract ReadMe; neither page states a suppression threshold.
 
+### CDC, AtlasPlus Technical Notes (in the application)
+
+- **Where:** https://gis.cdc.gov/grasp/nchhstpatlas/main.html, menu, "Technical
+  notes". A panel inside the application with tabs for HIV, PrEP, Viral
+  Hepatitis, TB, STI and Social Determinants of Health; no separate URL or
+  version date.
+- **Accessed:** 2026-11-15, read in the maintainer's browser.
+- **HIV (NHSS), section 1:**
+  - Data are based on cases reported through December 2025; "Data through
+    2024 are considered provisional." Data are preliminary until a 12-month
+    reporting delay and "should not be used for formal trend analyses" (1.1).
+  - "AtlasPlus includes NHSS data for persons aged 13 years and older" (1.9.1).
+    Age is age at diagnosis for diagnoses and linkage, age on 31 December for
+    prevalence, care and viral suppression, age at death for deaths.
+  - Rates are per 100,000 persons aged 13 and older (1.11).
+  - **County suppression (1.8.4):** "For populations <500,000: when the
+    population denominator <100 and/or total case count is 1–4"; "For
+    populations ≥500,000: when the population denominator <100"; rates by
+    race/ethnicity for Puerto Rico; data prohibited under a jurisdiction's
+    re-release agreement; and "When arithmetic calculation of a suppressed cell
+    is possible" (complementary suppression). The page renders the second
+    threshold as "=500,000"; "≥" is the evident meaning.
+  - State and MSA level: all data suppressed when the population denominator is
+    under 100; Puerto Rico rates by race/ethnicity (1.8.2, 1.8.3).
+  - Connecticut: county-level rates for HIV diagnoses and prevalence "are not
+    available prior to 2020"; care and viral-suppression data not before 2022;
+    Connecticut MSA case data for 2022 not available (1.8.3, 1.8.4).
+  - Cases with unknown race/ethnicity are in totals but not shown by race, so
+    sums by race "may not match the state and national totals" (1.9). Nothing
+    is said about cases with an unknown county.
+  - Regions follow Census Bureau definitions; "U.S. territories and freely
+    associated states" adds the Marshall Islands and Palau (1.10).
+- **STI, section 6:** from 2019 data, the 2017 CSTE re-release rules: suppressed
+  at any geographic level when "20% of individuals in a group have the
+  specified disease" or the denominator population is under 100, plus
+  complementary suppression (the page shows no comparison sign before "20%");
+  2000–2018 data follow the 1996 CSTE rules (6.6).
+  Congenital syphilis rates are per 100,000 live births (6.7). Maryland's 2021
+  data are incomplete (6.1).
+- **TB, section 5:** no state-level suppression; county cells suppressed "where
+  populations have <5 total cases"; cases with unknown sex or birth origin are
+  not displayed (5.5, 5.9).
+- **Viral hepatitis, section 4:** "No reported cases" for zero; "Data not
+  available" when a condition is "Not reportable" or "Unavailable" (4.4).
+- **Overview banner:** "Due to the impact of the COVID-19 pandemic, data for
+  2020 and 2021 may need to be interpreted with caution."
+
+### CDC, AtlasPlus Glossary
+
+- **URL:** https://gis.cdc.gov/grasp/nchhstpatlas/Content/docs/AtlasPlusGlossary.pdf
+  (dated 9/9/2026 on every page).
+- **Accessed:** 2026-11-15.
+- **Entries:** "Preliminary": data from an NHSS dataset "created before a
+  12-month reporting delay has been reached"; "Provisional": created after it
+  (p. 9). "Suppression": "small data values may not be available in some
+  circumstances" (p. 7). No entries for "Data not available", county,
+  residence or population.
+
 ### CDC, National HIV Surveillance System (NHSS) and its technical notes
 
 - **URL:** https://www.cdc.gov/hiv-data/nhss/
@@ -200,9 +258,8 @@
 
 ## Not yet verified
 
-- **AtlasPlus Technical Notes and Glossary inside the application.** The
-  application needs a browser to run; a web fetch reaches only its static text.
-  The numeric suppression rule for current county data, and the meaning of
-  "Data suppressed" and "Data not available", remain unconfirmed.
+- **The data-status labels.** Neither the Technical Notes nor the Glossary
+  defines the response labels "Data suppressed" and "Data not available" for
+  HIV; their meaning is inferred from the suppression rules above.
 - **AIDSVu reuse terms for the downloadable datasets.** Neither methods page
   states them; ask AIDSVu (info@aidsvu.org) before published use.

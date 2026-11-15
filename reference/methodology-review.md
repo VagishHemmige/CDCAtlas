@@ -6,12 +6,15 @@ questions. Entries describe methods, not CDCAtlas code.
 
 ## Small counts and suppression
 
-- State and county values are suppressed under data re-release agreements
-  ("CDC, National HIV Surveillance System" in [web-sources.md](web-sources.md)),
-  and the historical-extract ReadMe advises caution for numbers under 12.
-  Neither states the numeric threshold for current county suppression.
-- A suppressed county is known only to lie in a range (for example 1 to 4), so
-  any filled value is an assumption. Possible approaches include a fixed value,
+- HIV county counts are suppressed when the case count is 1–4 in counties
+  under 500,000 people, when the population is under 100, under re-release
+  agreements, and when a suppressed cell could be back-calculated
+  ("CDC, AtlasPlus Technical Notes" in [web-sources.md](web-sources.md)). STI
+  and TB follow different rules. The historical-extract ReadMe advises caution
+  for numbers under 12.
+- So a suppressed HIV county in a county under 500,000 is usually 1–4, but a
+  cell suppressed to prevent back-calculation, or under a re-release agreement,
+  can be larger. Any filled value is an assumption. Possible approaches include a fixed value,
   a state rate applied to the county population and capped at the range, and
   models that treat the value as censored. *Not yet sourced:* methods papers
   that use or compare these for surveillance counts.
