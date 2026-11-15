@@ -589,11 +589,11 @@ test_that("extrapolate_from_county() rejects data and arguments it can't use", {
   two_way$race_ethnicity <- factor("White")
   expect_snapshot(error = TRUE, extrapolate_from_county(two_way))
 
-  chlamydia <- impute_suppressed(
-    fake_county_atlas("age", indicators = "Chlamydia"),
+  congenital <- impute_suppressed(
+    fake_county_atlas(indicators = "Congenital Syphilis"),
     method = "zero"
   )
-  expect_snapshot(error = TRUE, extrapolate_from_county(chlamydia))
+  expect_snapshot(error = TRUE, extrapolate_from_county(congenital))
 
   several_years <- impute_suppressed(
     fake_county_atlas(years = 2021:2022),
@@ -664,12 +664,18 @@ test_that("unestimated = 'error' refuses rows impute_suppressed() couldn't estim
 
 test_that("block group estimates add up to county counts", {
   for (strat in list(NULL, "sex", "race", "age")) {
+    case <- strat %||% "unstratified"
     areas <- run_extrapolation(strat, to = "block group")
     check <- county_vs_areas(areas)
 
-    expect_equal(check$area_cases_sum, check$county_cases, tolerance = 1e-8)
-    expect_equal(unique(nchar(areas$geoid)), 12)
-    expect_equal(unique(areas$area_type), "block group")
+    expect_equal(
+      check$area_cases_sum,
+      check$county_cases,
+      tolerance = 1e-8,
+      label = paste("block group sums,", case)
+    )
+    expect_equal(unique(nchar(areas$geoid)), 12, label = paste("GEOID length,", case))
+    expect_equal(unique(areas$area_type), "block group", label = paste("area type,", case))
   }
 })
 
@@ -805,3 +811,122 @@ test_that("unknown race stays unallocated in a county with no known cases", {
   expect_equal(unique(left_out$race_ethnicity), "Unknown")
   expect_equal(sum(tracts$area_cases[tracts$county_fips == "01003"]), 0)
 })
+
+
+# Age groups (#10) ------------------------------------------------------------
+
+band_weights <- function(groups, ages = "all") {
+  d <- .census_denominators("age", ages, age_groups = groups)
+  weights <- tapply(d$weight, d$variable, sum)
+  stats::setNames(as.vector(weights), names(weights))
+}
+
+test_that("CDC age-group labels are read as ages", {
+  expect_equal(.age_group_bounds("13-24"), c(13, 24))
+  expect_equal(.age_group_bounds("05-14"), c(5, 14))
+  expect_equal(.age_group_bounds(varvals$name[varvals$id == 674]), c(13, 19)) # en dash
+  expect_equal(.age_group_bounds("65+"), c(65, Inf))
+  expect_equal(.age_group_bounds("Unknown"), c(NA_real_, NA_real_))
+})
+
+test_that("STI age groups count every ACS band once, for both sexes", {
+  weights <- band_weights(setdiff(sti_age_groups, "Unknown"))
+  bands <- sprintf("B01001_%03d", c(3:25, 27:49))
+  expect_setequal(names(weights), bands)
+  expect_equal(unname(weights), rep(1, length(bands)))
+})
+
+test_that("HIV age groups count 2/5 of the 10-14 band and nothing younger", {
+  weights <- band_weights(strata_for("age")$age, ages = "13+")
+  expect_equal(unname(weights[c("B01001_005", "B01001_029")]), c(0.4, 0.4))
+  expect_equal(intersect(names(weights), sprintf("B01001_%03d", c(3, 4, 27, 28))), character(0))
+  rest <- setdiff(names(weights), c("B01001_005", "B01001_029"))
+  expect_equal(unname(weights[rest]), rep(1, length(rest)))
+})
+
+test_that("every age group in CDC's code table maps to ACS bands", {
+  labels <- varvals$name[varvals$vtid == 7]
+  # "Age 15 and older" is in the code table, but no indicator offers it.
+  labels <- setdiff(labels, c(.atlas_totals$age, "Unknown", "Age 15 and older"))
+  for (label in labels) {
+    d <- .census_denominators("age", "all", age_groups = label)
+    expect_gt(nrow(d), 0)
+    expect_equal(all(d$weight > 0 & d$weight <= 1), TRUE, label = label)
+  }
+})
+
+test_that("chlamydia 0-14 counts all of the under-15 bands", {
+  county <- fake_county_atlas("age", indicators = "Chlamydia")
+  tracts <- run_extrapolation(
+    county = county,
+    state = fake_state_atlas(stratify_by = "age", indicators = "Chlamydia")
+  )
+  pop <- fake_acs_tract("01001000100")
+  expected <- sum(pop[sprintf("B01001_%03d", c(3:5, 27:29))])
+  got <- unique(tracts$area_population_acs[
+    tracts$geoid == "01001000100" & tracts$age == "0-14"
+  ])
+  expect_equal(got, expected)
+})
+
+test_that("chlamydia age estimates add up, with all-ages totals", {
+  county <- fake_county_atlas("age", indicators = "Chlamydia")
+  tracts <- run_extrapolation(
+    county = county,
+    state = fake_state_atlas(stratify_by = "age", indicators = "Chlamydia")
+  )
+  check <- county_vs_areas(tracts)
+  expect_equal(check$area_cases_sum, check$county_cases, tolerance = 1e-8)
+
+  pop <- fake_acs_tract("01001000100")
+  all_ages <- sum(pop[sprintf("B01001_%03d", c(3:25, 27:49))])
+  expect_equal(
+    unique(tracts$area_total_population[tracts$geoid == "01001000100"]),
+    all_ages
+  )
+})
+
+test_that("unknown age is left out and listed by default", {
+  county <- fake_county_atlas("age", indicators = "Chlamydia")
+  tracts <- run_extrapolation(
+    county = county,
+    state = fake_state_atlas(stratify_by = "age", indicators = "Chlamydia")
+  )
+  left_out <- attr(tracts, "not_allocated")
+  expect_equal(sort(unique(left_out$age)), "Unknown")
+  expect_equal(nrow(left_out), 2)
+  expect_equal(sum(tracts$age == "Unknown"), 0)
+})
+
+test_that("unknown_age = 'redistribute' shares unknown cases across known ages", {
+  county <- fake_county_atlas("age", indicators = "Chlamydia")
+  tracts <- run_extrapolation(
+    county = county,
+    state = fake_state_atlas(stratify_by = "age", indicators = "Chlamydia"),
+    unknown_age = "redistribute"
+  )
+  expect_equal(nrow(attr(tracts, "not_allocated")), 0)
+
+  for (fips in c("01001", "01003")) {
+    in_county <- county[county$fips == fips, ]
+    known <- in_county$age != "Unknown"
+    unknown <- in_county$cases[!known]
+    rows <- tracts$county_fips == fips
+    expect_equal(sum(tracts$area_cases[rows]), sum(in_county$cases))
+    in_tracts <- tracts[rows, ]
+    one_per_group <- in_tracts[!duplicated(in_tracts$age), ]
+    share <- in_county$cases[known] / sum(in_county$cases[known])
+    expect_equal(
+      one_per_group$county_cases_unknown[
+        match(as.character(in_county$age[known]), one_per_group$age)
+      ],
+      unknown * share
+    )
+  }
+})
+
+test_that("unknown_age is checked", {
+  county <- impute_suppressed(fake_county_atlas("age", indicators = "Chlamydia"), method = "zero")
+  expect_snapshot(error = TRUE, extrapolate_from_county(county, unknown_age = "spread"))
+})
+

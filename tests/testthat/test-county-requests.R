@@ -37,8 +37,13 @@ test_that("state payloads keep the same indicator, year and category codes", {
   full <- payload_ids(.build_payload("hiv", "county", 2017, stratify_by = "sex"))
   non_geo <- setdiff(full, county_ids)
 
-  for (payload in .build_payloads("hiv", "county", 2017, stratify_by = "sex")) {
-    expect_equal(setdiff(payload_ids(payload), county_ids), non_geo)
+  payloads <- .build_payloads("hiv", "county", 2017, stratify_by = "sex")
+  for (state in names(payloads)) {
+    expect_equal(
+      setdiff(payload_ids(payloads[[state]]), county_ids),
+      non_geo,
+      label = paste("non-county codes for state", state)
+    )
   }
 })
 
@@ -63,6 +68,38 @@ test_that("the order and repeats of years don't change the requests", {
     .build_payloads("hiv", "county", c(2022, 2017, 2022)),
     .build_payloads("hiv", "county", c(2017, 2022))
   )
+})
+
+age_ids <- varvals$id[varvals$vtid == 7]
+
+test_that("age-stratified requests ask for each disease's own age groups (#11)", {
+  hiv <- c(656, 662, 665, 668, 669, 672)
+  sti <- c(654, 657, 660, 661, 663, 664, 666, 668, 669, 672)
+  expected <- list(
+    "hiv" = hiv,
+    "estimate" = hiv,
+    "chlamydia" = c(sti, 673),
+    "gonorrhea" = c(sti, 673),
+    "adult syphilis" = c(sti, 673),
+    "tuberculosis" = sti,
+    "hepatitis" = sti
+  )
+  for (disease in names(expected)) {
+    ids <- payload_ids(.build_payload(disease, "state", 2022, stratify_by = "age"))
+    expect_setequal(intersect(ids, age_ids), expected[[disease]])
+  }
+})
+
+test_that("unstratified requests ask for each disease's own age total", {
+  expected <- c(
+    "hiv" = 650, "estimate" = 650, "chlamydia" = 651, "gonorrhea" = 651,
+    "adult syphilis" = 651, "congenital syphilis" = 651,
+    "tuberculosis" = 651, "hepatitis" = 651
+  )
+  for (disease in names(expected)) {
+    ids <- payload_ids(.build_payload(disease, "state", 2022))
+    expect_equal(intersect(ids, age_ids), expected[[disease]], label = disease)
+  }
 })
 
 test_that("national requests use CDC's United States code, 5000", {
@@ -103,24 +140,31 @@ test_that("region requests for reported data stop before asking CDC", {
 test_that("other geographies are still sent as one payload", {
   for (geography in c("national", "state", "msa")) {
     payloads <- .build_payloads("hiv", geography, 2022)
-    expect_length(payloads, 1)
-    expect_identical(payloads[[1]], .build_payload("hiv", geography, 2022))
+    expect_equal(length(payloads), 1, label = paste("payloads for", geography))
+    expect_identical(
+      payloads[[1]],
+      .build_payload("hiv", geography, 2022),
+      label = paste("the", geography, "payload")
+    )
   }
 })
 
 # Combining responses ---------------------------------------------------------
 
-# A made-up CDC response: one row per geography code and indicator, in CDC's
-# format (16 columns, coded values).
+# A made-up CDC response: one row per geography code, indicator and year in
+# the payload, in CDC's format (16 columns, coded values). The year comes from
+# the payload, so tests of the year check what was requested.
 all_geo_ids <- c(5000, lookup[["state"]]$geo_id, county_ids, lookup[["msa"]]$geo_id)
+year_ids <- varvals$id[varvals$vtid == 2]
 
 fake_cdc_response <- function(payload) {
   ids <- payload_ids(payload)
   geos <- intersect(ids, all_geo_ids)
   indicators <- intersect(ids, c(203, 205))
-  rows <- expand.grid(geo = geos, indicator = indicators)
+  years <- intersect(ids, year_ids)
+  rows <- expand.grid(geo = geos, indicator = indicators, year = years)
   sourcedata <- cbind(
-    rows$indicator, 539, rows$geo, 400, 551, 601, 650, 801,
+    rows$indicator, rows$year, rows$geo, 400, 551, 601, 650, 801,
     12.5, 10, 80000, NA, NA, NA, NA, NA
   )
   jsonlite::toJSON(list(sourcedata = sourcedata), na = "null")
@@ -176,11 +220,29 @@ test_that("get_atlas() returns a tibble, for one request or many (#17)", {
   expect_s3_class(county, "tbl_df")
 })
 
+test_that("rate labels fit every indicator, not only incidence", {
+  local_fake_cdc()
+  out <- suppressMessages(get_atlas("hiv", "state", 2017))
+
+  expect_identical(
+    labelled::var_label(out$rate100000),
+    "Rate per 100,000 population (percentage for Knowledge of Status; see ?get_atlas for denominators)"
+  )
+  expect_identical(labelled::var_label(out$lowerci_rate), "Lower 95% confidence interval of rate")
+  expect_identical(labelled::var_label(out$upperci_rate), "Upper 95% confidence interval of rate")
+})
+
 test_that("combined factor levels follow CDC's lookup order, as a single request would", {
   local_fake_cdc()
   out <- suppressMessages(get_atlas("hiv", "county", 2017))
   lookup_order <- intersect(unique(varvals$name), levels(out$geography))
   expect_identical(levels(out$geography), lookup_order)
+})
+
+test_that("the year in the result is the year requested", {
+  local_fake_cdc()
+  out <- suppressMessages(get_atlas("hiv", "state", c(2017, 2022)))
+  expect_setequal(out$year, c(2017, 2022))
 })
 
 test_that("a state request is still one CDC request", {

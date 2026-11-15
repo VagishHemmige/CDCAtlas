@@ -65,7 +65,7 @@ test_that("region HIV estimates return the four regions and the territories, 202
     )
   }
   northeast <- out[out$geography == "Northeast" & out$indicator == "Estimated HIV incidence", ]
-  expect_equal(northeast$cases, 4100)
+  expect_equal(northeast$cases, 4100, ignore_attr = "label")
 })
 
 test_that("national HIV request returns both indicators, 2017", {
@@ -74,6 +74,61 @@ test_that("national HIV request returns both indicators, 2017", {
 
   expect_setequal(as.character(out$indicator), c("HIV diagnoses", "HIV prevalence"))
   expect_gt(out$cases[out$indicator == "HIV prevalence"], 900000)
+})
+
+# The help for get_atlas() describes these indicators; these checks keep it
+# true.
+test_that("each disease returns the indicators its help describes, 2021", {
+  local_mocked_bindings(.request_atlas = .request_atlas_internal)
+  indicators <- function(disease) {
+    as.character(unique(get_atlas(disease, "national", 2021)$indicator))
+  }
+
+  expect_setequal(
+    indicators("adult syphilis"),
+    c(
+      "Primary and Secondary Syphilis",
+      "Early Non-Primary, Non-Secondary Syphilis",
+      "Unknown Duration or Late Syphilis"
+    )
+  )
+  expect_setequal(
+    indicators("hepatitis"),
+    c("Hepatitis  A", "Acute Viral Hepatitis B", "Acute Viral Hepatitis C")
+  )
+})
+
+test_that("reported counts have no confidence intervals and estimates do, 2021", {
+  local_mocked_bindings(.request_atlas = .request_atlas_internal)
+  reported <- get_atlas("hiv", "national", 2021)
+  estimated <- get_atlas("estimate", "national", 2021)
+  ci <- c("lowerci_rate", "upperci_rate", "lowerci_cases", "upperci_cases")
+
+  expect_equal(sum(!is.na(as.matrix(reported[ci]))), 0)
+  expect_setequal(
+    as.character(unique(estimated$indicator)),
+    c(
+      "Estimated HIV incidence",
+      "Estimated HIV prevalence (undiagnosed and diagnosed)",
+      "Knowledge of Status"
+    )
+  )
+  counts <- estimated[estimated$indicator != "Knowledge of Status", ]
+  expect_equal(sum(is.na(as.matrix(counts[c("lowerci_cases", "upperci_cases")]))), 0)
+  expect_equal(unique(estimated$year), 2021)
+  expect_equal(as.character(unique(estimated$geography)), "United States")
+
+  # Knowledge of Status: the percentage is in rate100000, with its bounds in
+  # the rate CI columns; cases are those who know their status, out of
+  # estimated prevalence (population); there are no count CIs.
+  status <- estimated[estimated$indicator == "Knowledge of Status", ]
+  expect_equal(nrow(status), 1)
+  expect_gt(status$rate100000, 50)
+  expect_lte(status$rate100000, 100)
+  expect_lt(status$lowerci_rate, status$rate100000)
+  expect_gt(status$upperci_rate, status$rate100000)
+  expect_equal(status$rate100000, 100 * status$cases / status$population, tolerance = 0.01)
+  expect_equal(sum(!is.na(c(status$lowerci_cases, status$upperci_cases))), 0)
 })
 
 test_that("stored codes still match CDC's code table", {
@@ -100,26 +155,46 @@ test_that("stored codes still match CDC's code table", {
   }
 })
 
-test_that("each disease's geographies are the ones CDC offers for its indicators", {
-  # CDC's set-up data list, for each indicator, every combination of codes
-  # AtlasPlus offers; `data_structure` names the variable type in each column
-  # (50 is the location).
+# CDC's set-up data list, for each indicator, every combination of codes
+# AtlasPlus offers; `data_structure` names the variable type in each column
+# (7 is age, 50 is the location).
+cdc_offered <- function(variable_type) {
   combo <- .atlas_init_data()$combo
-  location_column <- match("50", combo$data_structure)
-  offered <- do.call(rbind, lapply(combo$diseases$combinations, function(m) {
+  column <- match(variable_type, combo$data_structure)
+  do.call(rbind, lapply(combo$diseases$combinations, function(m) {
     m <- if (is.matrix(m)) m else do.call(rbind, m)
-    data.frame(indicator = m[, 1], location = m[, location_column])
+    data.frame(indicator = m[, 1], code = m[, column])
   }))
+}
+
+indicator_ids <- function(disease) {
+  lookup <- .disease_indicators()
+  varvals$id[varvals$vtid == 1 &
+    varvals$name %in% lookup$indicator[lookup$disease == disease]]
+}
+
+test_that("each disease's age codes are ones CDC offers for its indicators (#11)", {
+  offered <- cdc_offered("7")
+  for (disease in unique(.disease_indicators()$disease)) {
+    codes <- .atlas_age_codes(disease, by_age = FALSE)
+    if (disease != "congenital syphilis") {
+      codes <- c(codes, .atlas_age_codes(disease, by_age = TRUE))
+    }
+    for (id in indicator_ids(disease)) {
+      expect_contains(offered$code[offered$indicator == id], codes)
+    }
+  }
+})
+
+test_that("each disease's geographies are the ones CDC offers for its indicators", {
+  offered <- cdc_offered("50")
   geography <- c(
     "1001" = "national", "1002" = "state", "1003" = "county",
     "1004" = "msa", "1005" = "region"
   )
-  lookup <- .disease_indicators()
-  for (disease in unique(lookup$disease)) {
-    ids <- varvals$id[varvals$vtid == 1 &
-      varvals$name %in% lookup$indicator[lookup$disease == disease]]
-    for (id in ids) {
-      cdc <- unname(geography[as.character(unique(offered$location[offered$indicator == id]))])
+  for (disease in unique(.disease_indicators()$disease)) {
+    for (id in indicator_ids(disease)) {
+      cdc <- unname(geography[as.character(unique(offered$code[offered$indicator == id]))])
       expect_setequal(.atlas_geographies(disease), cdc)
     }
   }
@@ -167,3 +242,17 @@ for (year in c(2017, 2022)) {
     }
   })
 }
+
+test_that("HIV diagnoses are released for the latest stored year", {
+  # Checks data availability only: CDC listing a year before releasing HIV
+  # diagnoses for it would fail here. Whether CDC now lists a later year than
+  # the stored code table is a separate question this test does not answer.
+  local_mocked_bindings(.request_atlas = .request_atlas_internal)
+  latest <- .latest_atlas_year()
+  out <- get_atlas("hiv", "national", latest)
+  diagnoses <- out[out$indicator == "HIV diagnoses", ]
+
+  expect_equal(nrow(diagnoses), 1)
+  expect_equal(diagnoses$year, latest)
+  expect_equal(as.character(diagnoses$geography), "United States")
+})

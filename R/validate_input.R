@@ -143,11 +143,15 @@
     )
   }
 
-  if (any(year < 2000 | year > 2023)) {
+  latest <- .latest_atlas_year()
+  if (any(year < 2000 | year > latest)) {
     cli::cli_abort(
       c(
-        "{.arg year} must contain years from 2000 through 2023.",
-        "x" = "You supplied {.val {year}}."
+        "{.arg year} must contain years from 2000 through {latest}.",
+        "x" = "You supplied {.val {year}}.",
+        "i" = "{latest} is the latest year in the package's copy of CDC's
+               code table. A year CDC hasn't released for a disease returns
+               no data."
       ),
       call = call
     )
@@ -205,6 +209,18 @@
         call = call
       )
     }
+
+    # AtlasPlus offers congenital syphilis only as a total: its set-up data
+    # list no race, sex or age groups for it (#10).
+    if (identical(disease, "congenital syphilis")) {
+      cli::cli_abort(
+        c(
+          "CDC doesn't report congenital syphilis by race, sex or age.",
+          "i" = "Use {.code stratify_by = NULL}."
+        ),
+        call = call
+      )
+    }
   }
 
   invisible(TRUE)
@@ -224,3 +240,11 @@
   )
 }
 
+# The latest year in the package's copy of CDC's code table (`varvals`, type 2
+# is years, plus a few other entries such as "Change over time"). CDC lists a year's code before every disease has data for it, so
+# this is the latest year that can be requested, not the latest with data
+# (#16). data-raw/DATASET.R refreshes the table.
+.latest_atlas_year <- function() {
+  names <- varvals$name[varvals$vtid == 2]
+  max(as.numeric(names[grepl("^[0-9]{4}$", names)]))
+}
