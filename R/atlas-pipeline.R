@@ -91,6 +91,7 @@
       call = call
     )
   }
+  .check_count_values(x, arg, call)
   duplicated_rows <- duplicated(.row_key(x, c("fips", .atlas_keys)))
   if (any(duplicated_rows)) {
     cli::cli_abort(
@@ -105,6 +106,36 @@
   .atlas_diseases(x, arg = arg, call = call)
   .check_one_stratification_level(x, .atlas_stratify_by(x), arg, call)
   invisible(x)
+}
+
+# Counts and populations must be numbers of 0 or more; NA (suppressed or
+# missing), zero and fractional modelled counts are allowed. A negative or
+# infinite value would be carried through the arithmetic and labelled as
+# CDC's own (#115).
+.check_count_values <- function(x, arg, call) {
+  for (column in c("cases", "population")) {
+    values <- x[[column]]
+    if (!is.numeric(values) && !all(is.na(values))) {
+      cli::cli_abort(
+        c(
+          "{.field {column}} in {.arg {arg}} must be numeric.",
+          "x" = "It is {.obj_type_friendly {values}}."
+        ),
+        call = call
+      )
+    }
+    bad <- !is.na(values) & (values < 0 | is.infinite(values))
+    if (any(bad)) {
+      cli::cli_abort(
+        c(
+          "{.field {column}} in {.arg {arg}} must be 0 or more and finite.",
+          "x" = "{sum(bad)} row{?s} {?has/have} a negative or infinite
+                 value, such as {.val {values[bad][1]}}."
+        ),
+        call = call
+      )
+    }
+  }
 }
 
 # Stratified data must not also contain that variable's total rows (as when
@@ -156,10 +187,10 @@
   if (unestimated == "error" && any(not_estimated)) {
     cli::cli_abort(
       c(
-        "{.arg {arg}} has {sum(not_estimated)} suppressed row{?s} with no
-         count.",
-        "i" = "These are suppressed rows {.fn impute_suppressed} could not
-               estimate (no state rate or county population).",
+        "{.arg {arg}} has {sum(not_estimated)} row{?s} with no count.",
+        "i" = "These are rows {.fn impute_suppressed} could not estimate (no
+               state rate or county population, or not marked {.val Data
+               suppressed}).",
         "i" = "Remove them, use {.code impute_suppressed(unestimated =
                \"zero\")}, or use {.code unestimated = \"leave out\"}."
       ),

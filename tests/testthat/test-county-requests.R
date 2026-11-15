@@ -102,6 +102,41 @@ test_that("age-stratified requests ask for each disease's own age groups (#11)",
   }
 })
 
+race_ids <- varvals$id[varvals$vtid == 5]
+
+test_that("race-stratified requests ask for each disease's own race groups (#105)", {
+  groups <- c(552, 553, 554, 555, 556, 557, 562)
+  expected <- list(
+    "hiv" = groups,
+    "estimate" = groups,
+    "chlamydia" = c(groups, 559),
+    "gonorrhea" = c(groups, 559),
+    "adult syphilis" = c(groups, 559),
+    "tuberculosis" = c(groups, 559),
+    "hepatitis" = c(552, 554, 555, 557, 559, 560, 561)
+  )
+  for (disease in names(expected)) {
+    ids <- payload_ids(.build_payload(
+      disease,
+      "state",
+      2022,
+      stratify_by = "race"
+    ))
+    expect_equal(
+      sort(intersect(ids, race_ids)),
+      sort(expected[[disease]]),
+      label = disease
+    )
+  }
+})
+
+test_that("unstratified requests ask for the race total", {
+  for (disease in c("hiv", "hepatitis", "congenital syphilis")) {
+    ids <- payload_ids(.build_payload(disease, "state", 2022))
+    expect_equal(intersect(ids, race_ids), 551, label = disease)
+  }
+})
+
 test_that("unstratified requests ask for each disease's own age total", {
   expected <- c(
     "hiv" = 650,

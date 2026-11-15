@@ -52,12 +52,74 @@ test_that("zero fills suppressed counties with 0 and makes no request", {
   expect_equal(unique(out$cases_source[out$fips == "01003"]), "zero")
 })
 
-test_that("rows marked 'Data not available' with no count are dropped", {
+test_that("only rows marked 'Data suppressed' are filled in (#107)", {
+  local_fake_sources()
+  statuses <- list("Not Suppressed", "No reported cases", "CDC code 999", NA)
+  for (status in statuses) {
+    county <- fake_county_atlas(suppressed = "01003")
+    rows <- county$fips == "01003"
+    county$data_status <- factor(
+      ifelse(rows, status, as.character(county$data_status))
+    )
+    for (method in c("state_rate", "zero")) {
+      out <- suppressWarnings(impute_suppressed(county, method = method))
+      label <- paste(status, method)
+      expect_equal(
+        out$cases[out$fips == "01003"],
+        c(NA_real_, NA),
+        label = label
+      )
+      expect_equal(
+        unique(out$cases_source[out$fips == "01003"]),
+        "not estimated",
+        label = label
+      )
+      expect_equal(out$cases[out$fips == "01001"], c(11, 111), label = label)
+    }
+  }
+})
+
+test_that("a missing count that isn't suppression gets a warning naming its status", {
+  county <- fake_county_atlas(suppressed = "01003")
+  county$data_status <- factor(ifelse(
+    county$fips == "01003",
+    "No reported cases",
+    as.character(county$data_status)
+  ))
+  expect_snapshot(out <- impute_suppressed(county, method = "zero"))
+})
+
+test_that("a published zero stays zero whatever its status", {
+  county <- fake_county_atlas()
+  county$cases[county$fips == "01003"] <- 0
+  county$data_status <- factor(ifelse(
+    county$fips == "01003",
+    "No reported cases",
+    as.character(county$data_status)
+  ))
+  out <- impute_suppressed(county, method = "zero")
+  expect_equal(out$cases[out$fips == "01003"], c(0, 0))
+  expect_equal(unique(out$cases_source), "published")
+})
+
+test_that("rows marked 'Data not available' with no count are kept by default (#110)", {
   county <- fake_county_atlas()
   county$cases[county$fips == "01003"] <- NA
   county$data_status[county$fips == "01003"] <- "Data not available"
 
-  expect_snapshot(out <- impute_suppressed(county, method = "zero"))
+  expect_no_message(out <- impute_suppressed(county, method = "zero"))
+  expect_equal(nrow(out), nrow(county))
+  expect_equal(unique(out$cases_source[out$fips == "01003"]), "not available")
+})
+
+test_that("not_available = 'drop' drops rows marked 'Data not available' with no count", {
+  county <- fake_county_atlas()
+  county$cases[county$fips == "01003"] <- NA
+  county$data_status[county$fips == "01003"] <- "Data not available"
+
+  expect_snapshot(
+    out <- impute_suppressed(county, method = "zero", not_available = "drop")
+  )
   expect_equal(unique(out$fips), "01001")
 })
 
@@ -125,6 +187,42 @@ test_that("impute_suppressed() rejects data it can't use", {
 
   mixed <- rbind(fake_county_atlas(), fake_county_atlas("sex"))
   expect_snapshot(error = TRUE, impute_suppressed(mixed))
+})
+
+test_that("negative, infinite or non-numeric counts stop before any request (#115)", {
+  local_mocked_bindings(.request_atlas = function(payload) {
+    stop("CDC was called")
+  })
+  county <- fake_county_atlas()
+
+  negative <- county
+  negative$cases[1] <- -10
+  expect_snapshot(error = TRUE, impute_suppressed(negative, method = "zero"))
+
+  infinite <- county
+  infinite$population[2] <- Inf
+  expect_error(impute_suppressed(infinite), "population")
+
+  text <- county
+  text$cases <- as.character(text$cases)
+  expect_error(impute_suppressed(text), "cases")
+
+  for (f in list(no_county_cases, extrapolate_from_county)) {
+    expect_error(
+      f(
+        impute_suppressed(county, method = "zero") |>
+          transform(cases = -cases)
+      ),
+      "negative"
+    )
+  }
+})
+
+test_that("NA, zero and fractional counts are allowed", {
+  county <- fake_county_atlas(suppressed = "01003")
+  county$cases[county$fips == "01001"] <- c(0, 2.5)
+  out <- impute_suppressed(county, method = "zero")
+  expect_equal(out$cases, c(0, 0, 2.5, 0))
 })
 
 test_that("state rates are matched within each state", {
@@ -246,6 +344,43 @@ test_that("population = 'acs' stops for congenital syphilis", {
   expect_snapshot(
     error = TRUE,
     impute_suppressed(congenital, population = "acs")
+  )
+})
+
+test_that("Knowledge of Status uses CDC's denominator, people with HIV (#108)", {
+  # State: 80 of 100 people with HIV know their status. County: 10 people with
+  # HIV, 1,000 residents. The estimate is 0.8 x 10 = 8, not 0.8 x 1,000.
+  status <- fake_county_atlas(
+    suppressed = "01003",
+    indicators = "Knowledge of Status"
+  )
+  status$population[status$fips == "01003"] <- 10
+  state <- fake_state_atlas(indicators = "Knowledge of Status")
+  state$cases <- 80
+  state$population <- 100
+  local_fake_sources(state = state)
+
+  out <- impute_suppressed(status, cap = Inf)
+  expect_equal(out$cases[out$fips == "01003"], 8)
+})
+
+test_that("population = 'acs' stops for Knowledge of Status before any request (#108)", {
+  local_mocked_bindings(
+    .request_atlas = function(payload) stop("CDC was called"),
+    .check_census_ready = function(call) invisible(),
+    .get_acs_areas = function(...) stop("the Census was called")
+  )
+  status <- fake_county_atlas(
+    suppressed = "01003",
+    indicators = c("Estimated HIV incidence", "Knowledge of Status")
+  )
+  expect_error(
+    impute_suppressed(status, population = "acs"),
+    "Knowledge of Status"
+  )
+  expect_snapshot(
+    error = TRUE,
+    impute_suppressed(status, population = "acs")
   )
 })
 
