@@ -141,7 +141,8 @@ test_that("reported counts have no confidence intervals and estimates do, 2021",
   expect_equal(
     status$rate100000,
     100 * status$cases / status$population,
-    tolerance = 0.01
+    tolerance = 0.01,
+    ignore_attr = "label"
   )
   expect_equal(sum(!is.na(c(status$lowerci_cases, status$upperci_cases))), 0)
 })
@@ -281,6 +282,6 @@ test_that("HIV diagnoses are released for the latest stored year", {
   diagnoses <- out[out$indicator == "HIV diagnoses", ]
 
   expect_equal(nrow(diagnoses), 1)
-  expect_equal(diagnoses$year, latest)
+  expect_equal(diagnoses$year, latest, ignore_attr = "label")
   expect_equal(as.character(diagnoses$geography), "United States")
 })
