@@ -475,29 +475,66 @@ passed and shouldn’t be used for formal trend analyses until then. Check
 the technical notes for each indicator (in the AtlasPlus menu) before
 comparing years.
 
-## Choosing diseases and stratification variables
+## Choosing diseases, geographies and strata
 
-The available diseases and stratification variables depend on CDC
-AtlasPlus. Common disease values include:
+[`get_atlas()`](https://vagishhemmige.github.io/CDCAtlas/reference/get_atlas.md)
+takes one of eight `disease` values. Each returns several indicators
+(see
+[`?get_atlas`](https://vagishhemmige.github.io/CDCAtlas/reference/get_atlas.md)),
+and AtlasPlus offers each at different geographies:
+
+| `disease` | Geographies | Notes |
+|----|----|----|
+| `"hiv"` | national, state, county, msa | HIV diagnoses and prevalence |
+| `"estimate"` | national, region, state, county | Estimated HIV incidence and prevalence, and Knowledge of Status |
+| `"chlamydia"`, `"gonorrhea"`, `"adult syphilis"` | national, state, county | Age groups include “Unknown” |
+| `"tuberculosis"` | national, state, county |  |
+| `"hepatitis"` | national, state | No county data |
+| `"congenital syphilis"` | national, state | Can’t be stratified |
+
+[`get_atlas()`](https://vagishhemmige.github.io/CDCAtlas/reference/get_atlas.md)
+stops with an error, before downloading, when CDC doesn’t offer what is
+asked for.
 
 ``` r
 
-get_atlas(disease = "hiv", geography = "state", year = 2022)
-get_atlas(disease = "chlamydia", geography = "state", year = 2022)
-get_atlas(disease = "gonorrhea", geography = "state", year = 2022)
-get_atlas(disease = "adult syphilis", geography = "state", year = 2022)
-get_atlas(disease = "tuberculosis", geography = "state", year = 2022)
+get_atlas(disease = "estimate", geography = "region", year = 2021)
+get_atlas(disease = "hepatitis", geography = "state", year = 2022)
+get_atlas(disease = "tuberculosis", geography = "county", year = 2022)
+```
+
+Each disease has its own age groups: 13-24 to 65+ for `"hiv"` and
+`"estimate"`, and 0-14 to 65+ for the others except congenital syphilis.
+[About CDC AtlasPlus
+data](https://vagishhemmige.github.io/CDCAtlas/articles/about-atlasplus-data.md)
+lists them, with what CDC’s numbers mean and where they trip people up.
+
+## Saved downloads
+
+Each response from CDC is saved on your computer and reused for 30 days,
+so running the same code again doesn’t download the data again. To
+download fresh data sooner, for example after CDC revises a recent year:
+
+``` r
+
+get_atlas(disease = "chlamydia", geography = "county", year = 2022, refresh = TRUE)
+
+# Or delete every saved download
+clear_atlas_cache()
 ```
 
 ## Next steps
 
 After getting comfortable with basic queries, consider:
 
-- comparing state and county results
-- using sex, age, and race/ethnicity stratification
-- joining AtlasPlus data to Census or spatial data
-- tract-level extrapolation ([Extrapolation to
+- [About CDC AtlasPlus
+  data](https://vagishhemmige.github.io/CDCAtlas/articles/about-atlasplus-data.md):
+  suppression, denominators, what each disease offers, and CDC’s county
+  map
+- tract-level estimates ([Extrapolation to
   tracts](https://vagishhemmige.github.io/CDCAtlas/articles/extrapolation.md))
+- comparing state and county results
+- joining AtlasPlus data to Census or spatial data
 
 See
 [`?get_atlas`](https://vagishhemmige.github.io/CDCAtlas/reference/get_atlas.md)
