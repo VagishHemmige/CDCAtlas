@@ -22,7 +22,7 @@ has a `data_status`:
 |----|----|----|
 | “Not Suppressed” | CDC published the count. | Kept as it is. |
 | “Data suppressed” | CDC withheld a small count. | [`impute_suppressed()`](https://vagishhemmige.github.io/CDCAtlas/reference/impute_suppressed.md) fills it in. |
-| “Data not available” | CDC has no data for this row. | Dropped by [`impute_suppressed()`](https://vagishhemmige.github.io/CDCAtlas/reference/impute_suppressed.md) if it has no count; kept if it has one. |
+| “Data not available” | CDC has no data for this row. | Kept by [`impute_suppressed()`](https://vagishhemmige.github.io/CDCAtlas/reference/impute_suppressed.md), with or without a count; a row with no count is left out of the tracts, and dropped with `not_available = "drop"`. |
 
 CDC’s technical notes give the suppression rules but don’t define these
 labels. Their meaning here is inferred from those rules.
@@ -121,6 +121,10 @@ follows them.
 | `"msa"`                 | `"hiv"` only                                 |
 | `"region"`              | `"estimate"` only                            |
 
+County data for the HIV estimates (`"estimate"`) cover only the Ending
+the HIV Epidemic (EHE) counties, for selected years (AtlasPlus Technical
+Notes, 1.1 and 1.4.1).
+
 For reported data such as HIV diagnoses, CDC’s server doesn’t return
 regions. The AtlasPlus web page asks for each region’s states and adds
 them up in the browser. CDCAtlas doesn’t do that yet (#83): suppressed
@@ -174,6 +178,12 @@ leaves the remainder out by default (`no_county = "report"`).
 `no_county = "spread"` shares it across the state’s counties; that
 treats it as cases with no county, which is an assumption.
 
+For the HIV estimates, the counties are EHE counties only, so the
+remainder can include people in the state’s other counties and isn’t
+necessarily cases with no county.
+[`no_county_cases()`](https://vagishhemmige.github.io/CDCAtlas/reference/no_county_cases.md)
+says so, and `no_county = "spread"` is refused for them.
+
 ## CDC’s county map
 
 CDC reports every year on its current county map, not on the map of that
@@ -202,9 +212,16 @@ uses the 5-year ACS ending in the data year, so 2017 uses 2010 tracts
 and 2022 uses 2020 tracts. Tract estimates from 2017 and 2022 can’t be
 compared tract by tract.
 
-Until a crosswalk exists (#30), the 2017 Connecticut and Alaska rows
-above are left out of tract estimates and listed in
-`attr(result, "not_allocated")`.
+For ACS releases on 2010 tracts (2006–2010 to 2015–2019), a crosswalk
+assigns Connecticut’s and Valdez-Cordova’s 2010 tracts to the current
+counties (#30). ACS 2016–2020 and 2017–2021 use 2020 tracts but still
+code Connecticut by its old counties; planning regions first appear in
+2018–2022. So Connecticut data for 2020 and 2021 is left out of tract
+estimates with a warning that says why (a recode is \#121). Kusilvak,
+Alaska and Oglala Lakota, South Dakota were renamed in 2015 with new
+codes, so ACS releases before 2015 don’t have them either. These are the
+cases the package knows about, not a full check of every ACS release.
+Rows left out are listed in `attr(result, "not_allocated")`.
 
 ## Census denominators
 

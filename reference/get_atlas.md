@@ -46,6 +46,9 @@ get_atlas(
   has its own age groups, as AtlasPlus offers them: 13-24 to 65+ for
   `"hiv"` and `"estimate"`; 0-14, 15-19 and so on to 65+ for the other
   diseases, plus "Unknown" for chlamydia, gonorrhea and adult syphilis.
+  Race groups also differ: hepatitis has Asian/Pacific Islander and
+  Other in place of Asian, Native Hawaiian/Other Pacific Islander and
+  Multiracial; HIV and the HIV estimates have no Unknown group.
   Congenital syphilis can't be stratified.
 
 - extrapolate_to_tract:
@@ -220,8 +223,12 @@ or two dimensions:
 - `"sex"`
 
 Stratification increases the number of returned rows. For example,
-`stratify_by = c("race", "sex")` returns all race × sex combinations for
-each geography-year pair.
+`stratify_by = c("race", "sex")` returns the race × sex combinations CDC
+offers for each geography-year pair. CDC doesn't offer every disease,
+geography and stratification together (hepatitis by sex at state level,
+for example); such a request stops with "CDC AtlasPlus returned no
+data". If CDC returns some of a disease's indicators but not others, a
+warning names the missing ones.
 
 This function is a reverse-engineered wrapper around the AtlasPlus
 public query system. The CDC does not publish an official API

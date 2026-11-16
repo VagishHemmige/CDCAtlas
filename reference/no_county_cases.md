@@ -9,6 +9,11 @@ from
 [`get_atlas()`](https://vagishhemmige.github.io/CDCAtlas/reference/get_atlas.md)
 it reports only the gap left by published counts.
 
+For CDC's HIV estimates (`get_atlas("estimate")`), county data cover
+only the Ending the HIV Epidemic (EHE) counties, so the remainder can
+include people in counties outside EHE coverage and isn't necessarily
+cases with no county; a message says so.
+
 The remainder is a difference, not a count of identified cases. One
 likely explanation is cases whose county of residence is unknown or not
 released, but CDC's documentation doesn't say so; it also includes any
@@ -76,13 +81,14 @@ state total.
 
 Downloads the state data matching `x` (same diseases, years and
 stratification) from CDC AtlasPlus. The remainder also includes any
-county without a count in `x`: "Data not available" rows (whether
-[`impute_suppressed()`](https://vagishhemmige.github.io/CDCAtlas/reference/impute_suppressed.md)
-dropped or kept them) and counties removed by filtering `x`, and
-suppressed rows
+county without a count in `x`: "Data not available" rows, counties
+removed by filtering `x`, and suppressed rows
 [`impute_suppressed()`](https://vagishhemmige.github.io/CDCAtlas/reference/impute_suppressed.md)
 couldn't estimate (marked `cases_source = "not estimated"`), which count
-as 0 imputed cases.
+as 0 imputed cases. The report has a row only for state groups (state,
+indicator, year and stratum) with at least one row in `x`: if
+`impute_suppressed(not_available = "drop")` or filtering removed every
+row of a group, its state total is not reported.
 
 ## See also
 

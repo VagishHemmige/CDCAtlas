@@ -7,10 +7,14 @@ Rows are handled by what CDC published:
 A published count is kept, whatever its data status. (Connecticut's 2017
 planning regions are marked &quot;Data not available&quot; but have counts.)
 A row marked &quot;Data not available&quot; with no count has no data to estimate
-from; not_available says whether it is dropped or kept. Either way its
-cases are still in the state total, so no_county_cases() counts them in
-the remainder.
-Any other row with no count is suppressed and is filled in by method.
+from; not_available says whether it is kept or dropped. Its cases are
+still in the state total, so no_county_cases() counts them in the
+remainder, as long as the state still has a row in that indicator, year
+and stratum.
+A row marked &quot;Data suppressed&quot; with no count is filled in by method.
+A row with no count and any other status (or none), such as &quot;No reported
+cases&quot; or a code this version doesn't know, is not filled in: it stays
+NA and is marked &quot;not estimated&quot;, with a warning.
 
 "><meta property="og:description" content="CDC suppresses small county counts. impute_suppressed() gives each
 suppressed county a count so county data can be added up or shared across
@@ -20,10 +24,14 @@ Rows are handled by what CDC published:
 A published count is kept, whatever its data status. (Connecticut's 2017
 planning regions are marked &quot;Data not available&quot; but have counts.)
 A row marked &quot;Data not available&quot; with no count has no data to estimate
-from; not_available says whether it is dropped or kept. Either way its
-cases are still in the state total, so no_county_cases() counts them in
-the remainder.
-Any other row with no count is suppressed and is filled in by method.
+from; not_available says whether it is kept or dropped. Its cases are
+still in the state total, so no_county_cases() counts them in the
+remainder, as long as the state still has a row in that indicator, year
+and stratum.
+A row marked &quot;Data suppressed&quot; with no count is filled in by method.
+A row with no count and any other status (or none), such as &quot;No reported
+cases&quot; or a code this version doesn't know, is not filled in: it stays
+NA and is marked &quot;not estimated&quot;, with a warning.
 
 "><meta property="og:image" content="https://vagishhemmige.github.io/CDCAtlas/logo.png"><meta name="google-site-verification" content="TBumihuxSFxK8muRvdo69ca7bmvzWmy-3OMfCZ2692A"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -33,7 +41,7 @@ Any other row with no count is suppressed and is filled in by method.
 
     <a class="navbar-brand me-2" href="../index.html">CDCAtlas</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,6 +57,7 @@ Any other row with no count is suppressed and is filled in by method.
     <li><a class="dropdown-item" href="../articles/extrapolation.html">Extrapolation to tracts</a></li>
     <li><a class="dropdown-item" href="../articles/about-atlasplus-data.html">About CDC AtlasPlus data</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/VagishHemmige/CDCAtlas" aria-label="GitHub"><span class="fa fab fa-github"></span></a></li>
@@ -72,10 +81,14 @@ census tracts with <code><a href="extrapolate_from_county.html">extrapolate_from
 <p>Rows are handled by what CDC published:</p><ul><li><p>A published count is kept, whatever its data status. (Connecticut's 2017
 planning regions are marked "Data not available" but have counts.)</p></li>
 <li><p>A row marked "Data not available" with no count has no data to estimate
-from; <code>not_available</code> says whether it is dropped or kept. Either way its
-cases are still in the state total, so <code><a href="no_county_cases.html">no_county_cases()</a></code> counts them in
-the remainder.</p></li>
-<li><p>Any other row with no count is suppressed and is filled in by <code>method</code>.</p></li>
+from; <code>not_available</code> says whether it is kept or dropped. Its cases are
+still in the state total, so <code><a href="no_county_cases.html">no_county_cases()</a></code> counts them in the
+remainder, as long as the state still has a row in that indicator, year
+and stratum.</p></li>
+<li><p>A row marked "Data suppressed" with no count is filled in by <code>method</code>.</p></li>
+<li><p>A row with no count and any other status (or none), such as "No reported
+cases" or a code this version doesn't know, is not filled in: it stays
+<code>NA</code> and is marked <code>"not estimated"</code>, with a warning.</p></li>
 </ul></div>
 
     <div class="section level2">
@@ -87,7 +100,7 @@ the remainder.</p></li>
 <span>  floor <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  population <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"cdc"</span>, <span class="st">"acs"</span><span class="op">)</span>,</span>
 <span>  unestimated <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"na"</span>, <span class="st">"zero"</span><span class="op">)</span>,</span>
-<span>  not_available <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"drop"</span>, <span class="st">"keep"</span><span class="op">)</span></span>
+<span>  not_available <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"keep"</span>, <span class="st">"drop"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -129,8 +142,9 @@ ages, summed from its tracts as <code><a href="extrapolate_from_county.html">ext
 tidycensus and a Census API key.</p></li>
 </ul><p><code>"acs"</code> accepts the same input as <code><a href="extrapolate_from_county.html">extrapolate_from_county()</a></code>: at most
 one stratification variable, and no congenital syphilis (whose rates are
-per 100,000 live births). Other input stops before anything is
-downloaded; use <code>"cdc"</code> for it.</p>
+per 100,000 live births). It also refuses Knowledge of Status, whose
+denominator is people living with HIV, not residents. Other input stops
+before anything is downloaded; use <code>"cdc"</code> for it.</p>
 <p>CDC gives Connecticut's 2017 planning regions no population, so <code>"cdc"</code>
 can't estimate them; <code>"acs"</code> can, from 2010 tracts assigned to the
 planning regions (see <code><a href="extrapolate_from_county.html">extrapolate_from_county()</a></code>).</p></dd>
@@ -147,8 +161,12 @@ counts its cases in the remainder with no county, and
 
 
 <dt id="arg-not-available">not_available<a class="anchor" aria-label="anchor" href="#arg-not-available"></a></dt>
-<dd><p>Rows marked "Data not available" with no count:</p><ul><li><p><code>"drop"</code> (default): remove them, with a message.</p></li>
-<li><p><code>"keep"</code>: keep them with <code>NA</code> cases. The later steps leave them out.</p></li>
+<dd><p>Rows marked "Data not available" with no count:</p><ul><li><p><code>"keep"</code> (default): keep them with <code>NA</code> cases. The later steps leave
+them out of the tracts, and their cases stay in the state's remainder.</p></li>
+<li><p><code>"drop"</code>: remove them, with a message. If that removes every row a
+state has in an indicator, year and stratum, that state's remainder is
+no longer reported by <code><a href="no_county_cases.html">no_county_cases()</a></code> or spread by
+<code><a href="extrapolate_from_county.html">extrapolate_from_county()</a></code>, so this warns and names them.</p></li>
 </ul></dd>
 
 </dl></div>
@@ -157,8 +175,9 @@ counts its cases in the remainder with no county, and
     <p><code>x</code> with suppressed counts filled in and a new column
 <code>cases_source</code>:</p><ul><li><p><code>"published"</code>: CDC's count.</p></li>
 <li><p><code>"state_rate"</code> or <code>"zero"</code>: filled in by <code>method</code>.</p></li>
-<li><p><code>"not estimated"</code>: <code>"state_rate"</code> couldn't estimate it; <code>NA</code>, or 0 with
-<code>unestimated = "zero"</code>.</p></li>
+<li><p><code>"not estimated"</code>: <code>"state_rate"</code> couldn't estimate it (<code>NA</code>, or 0
+with <code>unestimated = "zero"</code>), or it had no count and wasn't marked
+"Data suppressed" (always <code>NA</code>).</p></li>
 <li><p><code>"not available"</code>: kept with <code>not_available = "keep"</code>; <code>NA</code>.</p></li>
 </ul><p><code>data_status</code> is unchanged, so suppressed rows can still be identified.
 <code>cap</code>, <code>floor</code>, <code>population</code> and <code>unestimated</code> apply only to

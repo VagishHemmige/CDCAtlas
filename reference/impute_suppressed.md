@@ -18,13 +18,17 @@ Rows are handled by what CDC published:
   counts.)
 
 - A row marked "Data not available" with no count has no data to
-  estimate from; `not_available` says whether it is dropped or kept.
-  Either way its cases are still in the state total, so
+  estimate from; `not_available` says whether it is kept or dropped. Its
+  cases are still in the state total, so
   [`no_county_cases()`](https://vagishhemmige.github.io/CDCAtlas/reference/no_county_cases.md)
-  counts them in the remainder.
+  counts them in the remainder, as long as the state still has a row in
+  that indicator, year and stratum.
 
-- Any other row with no count is suppressed and is filled in by
-  `method`.
+- A row marked "Data suppressed" with no count is filled in by `method`.
+
+- A row with no count and any other status (or none), such as "No
+  reported cases" or a code this version doesn't know, is not filled in:
+  it stays `NA` and is marked `"not estimated"`, with a warning.
 
 ## Usage
 
@@ -36,7 +40,7 @@ impute_suppressed(
   floor = 0,
   population = c("cdc", "acs"),
   unestimated = c("na", "zero"),
-  not_available = c("drop", "keep")
+  not_available = c("keep", "drop")
 )
 ```
 
@@ -85,8 +89,9 @@ impute_suppressed(
   `"acs"` accepts the same input as
   [`extrapolate_from_county()`](https://vagishhemmige.github.io/CDCAtlas/reference/extrapolate_from_county.md):
   at most one stratification variable, and no congenital syphilis (whose
-  rates are per 100,000 live births). Other input stops before anything
-  is downloaded; use `"cdc"` for it.
+  rates are per 100,000 live births). It also refuses Knowledge of
+  Status, whose denominator is people living with HIV, not residents.
+  Other input stops before anything is downloaded; use `"cdc"` for it.
 
   CDC gives Connecticut's 2017 planning regions no population, so
   `"cdc"` can't estimate them; `"acs"` can, from 2010 tracts assigned to
@@ -110,9 +115,17 @@ impute_suppressed(
 
   Rows marked "Data not available" with no count:
 
-  - `"drop"` (default): remove them, with a message.
+  - `"keep"` (default): keep them with `NA` cases. The later steps leave
+    them out of the tracts, and their cases stay in the state's
+    remainder.
 
-  - `"keep"`: keep them with `NA` cases. The later steps leave them out.
+  - `"drop"`: remove them, with a message. If that removes every row a
+    state has in an indicator, year and stratum, that state's remainder
+    is no longer reported by
+    [`no_county_cases()`](https://vagishhemmige.github.io/CDCAtlas/reference/no_county_cases.md)
+    or spread by
+    [`extrapolate_from_county()`](https://vagishhemmige.github.io/CDCAtlas/reference/extrapolate_from_county.md),
+    so this warns and names them.
 
 ## Value
 
@@ -122,8 +135,9 @@ impute_suppressed(
 
 - `"state_rate"` or `"zero"`: filled in by `method`.
 
-- `"not estimated"`: `"state_rate"` couldn't estimate it; `NA`, or 0
-  with `unestimated = "zero"`.
+- `"not estimated"`: `"state_rate"` couldn't estimate it (`NA`, or 0
+  with `unestimated = "zero"`), or it had no count and wasn't marked
+  "Data suppressed" (always `NA`).
 
 - `"not available"`: kept with `not_available = "keep"`; `NA`.
 

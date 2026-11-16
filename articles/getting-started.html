@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">CDCAtlas</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -45,6 +45,7 @@
     <li><a class="dropdown-item" href="../articles/about-atlasplus-data.html">About CDC AtlasPlus data</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -485,7 +486,7 @@ comparing years.</p>
 <h2 id="choosing-diseases-geographies-and-strata">Choosing diseases, geographies and strata<a class="anchor" aria-label="anchor" href="#choosing-diseases-geographies-and-strata"></a>
 </h2>
 <p><code><a href="../reference/get_atlas.html">get_atlas()</a></code> takes one of eight <code>disease</code>
-values. Each returns several indicators (see <code><a href="../reference/get_atlas.html">?get_atlas</a></code>),
+values. Some return several indicators (see <code><a href="../reference/get_atlas.html">?get_atlas</a></code>),
 and AtlasPlus offers each at different geographies:</p>
 <table class="table">
 <colgroup>
@@ -534,8 +535,12 @@ and AtlasPlus offers each at different geographies:</p>
 </tr>
 </tbody>
 </table>
-<p><code><a href="../reference/get_atlas.html">get_atlas()</a></code> stops with an error, before downloading,
-when CDC doesn’t offer what is asked for.</p>
+<p><code><a href="../reference/get_atlas.html">get_atlas()</a></code> stops with an error, before downloading, for
+many requests CDC doesn’t offer, such as the geographies in the table.
+Some other combinations of disease, geography and stratification aren’t
+offered either; those stop with an error after CDC returns no data
+(#122). If CDC returns some of a disease’s indicators but not others, a
+warning names the missing ones.</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_atlas.html">get_atlas</a></span><span class="op">(</span>disease <span class="op">=</span> <span class="st">"estimate"</span>, geography <span class="op">=</span> <span class="st">"region"</span>, year <span class="op">=</span> <span class="fl">2021</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/get_atlas.html">get_atlas</a></span><span class="op">(</span>disease <span class="op">=</span> <span class="st">"hepatitis"</span>, geography <span class="op">=</span> <span class="st">"state"</span>, year <span class="op">=</span> <span class="fl">2022</span><span class="op">)</span></span>

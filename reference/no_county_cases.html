@@ -4,6 +4,10 @@ counties. no_county_cases() compares each state total with the county
 counts supplied. Run it after impute_suppressed() for the remainder that
 no county accounts for; on county data straight from get_atlas() it
 reports only the gap left by published counts.
+For CDC's HIV estimates (get_atlas(&quot;estimate&quot;)), county data cover only
+the Ending the HIV Epidemic (EHE) counties, so the remainder can include
+people in counties outside EHE coverage and isn't necessarily cases with no county; a
+message says so.
 The remainder is a difference, not a count of identified cases. One likely
 explanation is cases whose county of residence is unknown or not released,
 but CDC's documentation doesn't say so; it also includes any counties left
@@ -16,6 +20,10 @@ counties. no_county_cases() compares each state total with the county
 counts supplied. Run it after impute_suppressed() for the remainder that
 no county accounts for; on county data straight from get_atlas() it
 reports only the gap left by published counts.
+For CDC's HIV estimates (get_atlas(&quot;estimate&quot;)), county data cover only
+the Ending the HIV Epidemic (EHE) counties, so the remainder can include
+people in counties outside EHE coverage and isn't necessarily cases with no county; a
+message says so.
 The remainder is a difference, not a count of identified cases. One likely
 explanation is cases whose county of residence is unknown or not released,
 but CDC's documentation doesn't say so; it also includes any counties left
@@ -31,7 +39,7 @@ the &quot;About CDC AtlasPlus data&quot; article."><meta property="og:image" con
 
     <a class="navbar-brand me-2" href="../index.html">CDCAtlas</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,6 +55,7 @@ the &quot;About CDC AtlasPlus data&quot; article."><meta property="og:image" con
     <li><a class="dropdown-item" href="../articles/extrapolation.html">Extrapolation to tracts</a></li>
     <li><a class="dropdown-item" href="../articles/about-atlasplus-data.html">About CDC AtlasPlus data</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/VagishHemmige/CDCAtlas" aria-label="GitHub"><span class="fa fab fa-github"></span></a></li>
@@ -68,6 +77,10 @@ counties. <code>no_county_cases()</code> compares each state total with the coun
 counts supplied. Run it after <code><a href="impute_suppressed.html">impute_suppressed()</a></code> for the remainder that
 no county accounts for; on county data straight from <code><a href="get_atlas.html">get_atlas()</a></code> it
 reports only the gap left by published counts.</p>
+<p>For CDC's HIV estimates (<code>get_atlas("estimate")</code>), county data cover only
+the Ending the HIV Epidemic (EHE) counties, so the remainder can include
+people in counties outside EHE coverage and isn't necessarily cases with no county; a
+message says so.</p>
 <p>The remainder is a difference, not a count of identified cases. One likely
 explanation is cases whose county of residence is unknown or not released,
 but CDC's documentation doesn't say so; it also includes any counties left
@@ -128,10 +141,13 @@ state total.</p>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Downloads the state data matching <code>x</code> (same diseases, years and
 stratification) from CDC AtlasPlus. The remainder also includes any county
-without a count in <code>x</code>: "Data not available" rows (whether
-<code><a href="impute_suppressed.html">impute_suppressed()</a></code> dropped or kept them) and counties removed by
+without a count in <code>x</code>: "Data not available" rows, counties removed by
 filtering <code>x</code>, and suppressed rows <code><a href="impute_suppressed.html">impute_suppressed()</a></code> couldn't estimate
-(marked <code>cases_source = "not estimated"</code>), which count as 0 imputed cases.</p>
+(marked <code>cases_source = "not estimated"</code>), which count as 0 imputed cases.
+The report has a row only for state groups (state, indicator, year and
+stratum) with at least one row in <code>x</code>: if
+<code>impute_suppressed(not_available = "drop")</code> or filtering removed every row
+of a group, its state total is not reported.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

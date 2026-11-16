@@ -9,6 +9,13 @@ population in the same stratum, from the American Community Survey (ACS)
 The estimates are modelled, not observed: they assume the same rate in
 every area of a county within a stratum.
 
+For Knowledge of Status, `county_cases` is the number of people with HIV
+who know their status, and it is shared across areas by their residents,
+as if people with HIV lived in each area in proportion to its
+population. The ACS columns are residents, not people with HIV, so
+`area_cases / area_population_acs` is not the percentage who know their
+status.
+
 ## Usage
 
 ``` r
@@ -60,6 +67,10 @@ extrapolate_from_county(
     giving the total. The report is kept in
     `attr(result, "no_county_cases")`.
 
+    For CDC's HIV estimates, whose county data cover only the Ending the
+    HIV Epidemic (EHE) counties, the remainder can include people in
+    counties outside EHE coverage, and a message says so.
+
   - `"spread"`: shared across the state's counties in `x` by their ACS
     population in the same stratum, then across areas as usual. `x` must
     hold every county CDC reports in each of its states, for each
@@ -70,7 +81,8 @@ extrapolate_from_county(
     from the cache when `x` was downloaded in this session. Negative
     remainders are not spread, nor are remainders in a state with no
     allocated county in that stratum; the message says how many cases
-    could not be spread.
+    could not be spread. Not available for CDC's HIV estimates (EHE
+    counties only).
 
 - spread_by:
 
@@ -249,9 +261,22 @@ A tibble with one row per area, indicator, year and stratum:
 
   Estimated cases in the area.
 
-- area_noncases:
+`area_population_acs - area_cases` means different things by indicator:
 
-  `area_population_acs - area_cases`, floored at 0.
+- HIV prevalence (people living with *diagnosed* HIV): residents aged 13
+  and older without diagnosed HIV, which includes people with
+  undiagnosed HIV.
+
+- Estimated HIV prevalence (diagnosed and undiagnosed): closer to
+  residents without HIV, under the estimate's own assumptions.
+
+- Other indicators: no such meaning. New diagnoses and incidence need
+  the population at risk, which excludes people already living with HIV;
+  chlamydia, gonorrhea and syphilis count infections rather than people;
+  for Knowledge of Status the population isn't residents.
+
+It can be negative where `empty_strata` shares cases into a stratum with
+no ACS population.
 
 Two attributes record what was not allocated:
 `attr(result, "no_county_cases")`, the
@@ -287,7 +312,33 @@ regions) and the old Valdez-Cordova Census Area, Alaska (now Chugach and
 Copper River), each 2010 tract and its block groups are assigned to the
 current county they fall in. The one 2010 tract split between two
 planning regions is shared by land area. The crosswalk ships in
-`inst/extdata/tract-2010-crosswalk.csv`.
+`inst/extdata/tract-2010-crosswalk.csv`. It is derived by
+`data-raw/tract-crosswalk.R` (in the package's GitHub repository) from
+two Census Bureau relationship files: the 2020-to-2010 census tract
+files for Connecticut and Alaska, and the 2022 county subdivision to
+census tract file for Connecticut, which gives each tract its planning
+region. These are US government works, in the public domain in the
+United States.
+
+CDC's current county codes the package knows an ACS release lacks:
+
+- Connecticut's planning regions: handled by the crosswalk for ACS 2010
+  to 2019; missing from ACS 2009, 2020 and 2021, which code Connecticut
+  by its old counties (#121); in ACS 2022 on.
+
+- Chugach and Copper River, Alaska: handled by the crosswalk for ACS
+  2010 to 2019; missing from ACS 2009; in ACS 2020 on.
+
+- Kusilvak, Alaska (02158, formerly Wade Hampton 02270) and Oglala
+  Lakota, South Dakota (46102, formerly Shannon 46113), renamed in 2015:
+  missing from ACS releases before 2015 (#121).
+
+This list is not a full check of every ACS vintage against CDC's map.
+Counties a release doesn't match are left out with a warning that says
+why, for the cases above. In 2010-2019 a block group follows its tract:
+the block groups of the one split tract (09013890201) are shared between
+Capitol and Northeastern Connecticut planning regions by the tract's
+land area, not by where each block group lies.
 
 Tract and block group boundaries change every ten years, so estimates
 from ACS years on different sides of a decennial census (2017 and 2022,

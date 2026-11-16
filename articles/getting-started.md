@@ -478,8 +478,7 @@ comparing years.
 ## Choosing diseases, geographies and strata
 
 [`get_atlas()`](https://vagishhemmige.github.io/CDCAtlas/reference/get_atlas.md)
-takes one of eight `disease` values. Each returns several indicators
-(see
+takes one of eight `disease` values. Some return several indicators (see
 [`?get_atlas`](https://vagishhemmige.github.io/CDCAtlas/reference/get_atlas.md)),
 and AtlasPlus offers each at different geographies:
 
@@ -493,8 +492,11 @@ and AtlasPlus offers each at different geographies:
 | `"congenital syphilis"` | national, state | Can’t be stratified |
 
 [`get_atlas()`](https://vagishhemmige.github.io/CDCAtlas/reference/get_atlas.md)
-stops with an error, before downloading, when CDC doesn’t offer what is
-asked for.
+stops with an error, before downloading, for many requests CDC doesn’t
+offer, such as the geographies in the table. Some other combinations of
+disease, geography and stratification aren’t offered either; those stop
+with an error after CDC returns no data (#122). If CDC returns some of a
+disease’s indicators but not others, a warning names the missing ones.
 
 ``` r
 

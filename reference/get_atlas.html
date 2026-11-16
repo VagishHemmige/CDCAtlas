@@ -17,7 +17,7 @@ tibble."><meta property="og:image" content="https://vagishhemmige.github.io/CDCA
 
     <a class="navbar-brand me-2" href="../index.html">CDCAtlas</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,6 +33,7 @@ tibble."><meta property="og:image" content="https://vagishhemmige.github.io/CDCA
     <li><a class="dropdown-item" href="../articles/extrapolation.html">Extrapolation to tracts</a></li>
     <li><a class="dropdown-item" href="../articles/about-atlasplus-data.html">About CDC AtlasPlus data</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/VagishHemmige/CDCAtlas" aria-label="GitHub"><span class="fa fab fa-github"></span></a></li>
@@ -97,6 +98,9 @@ Can be a single year (e.g., <code>2022</code>) or a sequence (e.g., <code>2018:2
 Each disease has its own age groups, as AtlasPlus offers them: 13-24 to 65+
 for <code>"hiv"</code> and <code>"estimate"</code>; 0-14, 15-19 and so on to 65+ for the other
 diseases, plus "Unknown" for chlamydia, gonorrhea and adult syphilis.
+Race groups also differ: hepatitis has Asian/Pacific Islander and Other in
+place of Asian, Native Hawaiian/Other Pacific Islander and Multiracial;
+HIV and the HIV estimates have no Unknown group.
 Congenital syphilis can't be stratified.</p></dd>
 
 
@@ -221,8 +225,12 @@ The CDC AtlasPlus API supports stratification by one or two dimensions:</p><ul><
 <li><p><code>"race"</code></p></li>
 <li><p><code>"sex"</code></p></li>
 </ul><p>Stratification increases the number of returned rows. For example,
-<code>stratify_by = c("race", "sex")</code> returns all race × sex combinations
-for each geography-year pair.</p>
+<code>stratify_by = c("race", "sex")</code> returns the race × sex combinations CDC
+offers for each geography-year pair. CDC doesn't offer every disease,
+geography and stratification together (hepatitis by sex at state level,
+for example); such a request stops with "CDC AtlasPlus returned no data".
+If CDC returns some of a disease's indicators but not others, a warning
+names the missing ones.</p>
 <p>This function is a reverse-engineered wrapper around the AtlasPlus
 public query system. The CDC does not publish an official API specification,
 and internal identifiers may change without notice. If the CDC modifies the
