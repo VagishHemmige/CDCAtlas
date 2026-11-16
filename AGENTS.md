@@ -219,6 +219,12 @@ is maintained outside these shared technical standards.
 
 The paths above describe the current layout. Update them when files move.
 
+Published documentation (the README, roxygen help, error and warning
+messages, and website articles) never mentions GitHub issue or pull request
+numbers: issues are internal working records. Say what the package does and
+doesn't do instead. `NEWS.md` is the exception and keeps its `(#123)`
+references. Code comments, tests and `data-raw/` may cite issues.
+
 [reference/](reference/README.md) holds background on CDC AtlasPlus, Census
 geography and estimation methods. Read
 [reference/README.md](reference/README.md) before implementing or reviewing

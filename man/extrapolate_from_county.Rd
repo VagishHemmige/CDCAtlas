@@ -150,7 +150,7 @@ A population of 0 is not missing; see \code{empty_strata}.}
 \item{acs_year}{The last year of the ACS 5-year estimates. \code{NULL} (default)
 uses each data year. A single year can be given only if \code{x} has one year.}
 
-\item{weights}{Not yet supported; for sub-county weights later (#1).}
+\item{weights}{Not yet supported; reserved for sub-county weights.}
 }
 \value{
 A tibble with one row per area, indicator, year and stratum:
@@ -251,12 +251,12 @@ CDC's current county codes the package knows an ACS release lacks:
 \itemize{
 \item Connecticut's planning regions: handled by the crosswalk for ACS 2010 to
 2019; missing from ACS 2009, 2020 and 2021, which code Connecticut by its
-old counties (#121); in ACS 2022 on.
+old counties; in ACS 2022 on.
 \item Chugach and Copper River, Alaska: handled by the crosswalk for ACS 2010
 to 2019; missing from ACS 2009; in ACS 2020 on.
 \item Kusilvak, Alaska (02158, formerly Wade Hampton 02270) and Oglala Lakota,
 South Dakota (46102, formerly Shannon 46113), renamed in 2015: missing
-from ACS releases before 2015 (#121).
+from ACS releases before 2015.
 }
 
 This list is not a full check of every ACS vintage against CDC's map.

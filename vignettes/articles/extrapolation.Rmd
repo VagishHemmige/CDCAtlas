@@ -20,10 +20,18 @@ library(dplyr)
 
 CDC AtlasPlus reports many outcomes at the county level. For some analyses,
 especially geographic access analyses, we may want estimates at a smaller
-geographic unit such as the Census tract.
+geographic unit: the Census tract or block group.
 
-`CDCAtlas` includes helper functions for extrapolating county-level AtlasPlus
-counts to Census tracts using tract-level Census denominators.
+`CDCAtlas` estimates these in three steps:
+
+1. `impute_suppressed()` fills in county counts CDC suppressed.
+2. `no_county_cases()` reports cases in each state's total that no county
+   accounts for.
+3. `extrapolate_from_county()` shares each county's count across its tracts
+   (or, with `to = "block group"`, its block groups) using Census
+   populations.
+
+This article uses tracts throughout; block groups work the same way.
 
 The basic idea is:
 
@@ -305,17 +313,46 @@ hiv_tract_race <- get_atlas(
   extrapolate_from_county()
 ```
 
-Race/ethnicity-stratified extrapolation requires care because Census and
-AtlasPlus race/ethnicity categories may not always align perfectly.
-
-The package attempts to use Census variables that correspond to the AtlasPlus
-combined race/ethnicity categories, but users should inspect the denominator
-mapping before interpreting results.
+The tract populations come from ACS table B03002 (Hispanic or Latino origin
+by race), whose groups match AtlasPlus's: Hispanic/Latino of any race, and
+non-Hispanic groups for the others. B03002 has no ages, so for HIV each
+tract's race populations are scaled by its share of residents aged 13 and
+older. `race_table = "B01001"` uses the race-specific sex-by-age tables
+instead, which have ages but match AtlasPlus's groups only for White and
+Hispanic. "Other" and "Unknown" have no Census population, so they are left
+out (see the next section for "Unknown").
 
 ```{r, message = TRUE, warning = TRUE}
 hiv_tract_race |>
   count(race_ethnicity, indicator)
 ```
+
+## Choices you can change
+
+Each default can be changed in `extrapolate_from_county()`; see
+`?extrapolate_from_county` for the details.
+
+| Situation | Default | Alternative |
+|---|---|---|
+| Cases in a state's total that no county accounts for | Left out and reported (`no_county = "report"`) | `no_county = "spread"` shares them across the state's counties, by population or by cases (`spread_by`). Not available for CDC's HIV estimates, whose county data cover only Ending the HIV Epidemic counties. |
+| A county has cases in a stratum but no Census population in any of its tracts | Shared by the tracts' total population (`empty_strata = "total"`) | `"equal"` shares equally across tracts; `"none"` leaves them out. |
+| Cases of unknown race or age | Left out and listed (`unknown_race`, `unknown_age = "report"`) | `"redistribute"` shares them across the county's known groups in proportion to their counts. |
+| Suppressed counties `impute_suppressed()` couldn't estimate | Left out and listed (`unestimated = "leave out"`) | `"error"` stops. |
+| A tract with no ACS population figure | Left out and listed (`missing_population = "leave out"`) | `"error"` stops. |
+| Which ACS release | The 5-year release ending in the data year | `acs_year` sets it. |
+
+Rows left out for any reason are listed, with the reason, in
+`attr(result, "not_allocated")`.
+
+## Older years and Census geography
+
+CDC reports every year on its current county map, while each ACS release uses
+the tract map of its own years. The package assigns 2010 tracts in
+Connecticut and Alaska to CDC's current counties, so ACS releases from 2010 to
+2019 cover them. A few combinations aren't covered, such as Connecticut with
+the 2020 and 2021 releases; those counties are left out with a warning that
+says why. [About CDC AtlasPlus data](about-atlasplus-data.html#cdcs-county-map)
+lists them.
 
 ## Multiple stratification variables
 
