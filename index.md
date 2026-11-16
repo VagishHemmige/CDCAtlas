@@ -43,6 +43,22 @@ notice. This package aims for safe and respectful usage:
 - **caches responses** on disk to reduce server traffic
 - passes on CDC’s own error message when a request fails
 
+It also estimates counts below the county level. CDC publishes many
+counts only by county, and suppresses small ones. CDCAtlas can:
+
+- fill in suppressed county counts from the state’s rate
+  ([`impute_suppressed()`](https://vagishhemmige.github.io/CDCAtlas/reference/impute_suppressed.md));
+- report the cases in each state’s total that no county accounts for
+  ([`no_county_cases()`](https://vagishhemmige.github.io/CDCAtlas/reference/no_county_cases.md));
+- share county counts across Census tracts or block groups in proportion
+  to their population
+  ([`extrapolate_from_county()`](https://vagishhemmige.github.io/CDCAtlas/reference/extrapolate_from_county.md)).
+
+These are modelled estimates, not CDC data. See [Extrapolation to
+tracts](https://vagishhemmige.github.io/CDCAtlas/articles/extrapolation.html)
+and [About CDC AtlasPlus
+data](https://vagishhemmige.github.io/CDCAtlas/articles/about-atlasplus-data.html).
+
 ## Installation
 
 You can install the development version of CDCAtlas from

@@ -199,7 +199,7 @@ extrapolate_from_county(
 
 - weights:
 
-  Not yet supported; for sub-county weights later (#1).
+  Not yet supported; reserved for sub-county weights.
 
 ## Value
 
@@ -324,14 +324,14 @@ CDC's current county codes the package knows an ACS release lacks:
 
 - Connecticut's planning regions: handled by the crosswalk for ACS 2010
   to 2019; missing from ACS 2009, 2020 and 2021, which code Connecticut
-  by its old counties (#121); in ACS 2022 on.
+  by its old counties; in ACS 2022 on.
 
 - Chugach and Copper River, Alaska: handled by the crosswalk for ACS
   2010 to 2019; missing from ACS 2009; in ACS 2020 on.
 
 - Kusilvak, Alaska (02158, formerly Wade Hampton 02270) and Oglala
   Lakota, South Dakota (46102, formerly Shannon 46113), renamed in 2015:
-  missing from ACS releases before 2015 (#121).
+  missing from ACS releases before 2015.
 
 This list is not a full check of every ACS vintage against CDC's map.
 Counties a release doesn't match are left out with a warning that says

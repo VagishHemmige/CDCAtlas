@@ -81,10 +81,22 @@
 </h2>
 <p>CDC AtlasPlus reports many outcomes at the county level. For some
 analyses, especially geographic access analyses, we may want estimates
-at a smaller geographic unit such as the Census tract.</p>
-<p><code>CDCAtlas</code> includes helper functions for extrapolating
-county-level AtlasPlus counts to Census tracts using tract-level Census
-denominators.</p>
+at a smaller geographic unit: the Census tract or block group.</p>
+<p><code>CDCAtlas</code> estimates these in three steps:</p>
+<ol style="list-style-type: decimal">
+<li>
+<code><a href="../reference/impute_suppressed.html">impute_suppressed()</a></code> fills in county counts CDC
+suppressed.</li>
+<li>
+<code><a href="../reference/no_county_cases.html">no_county_cases()</a></code> reports cases in each state’s total
+that no county accounts for.</li>
+<li>
+<code><a href="../reference/extrapolate_from_county.html">extrapolate_from_county()</a></code> shares each county’s count
+across its tracts (or, with <code>to = "block group"</code>, its block
+groups) using Census populations.</li>
+</ol>
+<p>This article uses tracts throughout; block groups work the same
+way.</p>
 <p>The basic idea is:</p>
 <ol style="list-style-type: decimal">
 <li>Retrieve county-level CDC AtlasPlus counts.</li>
@@ -164,34 +176,18 @@ using total tract population.</p>
 <span>  <span class="fu"><a href="../reference/impute_suppressed.html">impute_suppressed</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/extrapolate_from_county.html">extrapolate_from_county</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■                              </span>   4% | ETA:  1m</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■                            </span>  12% | ETA:  1m</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■                         </span>  19% | ETA:  1m</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■                         </span>  21% | ETA:  1m</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■                       </span>  25% | ETA:  1m</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■                       </span>  27% | ETA:  1m</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■                      </span>  29% | ETA:  1m</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■                      </span>  31% | ETA:  1m</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■                     </span>  33% | ETA:  2m</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■                     </span>  35% | ETA:  2m</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■                    </span>  37% | ETA:  2m</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■                  </span>  44% | ETA:  1m</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■                 </span>  46% | ETA:  1m</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■                 </span>  48% | ETA:  1m</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■                </span>  50% | ETA:  1m</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■               </span>  54% | ETA:  1m</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■             </span>  62% | ETA: 47s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■           </span>  65% | ETA: 42s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■           </span>  67% | ETA: 39s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■          </span>  69% | ETA: 37s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■         </span>  73% | ETA: 32s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■         </span>  75% | ETA: 30s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■       </span>  81% | ETA: 22s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■      </span>  83% | ETA: 21s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■      </span>  85% | ETA: 21s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■    </span>  90% | ETA: 13s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■■   </span>  92% | ETA: 10s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■■   </span>  94% | ETA:  8s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■  </span>  98% | ETA:  3s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■                         </span>  21% | ETA: 32s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■                      </span>  29% | ETA: 29s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■                     </span>  35% | ETA: 29s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■                  </span>  44% | ETA: 23s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■                </span>  50% | ETA: 21s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■              </span>  56% | ETA: 19s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■           </span>  65% | ETA: 14s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■          </span>  71% | ETA: 12s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■       </span>  81% | ETA:  8s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■      </span>  85% | ETA:  7s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■    </span>  90% | ETA:  4s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■  </span>  96% | ETA:  2s</span></span>
 <span><span class="co">#&gt; Warning: 1 suppressed row could not be estimated and is set to `NA`.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> No state rate or no county population for <span style="color: #0000BB;">"Valdez-Cordova Census Area, AK"</span>.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> They are marked `cases_source = "not estimated"`.</span></span>
@@ -359,26 +355,20 @@ also be sex-specific.</p>
 <span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/impute_suppressed.html">impute_suppressed</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/extrapolate_from_county.html">extrapolate_from_county</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■                             </span>   6% | ETA: 46s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■                         </span>  19% | ETA: 42s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■                         </span>  21% | ETA: 50s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■                       </span>  25% | ETA: 45s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■                      </span>  29% | ETA: 47s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■                      </span>  31% | ETA: 48s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■                     </span>  33% | ETA: 49s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■                    </span>  37% | ETA: 48s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■                  </span>  44% | ETA: 39s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■                 </span>  46% | ETA: 39s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■                </span>  50% | ETA: 37s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■               </span>  54% | ETA: 34s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■             </span>  62% | ETA: 26s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■           </span>  65% | ETA: 24s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■          </span>  69% | ETA: 21s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■         </span>  75% | ETA: 17s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■       </span>  81% | ETA: 13s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■      </span>  85% | ETA: 11s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■    </span>  90% | ETA:  7s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■  </span>  96% | ETA:  3s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■                            </span>  10% | ETA: 48s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■                         </span>  21% | ETA: 40s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■                      </span>  29% | ETA: 35s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■                     </span>  33% | ETA: 35s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■                   </span>  38% | ETA: 32s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■                 </span>  46% | ETA: 27s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■                </span>  50% | ETA: 26s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■              </span>  56% | ETA: 23s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■           </span>  65% | ETA: 17s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■          </span>  71% | ETA: 14s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■        </span>  77% | ETA: 11s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■      </span>  85% | ETA:  8s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■     </span>  87% | ETA:  7s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■■   </span>  94% | ETA:  3s</span></span>
 <span><span class="co">#&gt; Warning: 1 suppressed row could not be estimated and is set to `NA`.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> No state rate or no county population for <span style="color: #0000BB;">"Valdez-Cordova Census Area, AK"</span>.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> They are marked `cases_source = "not estimated"`.</span></span>
@@ -457,27 +447,22 @@ AtlasPlus age group.</p>
 <span>  <span class="fu"><a href="../reference/impute_suppressed.html">impute_suppressed</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/extrapolate_from_county.html">extrapolate_from_county</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■                             </span>   6% | ETA:  1m</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■                          </span>  15% | ETA: 49s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■                         </span>  21% | ETA:  1m</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■                       </span>  25% | ETA: 46s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■                      </span>  29% | ETA: 48s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■                      </span>  31% | ETA: 49s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■                     </span>  33% | ETA: 49s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■                    </span>  37% | ETA:  1m</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■                   </span>  40% | ETA: 46s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■                  </span>  44% | ETA: 42s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■                 </span>  48% | ETA: 40s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■                </span>  50% | ETA: 40s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■               </span>  54% | ETA: 37s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■             </span>  62% | ETA: 28s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■           </span>  65% | ETA: 26s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■          </span>  69% | ETA: 23s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■          </span>  71% | ETA: 22s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■       </span>  79% | ETA: 15s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■      </span>  83% | ETA: 13s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■      </span>  85% | ETA: 12s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■    </span>  90% | ETA:  7s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■■   </span>  94% | ETA:  4s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■                         </span>  21% | ETA: 43s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■                       </span>  25% | ETA: 39s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■                      </span>  29% | ETA: 39s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■                     </span>  33% | ETA: 39s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■                    </span>  37% | ETA: 38s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■                  </span>  44% | ETA: 31s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■                </span>  50% | ETA: 29s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■               </span>  54% | ETA: 27s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■             </span>  62% | ETA: 21s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■           </span>  67% | ETA: 18s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■          </span>  71% | ETA: 16s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■       </span>  79% | ETA: 12s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■       </span>  81% | ETA: 11s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■      </span>  85% | ETA:  9s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■    </span>  90% | ETA:  6s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■  </span>  96% | ETA:  2s</span></span>
 <span><span class="co">#&gt; Warning: 1 suppressed row could not be estimated and is set to `NA`.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> No state rate or no county population for <span style="color: #0000BB;">"Valdez-Cordova Census Area, AK"</span>.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> They are marked `cases_source = "not estimated"`.</span></span>
@@ -548,28 +533,23 @@ while the remaining groups are usually non-Hispanic race categories.</p>
 <span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/impute_suppressed.html">impute_suppressed</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/extrapolate_from_county.html">extrapolate_from_county</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■                             </span>   6% | ETA: 45s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■                         </span>  19% | ETA: 39s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■                         </span>  21% | ETA: 45s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■                       </span>  27% | ETA: 41s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■                      </span>  31% | ETA: 43s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■                     </span>  33% | ETA: 44s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■                     </span>  35% | ETA: 45s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■                   </span>  40% | ETA: 39s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■                 </span>  46% | ETA: 35s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■                 </span>  48% | ETA: 36s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■                </span>  50% | ETA: 36s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■               </span>  54% | ETA: 33s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■            </span>  63% | ETA: 24s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■           </span>  65% | ETA: 24s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■          </span>  69% | ETA: 22s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■          </span>  71% | ETA: 21s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■         </span>  75% | ETA: 18s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■       </span>  81% | ETA: 14s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■      </span>  83% | ETA: 13s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■      </span>  85% | ETA: 12s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■    </span>  90% | ETA:  7s</span></span>
-<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■■   </span>  94% | ETA:  4s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■                             </span>   8% | ETA:  1m</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■                         </span>  21% | ETA: 44s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■                       </span>  25% | ETA: 39s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■                      </span>  29% | ETA: 42s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■                     </span>  33% | ETA: 42s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■                     </span>  35% | ETA: 42s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■                   </span>  40% | ETA: 37s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■                 </span>  46% | ETA: 33s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■                </span>  50% | ETA: 31s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■               </span>  54% | ETA: 29s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■            </span>  63% | ETA: 21s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■          </span>  69% | ETA: 18s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■         </span>  73% | ETA: 16s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■       </span>  81% | ETA: 11s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■      </span>  85% | ETA:  9s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■    </span>  90% | ETA:  6s</span></span>
+<span><span class="co">#&gt; Downloading from CDC AtlasPlus <span style="color: #00BB00;">■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■  </span>  96% | ETA:  2s</span></span>
 <span><span class="co">#&gt; Warning: 314 suppressed rows could not be estimated and are set to `NA`.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> No state rate or no county population for <span style="color: #0000BB;">"Valdez-Cordova Census Area, AK"</span>,</span></span>
 <span><span class="co">#&gt;   <span style="color: #0000BB;">"Aguada Municipio, PR"</span>, <span style="color: #0000BB;">"Aguadilla Municipio, PR"</span>, <span style="color: #0000BB;">"Aguas Buenas Municipio,</span></span></span>
@@ -597,12 +577,15 @@ while the remaining groups are usually non-Hispanic race categories.</p>
 <span><span class="co">#&gt;   <span style="color: #0000BB;">Municipio, PR"</span>, <span style="color: #0000BB;">"Ciales Municipio, PR"</span>, <span style="color: #0000BB;">"Cidra Municipio, PR"</span>, <span style="color: #0000BB;">"Coamo</span></span></span>
 <span><span class="co">#&gt;   <span style="color: #0000BB;">Municipio, PR"</span>, <span style="color: #0000BB;">"Corozal Municipio, PR"</span>, …, <span style="color: #0000BB;">"Cabo Rojo Municipio, PR"</span>, and</span></span>
 <span><span class="co">#&gt;   <span style="color: #0000BB;">"Arecibo Municipio, PR"</span>.</span></span></code></pre></div>
-<p>Race/ethnicity-stratified extrapolation requires care because Census
-and AtlasPlus race/ethnicity categories may not always align
-perfectly.</p>
-<p>The package attempts to use Census variables that correspond to the
-AtlasPlus combined race/ethnicity categories, but users should inspect
-the denominator mapping before interpreting results.</p>
+<p>The tract populations come from ACS table B03002 (Hispanic or Latino
+origin by race), whose groups match AtlasPlus’s: Hispanic/Latino of any
+race, and non-Hispanic groups for the others. B03002 has no ages, so for
+HIV each tract’s race populations are scaled by its share of residents
+aged 13 and older. <code>race_table = "B01001"</code> uses the
+race-specific sex-by-age tables instead, which have ages but match
+AtlasPlus’s groups only for White and Hispanic. “Other” and “Unknown”
+have no Census population, so they are left out (see the next section
+for “Unknown”).</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hiv_tract_race</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">race_ethnicity</span>, <span class="va">indicator</span><span class="op">)</span></span>
@@ -623,6 +606,90 @@ the denominator mapping before interpreting results.</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> Native Hawaiian/Other Pacific Islander HIV prevalence <span style="text-decoration: underline;">85</span>167</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span> White                                  HIV diagnoses  <span style="text-decoration: underline;">84</span>924</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">14</span> White                                  HIV prevalence <span style="text-decoration: underline;">85</span>122</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="choices-you-can-change">Choices you can change<a class="anchor" aria-label="anchor" href="#choices-you-can-change"></a>
+</h2>
+<p>Each default can be changed in
+<code><a href="../reference/extrapolate_from_county.html">extrapolate_from_county()</a></code>; see
+<code><a href="../reference/extrapolate_from_county.html">?extrapolate_from_county</a></code> for the details.</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th>Situation</th>
+<th>Default</th>
+<th>Alternative</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Cases in a state’s total that no county accounts for</td>
+<td>Left out and reported (<code>no_county = "report"</code>)</td>
+<td>
+<code>no_county = "spread"</code> shares them across the state’s
+counties, by population or by cases (<code>spread_by</code>). Not
+available for CDC’s HIV estimates, whose county data cover only Ending
+the HIV Epidemic counties.</td>
+</tr>
+<tr class="even">
+<td>A county has cases in a stratum but no Census population in any of
+its tracts</td>
+<td>Shared by the tracts’ total population
+(<code>empty_strata = "total"</code>)</td>
+<td>
+<code>"equal"</code> shares equally across tracts;
+<code>"none"</code> keeps the tract rows with <code>area_cases</code> as
+<code>NA</code>, with a warning.</td>
+</tr>
+<tr class="odd">
+<td>Cases of unknown race or age</td>
+<td>Left out and listed (<code>unknown_race</code>,
+<code>unknown_age = "report"</code>)</td>
+<td>
+<code>"redistribute"</code> shares them across the county’s known
+groups in proportion to their counts.</td>
+</tr>
+<tr class="even">
+<td>Suppressed counties <code><a href="../reference/impute_suppressed.html">impute_suppressed()</a></code> couldn’t
+estimate</td>
+<td>Left out and listed (<code>unestimated = "leave out"</code>)</td>
+<td>
+<code>"error"</code> stops.</td>
+</tr>
+<tr class="odd">
+<td>A tract with no ACS population figure</td>
+<td>The whole county stratum (that county, indicator, year and group) is
+left out and listed, so cases aren’t shared over an incomplete
+denominator (<code>missing_population = "leave out"</code>)</td>
+<td>
+<code>"error"</code> stops.</td>
+</tr>
+<tr class="even">
+<td>Which ACS release</td>
+<td>The 5-year release ending in the data year</td>
+<td>
+<code>acs_year</code> sets it.</td>
+</tr>
+</tbody>
+</table>
+<p>County rows left out are listed, with the reason, in
+<code>attr(result, "not_allocated")</code>. With
+<code>empty_strata = "none"</code>, the tract rows stay in the result
+with <code>area_cases</code> as <code>NA</code> instead.</p>
+</div>
+<div class="section level2">
+<h2 id="older-years-and-census-geography">Older years and Census geography<a class="anchor" aria-label="anchor" href="#older-years-and-census-geography"></a>
+</h2>
+<p>CDC reports every year on its current county map, while each ACS
+release uses the tract map of its own years. The package assigns 2010
+tracts in Connecticut and Alaska to CDC’s current counties, so ACS
+releases from 2010 to 2019 cover them. A few combinations aren’t
+covered, such as Connecticut with the 2020 and 2021 releases; those
+counties are left out with a warning that says why. <a href="about-atlasplus-data.html#cdcs-county-map">About CDC AtlasPlus
+data</a> lists them.</p>
 </div>
 <div class="section level2">
 <h2 id="multiple-stratification-variables">Multiple stratification variables<a class="anchor" aria-label="anchor" href="#multiple-stratification-variables"></a>

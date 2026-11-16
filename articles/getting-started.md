@@ -275,8 +275,13 @@ group.](getting-started_files/figure-html/unnamed-chunk-13-1.png)
 
 ## Stratification by race/ethnicity
 
-CDC AtlasPlus commonly uses a combined race/ethnicity variable rather
-than separate race and Hispanic ethnicity fields.
+CDC AtlasPlus uses a combined race/ethnicity variable rather than
+separate race and Hispanic ethnicity fields. The groups differ by
+disease: hepatitis, for example, has Asian/Pacific Islander instead of
+separate Asian and Native Hawaiian/Other Pacific Islander groups. [About
+CDC AtlasPlus
+data](https://vagishhemmige.github.io/CDCAtlas/articles/about-atlasplus-data.md)
+lists them.
 
 ``` r
 
@@ -495,7 +500,7 @@ and AtlasPlus offers each at different geographies:
 stops with an error, before downloading, for many requests CDC doesn’t
 offer, such as the geographies in the table. Some other combinations of
 disease, geography and stratification aren’t offered either; those stop
-with an error after CDC returns no data (#122). If CDC returns some of a
+with an error after CDC returns no data. If CDC returns some of a
 disease’s indicators but not others, a warning names the missing ones.
 
 ``` r

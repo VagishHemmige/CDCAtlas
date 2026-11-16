@@ -93,6 +93,13 @@
 <strong>caches responses</strong> on disk to reduce server traffic</li>
 <li>passes on CDC’s own error message when a request fails</li>
 </ul>
+<p>It also estimates counts below the county level. CDC publishes many counts only by county, and suppresses small ones. CDCAtlas can:</p>
+<ul>
+<li>fill in suppressed county counts from the state’s rate (<code><a href="reference/impute_suppressed.html">impute_suppressed()</a></code>);</li>
+<li>report the cases in each state’s total that no county accounts for (<code><a href="reference/no_county_cases.html">no_county_cases()</a></code>);</li>
+<li>share county counts across Census tracts or block groups in proportion to their population (<code><a href="reference/extrapolate_from_county.html">extrapolate_from_county()</a></code>).</li>
+</ul>
+<p>These are modelled estimates, not CDC data. See <a href="https://vagishhemmige.github.io/CDCAtlas/articles/extrapolation.html">Extrapolation to tracts</a> and <a href="https://vagishhemmige.github.io/CDCAtlas/articles/about-atlasplus-data.html">About CDC AtlasPlus data</a>.</p>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>

@@ -312,8 +312,11 @@ state rows include territories.</p>
 <div class="section level2">
 <h2 id="stratification-by-raceethnicity">Stratification by race/ethnicity<a class="anchor" aria-label="anchor" href="#stratification-by-raceethnicity"></a>
 </h2>
-<p>CDC AtlasPlus commonly uses a combined race/ethnicity variable rather
-than separate race and Hispanic ethnicity fields.</p>
+<p>CDC AtlasPlus uses a combined race/ethnicity variable rather than
+separate race and Hispanic ethnicity fields. The groups differ by
+disease: hepatitis, for example, has Asian/Pacific Islander instead of
+separate Asian and Native Hawaiian/Other Pacific Islander groups. <a href="about-atlasplus-data.html">About CDC AtlasPlus data</a> lists
+them.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hiv_race</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_atlas.html">get_atlas</a></span><span class="op">(</span></span>
 <span>  disease     <span class="op">=</span> <span class="st">"hiv"</span>,</span>
@@ -538,9 +541,9 @@ and AtlasPlus offers each at different geographies:</p>
 <p><code><a href="../reference/get_atlas.html">get_atlas()</a></code> stops with an error, before downloading, for
 many requests CDC doesn’t offer, such as the geographies in the table.
 Some other combinations of disease, geography and stratification aren’t
-offered either; those stop with an error after CDC returns no data
-(#122). If CDC returns some of a disease’s indicators but not others, a
-warning names the missing ones.</p>
+offered either; those stop with an error after CDC returns no data. If
+CDC returns some of a disease’s indicators but not others, a warning
+names the missing ones.</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_atlas.html">get_atlas</a></span><span class="op">(</span>disease <span class="op">=</span> <span class="st">"estimate"</span>, geography <span class="op">=</span> <span class="st">"region"</span>, year <span class="op">=</span> <span class="fl">2021</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/get_atlas.html">get_atlas</a></span><span class="op">(</span>disease <span class="op">=</span> <span class="st">"hepatitis"</span>, geography <span class="op">=</span> <span class="st">"state"</span>, year <span class="op">=</span> <span class="fl">2022</span><span class="op">)</span></span>

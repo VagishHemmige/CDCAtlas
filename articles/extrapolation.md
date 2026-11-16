@@ -10,10 +10,19 @@ library(dplyr)
 
 CDC AtlasPlus reports many outcomes at the county level. For some
 analyses, especially geographic access analyses, we may want estimates
-at a smaller geographic unit such as the Census tract.
+at a smaller geographic unit: the Census tract or block group.
 
-`CDCAtlas` includes helper functions for extrapolating county-level
-AtlasPlus counts to Census tracts using tract-level Census denominators.
+`CDCAtlas` estimates these in three steps:
+
+1.  [`impute_suppressed()`](https://vagishhemmige.github.io/CDCAtlas/reference/impute_suppressed.md)
+    fills in county counts CDC suppressed.
+2.  [`no_county_cases()`](https://vagishhemmige.github.io/CDCAtlas/reference/no_county_cases.md)
+    reports cases in each state’s total that no county accounts for.
+3.  [`extrapolate_from_county()`](https://vagishhemmige.github.io/CDCAtlas/reference/extrapolate_from_county.md)
+    shares each county’s count across its tracts (or, with
+    `to = "block group"`, its block groups) using Census populations.
+
+This article uses tracts throughout; block groups work the same way.
 
 The basic idea is:
 
@@ -101,34 +110,18 @@ hiv_tract <- get_atlas(
   impute_suppressed() |>
   extrapolate_from_county()
 #> Downloading from CDC AtlasPlus ■■                                 4% | ETA:  1m
-#> Downloading from CDC AtlasPlus ■■■■                              12% | ETA:  1m
-#> Downloading from CDC AtlasPlus ■■■■■■■                           19% | ETA:  1m
-#> Downloading from CDC AtlasPlus ■■■■■■■                           21% | ETA:  1m
-#> Downloading from CDC AtlasPlus ■■■■■■■■■                         25% | ETA:  1m
-#> Downloading from CDC AtlasPlus ■■■■■■■■■                         27% | ETA:  1m
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■                        29% | ETA:  1m
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■                        31% | ETA:  1m
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■                       33% | ETA:  2m
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■                       35% | ETA:  2m
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■                      37% | ETA:  2m
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■                    44% | ETA:  1m
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■                   46% | ETA:  1m
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■                   48% | ETA:  1m
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■                  50% | ETA:  1m
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■                 54% | ETA:  1m
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■               62% | ETA: 47s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■             65% | ETA: 42s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■             67% | ETA: 39s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■            69% | ETA: 37s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■           73% | ETA: 32s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■           75% | ETA: 30s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■         81% | ETA: 22s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■        83% | ETA: 21s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■        85% | ETA: 21s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■      90% | ETA: 13s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■     92% | ETA: 10s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■     94% | ETA:  8s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■    98% | ETA:  3s
+#> Downloading from CDC AtlasPlus ■■■■■■■                           21% | ETA: 32s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■                        29% | ETA: 29s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■                       35% | ETA: 29s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■                    44% | ETA: 23s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■                  50% | ETA: 21s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■                56% | ETA: 19s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■             65% | ETA: 14s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■            71% | ETA: 12s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■         81% | ETA:  8s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■        85% | ETA:  7s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■      90% | ETA:  4s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■    96% | ETA:  2s
 #> Warning: 1 suppressed row could not be estimated and is set to `NA`.
 #> ℹ No state rate or no county population for "Valdez-Cordova Census Area, AK".
 #> ℹ They are marked `cases_source = "not estimated"`.
@@ -317,26 +310,20 @@ hiv_tract_sex <- get_atlas(
 ) |>
   impute_suppressed() |>
   extrapolate_from_county()
-#> Downloading from CDC AtlasPlus ■■■                                6% | ETA: 46s
-#> Downloading from CDC AtlasPlus ■■■■■■■                           19% | ETA: 42s
-#> Downloading from CDC AtlasPlus ■■■■■■■                           21% | ETA: 50s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■                         25% | ETA: 45s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■                        29% | ETA: 47s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■                        31% | ETA: 48s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■                       33% | ETA: 49s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■                      37% | ETA: 48s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■                    44% | ETA: 39s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■                   46% | ETA: 39s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■                  50% | ETA: 37s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■                 54% | ETA: 34s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■               62% | ETA: 26s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■             65% | ETA: 24s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■            69% | ETA: 21s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■           75% | ETA: 17s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■         81% | ETA: 13s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■        85% | ETA: 11s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■      90% | ETA:  7s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■    96% | ETA:  3s
+#> Downloading from CDC AtlasPlus ■■■■                              10% | ETA: 48s
+#> Downloading from CDC AtlasPlus ■■■■■■■                           21% | ETA: 40s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■                        29% | ETA: 35s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■                       33% | ETA: 35s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■                     38% | ETA: 32s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■                   46% | ETA: 27s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■                  50% | ETA: 26s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■                56% | ETA: 23s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■             65% | ETA: 17s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■            71% | ETA: 14s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■          77% | ETA: 11s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■        85% | ETA:  8s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■       87% | ETA:  7s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■     94% | ETA:  3s
 #> Warning: 1 suppressed row could not be estimated and is set to `NA`.
 #> ℹ No state rate or no county population for "Valdez-Cordova Census Area, AK".
 #> ℹ They are marked `cases_source = "not estimated"`.
@@ -428,27 +415,22 @@ hiv_tract_age <- get_atlas(
   impute_suppressed() |>
   extrapolate_from_county()
 #> Downloading from CDC AtlasPlus ■■■                                6% | ETA:  1m
-#> Downloading from CDC AtlasPlus ■■■■■■                            15% | ETA: 49s
-#> Downloading from CDC AtlasPlus ■■■■■■■                           21% | ETA:  1m
-#> Downloading from CDC AtlasPlus ■■■■■■■■■                         25% | ETA: 46s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■                        29% | ETA: 48s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■                        31% | ETA: 49s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■                       33% | ETA: 49s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■                      37% | ETA:  1m
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■                     40% | ETA: 46s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■                    44% | ETA: 42s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■                   48% | ETA: 40s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■                  50% | ETA: 40s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■                 54% | ETA: 37s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■               62% | ETA: 28s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■             65% | ETA: 26s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■            69% | ETA: 23s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■            71% | ETA: 22s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■         79% | ETA: 15s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■        83% | ETA: 13s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■        85% | ETA: 12s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■      90% | ETA:  7s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■     94% | ETA:  4s
+#> Downloading from CDC AtlasPlus ■■■■■■■                           21% | ETA: 43s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■                         25% | ETA: 39s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■                        29% | ETA: 39s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■                       33% | ETA: 39s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■                      37% | ETA: 38s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■                    44% | ETA: 31s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■                  50% | ETA: 29s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■                 54% | ETA: 27s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■               62% | ETA: 21s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■             67% | ETA: 18s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■            71% | ETA: 16s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■         79% | ETA: 12s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■         81% | ETA: 11s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■        85% | ETA:  9s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■      90% | ETA:  6s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■    96% | ETA:  2s
 #> Warning: 1 suppressed row could not be estimated and is set to `NA`.
 #> ℹ No state rate or no county population for "Valdez-Cordova Census Area, AK".
 #> ℹ They are marked `cases_source = "not estimated"`.
@@ -529,28 +511,23 @@ hiv_tract_race <- get_atlas(
 ) |>
   impute_suppressed() |>
   extrapolate_from_county()
-#> Downloading from CDC AtlasPlus ■■■                                6% | ETA: 45s
-#> Downloading from CDC AtlasPlus ■■■■■■■                           19% | ETA: 39s
-#> Downloading from CDC AtlasPlus ■■■■■■■                           21% | ETA: 45s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■                         27% | ETA: 41s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■                        31% | ETA: 43s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■                       33% | ETA: 44s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■                       35% | ETA: 45s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■                     40% | ETA: 39s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■                   46% | ETA: 35s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■                   48% | ETA: 36s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■                  50% | ETA: 36s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■                 54% | ETA: 33s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■              63% | ETA: 24s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■             65% | ETA: 24s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■            69% | ETA: 22s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■            71% | ETA: 21s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■           75% | ETA: 18s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■         81% | ETA: 14s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■        83% | ETA: 13s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■        85% | ETA: 12s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■      90% | ETA:  7s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■     94% | ETA:  4s
+#> Downloading from CDC AtlasPlus ■■■                                8% | ETA:  1m
+#> Downloading from CDC AtlasPlus ■■■■■■■                           21% | ETA: 44s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■                         25% | ETA: 39s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■                        29% | ETA: 42s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■                       33% | ETA: 42s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■                       35% | ETA: 42s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■                     40% | ETA: 37s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■                   46% | ETA: 33s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■                  50% | ETA: 31s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■                 54% | ETA: 29s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■              63% | ETA: 21s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■            69% | ETA: 18s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■           73% | ETA: 16s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■         81% | ETA: 11s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■        85% | ETA:  9s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■      90% | ETA:  6s
+#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■    96% | ETA:  2s
 #> Warning: 314 suppressed rows could not be estimated and are set to `NA`.
 #> ℹ No state rate or no county population for "Valdez-Cordova Census Area, AK",
 #>   "Aguada Municipio, PR", "Aguadilla Municipio, PR", "Aguas Buenas Municipio,
@@ -580,12 +557,14 @@ hiv_tract_race <- get_atlas(
 #>   "Arecibo Municipio, PR".
 ```
 
-Race/ethnicity-stratified extrapolation requires care because Census and
-AtlasPlus race/ethnicity categories may not always align perfectly.
-
-The package attempts to use Census variables that correspond to the
-AtlasPlus combined race/ethnicity categories, but users should inspect
-the denominator mapping before interpreting results.
+The tract populations come from ACS table B03002 (Hispanic or Latino
+origin by race), whose groups match AtlasPlus’s: Hispanic/Latino of any
+race, and non-Hispanic groups for the others. B03002 has no ages, so for
+HIV each tract’s race populations are scaled by its share of residents
+aged 13 and older. `race_table = "B01001"` uses the race-specific
+sex-by-age tables instead, which have ages but match AtlasPlus’s groups
+only for White and Hispanic. “Other” and “Unknown” have no Census
+population, so they are left out (see the next section for “Unknown”).
 
 ``` r
 
@@ -609,6 +588,38 @@ hiv_tract_race |>
 #> 13 White                                  HIV diagnoses  84924
 #> 14 White                                  HIV prevalence 85122
 ```
+
+## Choices you can change
+
+Each default can be changed in
+[`extrapolate_from_county()`](https://vagishhemmige.github.io/CDCAtlas/reference/extrapolate_from_county.md);
+see
+[`?extrapolate_from_county`](https://vagishhemmige.github.io/CDCAtlas/reference/extrapolate_from_county.md)
+for the details.
+
+| Situation | Default | Alternative |
+|----|----|----|
+| Cases in a state’s total that no county accounts for | Left out and reported (`no_county = "report"`) | `no_county = "spread"` shares them across the state’s counties, by population or by cases (`spread_by`). Not available for CDC’s HIV estimates, whose county data cover only Ending the HIV Epidemic counties. |
+| A county has cases in a stratum but no Census population in any of its tracts | Shared by the tracts’ total population (`empty_strata = "total"`) | `"equal"` shares equally across tracts; `"none"` keeps the tract rows with `area_cases` as `NA`, with a warning. |
+| Cases of unknown race or age | Left out and listed (`unknown_race`, `unknown_age = "report"`) | `"redistribute"` shares them across the county’s known groups in proportion to their counts. |
+| Suppressed counties [`impute_suppressed()`](https://vagishhemmige.github.io/CDCAtlas/reference/impute_suppressed.md) couldn’t estimate | Left out and listed (`unestimated = "leave out"`) | `"error"` stops. |
+| A tract with no ACS population figure | The whole county stratum (that county, indicator, year and group) is left out and listed, so cases aren’t shared over an incomplete denominator (`missing_population = "leave out"`) | `"error"` stops. |
+| Which ACS release | The 5-year release ending in the data year | `acs_year` sets it. |
+
+County rows left out are listed, with the reason, in
+`attr(result, "not_allocated")`. With `empty_strata = "none"`, the tract
+rows stay in the result with `area_cases` as `NA` instead.
+
+## Older years and Census geography
+
+CDC reports every year on its current county map, while each ACS release
+uses the tract map of its own years. The package assigns 2010 tracts in
+Connecticut and Alaska to CDC’s current counties, so ACS releases from
+2010 to 2019 cover them. A few combinations aren’t covered, such as
+Connecticut with the 2020 and 2021 releases; those counties are left out
+with a warning that says why. [About CDC AtlasPlus
+data](https://vagishhemmige.github.io/CDCAtlas/articles/about-atlasplus-data.html#cdcs-county-map)
+lists them.
 
 ## Multiple stratification variables
 

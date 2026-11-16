@@ -12,7 +12,7 @@ The remainder is a difference, not a count of identified cases. One likely
 explanation is cases whose county of residence is unknown or not released,
 but CDC's documentation doesn't say so; it also includes any counties left
 out of x. In 2022 the gap was far larger than suppressed counties could
-hold at 1-4 cases each (#27), so it can't be used to fill them in.
+hold at 1-4 cases each, so it can't be used to fill them in.
 extrapolate_from_county() leaves the remainder out by default;
 no_county = &quot;spread&quot; shares it across the state's counties instead. See
 the &quot;About CDC AtlasPlus data&quot; article."><meta property="og:description" content="A state's total in CDC AtlasPlus is usually larger than the sum of its
@@ -28,7 +28,7 @@ The remainder is a difference, not a count of identified cases. One likely
 explanation is cases whose county of residence is unknown or not released,
 but CDC's documentation doesn't say so; it also includes any counties left
 out of x. In 2022 the gap was far larger than suppressed counties could
-hold at 1-4 cases each (#27), so it can't be used to fill them in.
+hold at 1-4 cases each, so it can't be used to fill them in.
 extrapolate_from_county() leaves the remainder out by default;
 no_county = &quot;spread&quot; shares it across the state's counties instead. See
 the &quot;About CDC AtlasPlus data&quot; article."><meta property="og:image" content="https://vagishhemmige.github.io/CDCAtlas/logo.png"><meta name="google-site-verification" content="TBumihuxSFxK8muRvdo69ca7bmvzWmy-3OMfCZ2692A"></head><body>
@@ -85,7 +85,7 @@ message says so.</p>
 explanation is cases whose county of residence is unknown or not released,
 but CDC's documentation doesn't say so; it also includes any counties left
 out of <code>x</code>. In 2022 the gap was far larger than suppressed counties could
-hold at 1-4 cases each (#27), so it can't be used to fill them in.
+hold at 1-4 cases each, so it can't be used to fill them in.
 <code><a href="extrapolate_from_county.html">extrapolate_from_county()</a></code> leaves the remainder out by default;
 <code>no_county = "spread"</code> shares it across the state's counties instead. See
 the "About CDC AtlasPlus data" article.</p>
@@ -122,7 +122,7 @@ the "About CDC AtlasPlus data" article.</p>
 <dt>unpublished_cases</dt>
 <dd><p><code>state_cases - published_cases</code>: cases in
 suppressed counties together with the remainder no county accounts
-for (the figures in #27).</p></dd>
+for.</p></dd>
 
 <dt>imputed_cases</dt>
 <dd><p>Sum of the counts <code><a href="impute_suppressed.html">impute_suppressed()</a></code> filled in;

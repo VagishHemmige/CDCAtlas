@@ -23,6 +23,16 @@ has a `data_status`:
 | “Not Suppressed” | CDC published the count. | Kept as it is. |
 | “Data suppressed” | CDC withheld a small count. | [`impute_suppressed()`](https://vagishhemmige.github.io/CDCAtlas/reference/impute_suppressed.md) fills it in. |
 | “Data not available” | CDC has no data for this row. | Kept by [`impute_suppressed()`](https://vagishhemmige.github.io/CDCAtlas/reference/impute_suppressed.md), with or without a count; a row with no count is left out of the tracts, and dropped with `not_available = "drop"`. |
+| “No reported cases” | CDC received no reports. | Kept as it is. A row with no count is not filled in: it stays `NA`, with a warning. |
+| “CDC code” and a number | A code this version of CDCAtlas doesn’t know yet. | Kept, with a warning when downloaded. A row with no count is not filled in. |
+
+Only rows marked “Data suppressed” are filled in. A row with no count
+and a status other than “Data suppressed” or “Data not available” (or no
+status) is left as `NA`, marked `cases_source = "not estimated"`, and
+named in a warning. “Data not available” rows are handled as the table
+says: kept as `cases_source = "not available"` by default, or dropped.
+It is left out of the tracts and counted in the state’s remainder (see
+below).
 
 CDC’s technical notes give the suppression rules but don’t define these
 labels. Their meaning here is inferred from those rules.
@@ -101,6 +111,15 @@ For Knowledge of Status, the columns hold:
 
 There are no confidence intervals for the counts.
 
+Because its population is people living with HIV, not residents,
+`impute_suppressed(population = "acs")` refuses Knowledge of Status; the
+default `population = "cdc"` works.
+[`extrapolate_from_county()`](https://vagishhemmige.github.io/CDCAtlas/reference/extrapolate_from_county.md)
+shares a county’s count of people who know their status across tracts by
+residents, as if people with HIV lived in each tract in proportion to
+its population. So `area_cases / area_population_acs` is not the
+percentage who know their status.
+
 For HIV, cases with unknown race or ethnicity are in the totals but not
 shown by race, so rows by race may not add up to the state or national
 total.
@@ -127,9 +146,16 @@ Notes, 1.1 and 1.4.1).
 
 For reported data such as HIV diagnoses, CDC’s server doesn’t return
 regions. The AtlasPlus web page asks for each region’s states and adds
-them up in the browser. CDCAtlas doesn’t do that yet (#83): suppressed
-state counts would need care, and rates must be recomputed from cases
-and populations.
+them up in the browser. CDCAtlas doesn’t do that: suppressed state
+counts would need care, and rates must be recomputed from cases and
+populations.
+
+Not every combination of disease, geography and stratification is
+offered. A request CDC doesn’t answer stops with an error saying CDC
+returned no data. If CDC returns some of a disease’s indicators but not
+others (a year not yet released for one of them, for example),
+[`get_atlas()`](https://vagishhemmige.github.io/CDCAtlas/reference/get_atlas.md)
+warns and names the missing ones.
 
 ### Age groups
 
@@ -142,6 +168,21 @@ and populations.
 
 Each set covers that disease’s ages once. Congenital syphilis can’t be
 stratified by race, sex or age.
+
+### Race and ethnicity groups
+
+AtlasPlus combines race and Hispanic ethnicity into one variable,
+`race_ethnicity`. Hispanic/Latino people of any race are one group; the
+other groups are non-Hispanic.
+
+| `disease` | Groups with `stratify_by = "race"` |
+|----|----|
+| `"hiv"`, `"estimate"` | American Indian/Alaska Native, Asian, Black/African American, Hispanic/Latino, Multiracial, Native Hawaiian/Other Pacific Islander, White |
+| `"chlamydia"`, `"gonorrhea"`, `"adult syphilis"`, `"tuberculosis"` | the same, plus Unknown |
+| `"hepatitis"` | American Indian/Alaska Native, Asian/Pacific Islander, Black/African American, Hispanic/Latino, White, Other, Unknown |
+
+Hepatitis combines Asian and Pacific Islander and has no Multiracial
+group, so its groups don’t line up with the others.
 
 Cases of unknown age (and unknown race) have no Census population. By
 default
@@ -214,14 +255,14 @@ compared tract by tract.
 
 For ACS releases on 2010 tracts (2006–2010 to 2015–2019), a crosswalk
 assigns Connecticut’s and Valdez-Cordova’s 2010 tracts to the current
-counties (#30). ACS 2016–2020 and 2017–2021 use 2020 tracts but still
-code Connecticut by its old counties; planning regions first appear in
+counties. ACS 2016–2020 and 2017–2021 use 2020 tracts but still code
+Connecticut by its old counties; planning regions first appear in
 2018–2022. So Connecticut data for 2020 and 2021 is left out of tract
-estimates with a warning that says why (a recode is \#121). Kusilvak,
-Alaska and Oglala Lakota, South Dakota were renamed in 2015 with new
-codes, so ACS releases before 2015 don’t have them either. These are the
-cases the package knows about, not a full check of every ACS release.
-Rows left out are listed in `attr(result, "not_allocated")`.
+estimates with a warning that says why. Kusilvak, Alaska and Oglala
+Lakota, South Dakota were renamed in 2015 with new codes, so ACS
+releases before 2015 don’t have them either. These are the cases the
+package knows about, not a full check of every ACS release. Rows left
+out are listed in `attr(result, "not_allocated")`.
 
 ## Census denominators
 
