@@ -9,6 +9,8 @@ knitr::opts_chunk$set(
   message = FALSE,
   warning = FALSE
 )
+# Download progress bars are for interactive use; keep them off the page.
+options(cli.progress_show_after = Inf)
 ```
 
 ```{r setup}
@@ -184,8 +186,9 @@ attr(hiv_tract, "not_allocated") |>
   count(reason, indicator)
 ```
 
-Reasons include counties with no Census tracts in the ACS year, strata with no
-Census population (race "Other", for example), and suppressed counties that
+Reasons include counties CDC has no data for ("Data not available" with no
+count), counties with no Census tracts in the ACS year, strata with no Census
+population (race "Other", for example), and suppressed counties that
 `impute_suppressed()` could not estimate. In CDC's 2022 data, for example,
 Valdez-Cordova Census Area, Alaska, is still listed although it was split into
 two census areas in 2019; it is suppressed, has no CDC population and has no
