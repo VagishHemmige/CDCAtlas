@@ -335,14 +335,15 @@ Each default can be changed in `extrapolate_from_county()`; see
 | Situation | Default | Alternative |
 |---|---|---|
 | Cases in a state's total that no county accounts for | Left out and reported (`no_county = "report"`) | `no_county = "spread"` shares them across the state's counties, by population or by cases (`spread_by`). Not available for CDC's HIV estimates, whose county data cover only Ending the HIV Epidemic counties. |
-| A county has cases in a stratum but no Census population in any of its tracts | Shared by the tracts' total population (`empty_strata = "total"`) | `"equal"` shares equally across tracts; `"none"` leaves them out. |
+| A county has cases in a stratum but no Census population in any of its tracts | Shared by the tracts' total population (`empty_strata = "total"`) | `"equal"` shares equally across tracts; `"none"` keeps the tract rows with `area_cases` as `NA`, with a warning. |
 | Cases of unknown race or age | Left out and listed (`unknown_race`, `unknown_age = "report"`) | `"redistribute"` shares them across the county's known groups in proportion to their counts. |
 | Suppressed counties `impute_suppressed()` couldn't estimate | Left out and listed (`unestimated = "leave out"`) | `"error"` stops. |
-| A tract with no ACS population figure | Left out and listed (`missing_population = "leave out"`) | `"error"` stops. |
+| A tract with no ACS population figure | The whole county stratum (that county, indicator, year and group) is left out and listed, so cases aren't shared over an incomplete denominator (`missing_population = "leave out"`) | `"error"` stops. |
 | Which ACS release | The 5-year release ending in the data year | `acs_year` sets it. |
 
-Rows left out for any reason are listed, with the reason, in
-`attr(result, "not_allocated")`.
+County rows left out are listed, with the reason, in
+`attr(result, "not_allocated")`. With `empty_strata = "none"`, the tract rows
+stay in the result with `area_cases` as `NA` instead.
 
 ## Older years and Census geography
 
