@@ -209,7 +209,7 @@
       extrapolate_from_county(county, weights = 1)
     Condition
       Error in `extrapolate_from_county()`:
-      ! `weights` is not supported yet (#1).
+      ! `weights` is not supported yet.
 
 ---
 

@@ -19,7 +19,7 @@ A tibble with one row per state, indicator, year and stratum:
 \item{published_cases}{Sum of the published county counts in \code{x}.}
 \item{unpublished_cases}{\code{state_cases - published_cases}: cases in
 suppressed counties together with the remainder no county accounts
-for (the figures in #27).}
+for.}
 \item{imputed_cases}{Sum of the counts \code{\link[=impute_suppressed]{impute_suppressed()}} filled in;
 \code{NA} if \code{x} hasn't been imputed.}
 \item{no_county_cases}{\code{unpublished_cases - imputed_cases}. Can be
@@ -46,7 +46,7 @@ The remainder is a difference, not a count of identified cases. One likely
 explanation is cases whose county of residence is unknown or not released,
 but CDC's documentation doesn't say so; it also includes any counties left
 out of \code{x}. In 2022 the gap was far larger than suppressed counties could
-hold at 1-4 cases each (#27), so it can't be used to fill them in.
+hold at 1-4 cases each, so it can't be used to fill them in.
 \code{\link[=extrapolate_from_county]{extrapolate_from_county()}} leaves the remainder out by default;
 \code{no_county = "spread"} shares it across the state's counties instead. See
 the "About CDC AtlasPlus data" article.

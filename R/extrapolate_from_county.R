@@ -114,7 +114,7 @@
 #'   A population of 0 is not missing; see `empty_strata`.
 #' @param acs_year The last year of the ACS 5-year estimates. `NULL` (default)
 #'   uses each data year. A single year can be given only if `x` has one year.
-#' @param weights Not yet supported; for sub-county weights later (#1).
+#' @param weights Not yet supported; reserved for sub-county weights.
 #'
 #' @return A tibble with one row per area, indicator, year and stratum:
 #'   \describe{
@@ -197,12 +197,12 @@
 #' CDC's current county codes the package knows an ACS release lacks:
 #' * Connecticut's planning regions: handled by the crosswalk for ACS 2010 to
 #'   2019; missing from ACS 2009, 2020 and 2021, which code Connecticut by its
-#'   old counties (#121); in ACS 2022 on.
+#'   old counties; in ACS 2022 on.
 #' * Chugach and Copper River, Alaska: handled by the crosswalk for ACS 2010
 #'   to 2019; missing from ACS 2009; in ACS 2020 on.
 #' * Kusilvak, Alaska (02158, formerly Wade Hampton 02270) and Oglala Lakota,
 #'   South Dakota (46102, formerly Shannon 46113), renamed in 2015: missing
-#'   from ACS releases before 2015 (#121).
+#'   from ACS releases before 2015.
 #'
 #' This list is not a full check of every ACS vintage against CDC's map.
 #' Counties a release doesn't match are left out with a warning that says
@@ -268,7 +268,7 @@ extrapolate_from_county <- function(
   unknown_age <- rlang::arg_match(unknown_age)
 
   if (!is.null(weights)) {
-    cli::cli_abort("{.arg weights} is not supported yet (#1).", call = call)
+    cli::cli_abort("{.arg weights} is not supported yet.", call = call)
   }
 
   stratify_by <- .check_census_strata(x, call)
