@@ -109,19 +109,6 @@ hiv_tract <- get_atlas(
 ) |>
   impute_suppressed() |>
   extrapolate_from_county()
-#> Downloading from CDC AtlasPlus ■■                                 4% | ETA:  1m
-#> Downloading from CDC AtlasPlus ■■■■■■■                           21% | ETA: 32s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■                        29% | ETA: 29s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■                       35% | ETA: 29s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■                    44% | ETA: 23s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■                  50% | ETA: 21s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■                56% | ETA: 19s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■             65% | ETA: 14s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■            71% | ETA: 12s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■         81% | ETA:  8s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■        85% | ETA:  7s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■      90% | ETA:  4s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■    96% | ETA:  2s
 #> Warning: 1 suppressed row could not be estimated and is set to `NA`.
 #> ℹ No state rate or no county population for "Valdez-Cordova Census Area, AK".
 #> ℹ They are marked `cases_source = "not estimated"`.
@@ -266,8 +253,9 @@ attr(hiv_tract, "not_allocated") |>
 #> 3 suppressed, not estimated   HIV prevalence     1
 ```
 
-Reasons include counties with no Census tracts in the ACS year, strata
-with no Census population (race “Other”, for example), and suppressed
+Reasons include counties CDC has no data for (“Data not available” with
+no count), counties with no Census tracts in the ACS year, strata with
+no Census population (race “Other”, for example), and suppressed
 counties that
 [`impute_suppressed()`](https://vagishhemmige.github.io/CDCAtlas/reference/impute_suppressed.md)
 could not estimate. In CDC’s 2022 data, for example, Valdez-Cordova
@@ -310,20 +298,6 @@ hiv_tract_sex <- get_atlas(
 ) |>
   impute_suppressed() |>
   extrapolate_from_county()
-#> Downloading from CDC AtlasPlus ■■■■                              10% | ETA: 48s
-#> Downloading from CDC AtlasPlus ■■■■■■■                           21% | ETA: 40s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■                        29% | ETA: 35s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■                       33% | ETA: 35s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■                     38% | ETA: 32s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■                   46% | ETA: 27s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■                  50% | ETA: 26s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■                56% | ETA: 23s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■             65% | ETA: 17s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■            71% | ETA: 14s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■          77% | ETA: 11s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■        85% | ETA:  8s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■       87% | ETA:  7s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■     94% | ETA:  3s
 #> Warning: 1 suppressed row could not be estimated and is set to `NA`.
 #> ℹ No state rate or no county population for "Valdez-Cordova Census Area, AK".
 #> ℹ They are marked `cases_source = "not estimated"`.
@@ -414,23 +388,6 @@ hiv_tract_age <- get_atlas(
 ) |>
   impute_suppressed() |>
   extrapolate_from_county()
-#> Downloading from CDC AtlasPlus ■■■                                6% | ETA:  1m
-#> Downloading from CDC AtlasPlus ■■■■■■■                           21% | ETA: 43s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■                         25% | ETA: 39s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■                        29% | ETA: 39s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■                       33% | ETA: 39s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■                      37% | ETA: 38s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■                    44% | ETA: 31s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■                  50% | ETA: 29s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■                 54% | ETA: 27s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■               62% | ETA: 21s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■             67% | ETA: 18s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■            71% | ETA: 16s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■         79% | ETA: 12s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■         81% | ETA: 11s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■        85% | ETA:  9s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■      90% | ETA:  6s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■    96% | ETA:  2s
 #> Warning: 1 suppressed row could not be estimated and is set to `NA`.
 #> ℹ No state rate or no county population for "Valdez-Cordova Census Area, AK".
 #> ℹ They are marked `cases_source = "not estimated"`.
@@ -511,23 +468,6 @@ hiv_tract_race <- get_atlas(
 ) |>
   impute_suppressed() |>
   extrapolate_from_county()
-#> Downloading from CDC AtlasPlus ■■■                                8% | ETA:  1m
-#> Downloading from CDC AtlasPlus ■■■■■■■                           21% | ETA: 44s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■                         25% | ETA: 39s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■                        29% | ETA: 42s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■                       33% | ETA: 42s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■                       35% | ETA: 42s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■                     40% | ETA: 37s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■                   46% | ETA: 33s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■                  50% | ETA: 31s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■                 54% | ETA: 29s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■              63% | ETA: 21s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■            69% | ETA: 18s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■           73% | ETA: 16s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■         81% | ETA: 11s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■        85% | ETA:  9s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■      90% | ETA:  6s
-#> Downloading from CDC AtlasPlus ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■    96% | ETA:  2s
 #> Warning: 314 suppressed rows could not be estimated and are set to `NA`.
 #> ℹ No state rate or no county population for "Valdez-Cordova Census Area, AK",
 #>   "Aguada Municipio, PR", "Aguadilla Municipio, PR", "Aguas Buenas Municipio,

@@ -29,10 +29,10 @@ has a `data_status`:
 Only rows marked “Data suppressed” are filled in. A row with no count
 and a status other than “Data suppressed” or “Data not available” (or no
 status) is left as `NA`, marked `cases_source = "not estimated"`, and
-named in a warning. “Data not available” rows are handled as the table
-says: kept as `cases_source = "not available"` by default, or dropped.
-It is left out of the tracts and counted in the state’s remainder (see
-below).
+named in a warning. It is left out of the tracts and counted in the
+state’s remainder (see below). “Data not available” rows are handled as
+the table says: kept as `cases_source = "not available"` by default, or
+dropped.
 
 CDC’s technical notes give the suppression rules but don’t define these
 labels. Their meaning here is inferred from those rules.
