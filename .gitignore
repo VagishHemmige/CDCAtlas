@@ -9,6 +9,11 @@
 /data-raw/AIDSVu/
 /data-raw/aidsvu_*.R
 /data-raw/*.pdf
+/data-raw/client.R
+/data-raw/internal-metadata.R
+/data-raw/msa.txt
+/data-raw/variable_lookup.R
+
 
 inst/doc
 /doc/
