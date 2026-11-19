@@ -48,20 +48,15 @@ test_that("the year code is the calendar year minus 1478, as in CDC's table", {
   expect_equal(years$id, as.integer(years$name) - 1478)
 })
 
-test_that("state and MSA requests ask for every state and every MSA", {
-  state_ids <- as.integer(strsplit(
-    .build_payload("hiv", "state", 2022)$VariableIDs,
-    ","
-  )[[1]])
-  expect_contains(state_ids, lookup[["state"]]$geo_id)
-  expect_equal(intersect(state_ids, lookup[["msa"]]$geo_id), integer(0))
-
-  msa_ids <- as.integer(strsplit(
-    .build_payload("hiv", "msa", 2022)$VariableIDs,
-    ","
-  )[[1]])
-  expect_contains(msa_ids, lookup[["msa"]]$geo_id)
-  expect_equal(intersect(msa_ids, lookup[["state"]]$geo_id), integer(0))
+test_that("state and MSA requests ask for every state or every MSA, and nothing else", {
+  expect_equal(
+    payload_codes("hiv", "state", 2022, vtid = 3),
+    sort(lookup[["state"]]$geo_id)
+  )
+  expect_equal(
+    payload_codes("hiv", "msa", 2022, vtid = 3),
+    sort(lookup[["msa"]]$geo_id)
+  )
 })
 
 test_that("sex-stratified requests ask for male and female, others for both", {
