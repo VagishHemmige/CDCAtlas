@@ -8,16 +8,16 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/VagishHemmige/CDCAtlas/blob/v0.1.0/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/VagishHemmige/CDCAtlas/blob/master/DESCRIPTION)
 
 Hemmige V (2026). *CDCAtlas: Download 'CDC AtlasPlus' Data and Estimate
-Tract-Level Counts*. R package version 0.1.0,
+Tract-Level Counts*. R package version 0.1.0.9000,
 <https://github.com/VagishHemmige/CDCAtlas>.
 
     @Manual{,
       title = {CDCAtlas: Download 'CDC AtlasPlus' Data and Estimate Tract-Level Counts},
       author = {Vagish Hemmige},
       year = {2026},
-      note = {R package version 0.1.0},
+      note = {R package version 0.1.0.9000},
       url = {https://github.com/VagishHemmige/CDCAtlas},
     }

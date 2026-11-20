@@ -1,5 +1,7 @@
 # Changelog
 
+## CDCAtlas (development version)
+
 ## CDCAtlas 0.1.0
 
 First release. CDCAtlas downloads surveillance data from CDC AtlasPlus
