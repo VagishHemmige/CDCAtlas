@@ -1,3 +1,5 @@
+# CDCAtlas (development version)
+
 # CDCAtlas 0.1.0
 
 First release. CDCAtlas downloads surveillance data from CDC AtlasPlus and estimates counts below the county level. Earlier development versions had only `get_atlas()`.
