@@ -8,7 +8,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/VagishHemmige/CDCAtlas/blob/master/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/VagishHemmige/CDCAtlas/blob/v0.1.0/DESCRIPTION)
 
 Hemmige V (2026). *CDCAtlas: Download 'CDC AtlasPlus' Data and Estimate
 Tract-Level Counts*. R package version 0.1.0,
