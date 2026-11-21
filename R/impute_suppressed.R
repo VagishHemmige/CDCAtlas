@@ -29,12 +29,9 @@
 #' @param cap The largest count `"state_rate"` can give a suppressed county.
 #'   Use `Inf` for no cap. The default, 4, reflects CDC suppressing counts of
 #'   1 to 4, but complementary suppression can hide larger counts, so it is a
-#'   default rather than a hard limit. For HIV prevalence, the state rate
-#'   times a county's population is expected to be above the default cap in
-#'   most suppressed counties, so the cap would usually set the value. That
-#'   is an expectation, not a measurement: `cases_uncapped` in the output
-#'   lets you count it. `floor = cap = 2.5` gives every row that can be
-#'   estimated the same fixed value, 2.5.
+#'   default rather than a hard limit. `cases_uncapped` in the output lets
+#'   you count how often the cap sets the value. `floor = cap = 2.5` gives
+#'   every row that can be estimated the same fixed value, 2.5.
 #' @param floor The smallest count `"state_rate"` can give. The default, 0,
 #'   allows for counties suppressed because their population is under 100,
 #'   which may have no cases. Use 1 to treat every suppressed county as having
