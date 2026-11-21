@@ -151,6 +151,11 @@ from the state’s rate in the same indicator, year and stratum, times the
 county’s population, kept between <code>floor</code> and
 <code>cap</code>. Filling suppressed counts with zero is available as
 <code>method = "zero"</code>, as a sensitivity analysis.</p>
+<p>The column <code>cases_uncapped</code> keeps the estimate before
+<code>floor</code> and <code>cap</code> were applied, so
+<code>cases_uncapped &gt; cap</code> picks out the rows whose value the
+cap set. It is a modeled number (state rate times county population),
+not CDC’s hidden count.</p>
 <p>The suppression rules differ by disease, according to CDC’s technical
 notes:</p>
 <ul>

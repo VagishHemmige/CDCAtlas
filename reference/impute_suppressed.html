@@ -124,7 +124,9 @@ between <code>floor</code> and <code>cap</code>.</p></li>
 <dd><p>The largest count <code>"state_rate"</code> can give a suppressed county.
 Use <code>Inf</code> for no cap. The default, 4, reflects CDC suppressing counts of
 1 to 4, but complementary suppression can hide larger counts, so it is a
-default rather than a hard limit.</p></dd>
+default rather than a hard limit. <code>cases_uncapped</code> in the output lets
+you count how often the cap sets the value. <code>floor = cap = 2.5</code> gives
+every row that can be estimated the same fixed value, 2.5.</p></dd>
 
 
 <dt id="arg-floor">floor<a class="anchor" aria-label="anchor" href="#arg-floor"></a></dt>
@@ -172,16 +174,27 @@ no longer reported by <code><a href="no_county_cases.html">no_county_cases()</a>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p><code>x</code> with suppressed counts filled in and a new column
-<code>cases_source</code>:</p><ul><li><p><code>"published"</code>: CDC's count.</p></li>
+    <p><code>x</code> with suppressed counts filled in and two new columns,
+<code>cases_source</code> and <code>cases_uncapped</code>. <code>cases_source</code> is:</p><ul><li><p><code>"published"</code>: CDC's count.</p></li>
 <li><p><code>"state_rate"</code> or <code>"zero"</code>: filled in by <code>method</code>.</p></li>
 <li><p><code>"not estimated"</code>: <code>"state_rate"</code> couldn't estimate it (<code>NA</code>, or 0
 with <code>unestimated = "zero"</code>), or it had no count and wasn't marked
 "Data suppressed" (always <code>NA</code>).</p></li>
 <li><p><code>"not available"</code>: kept with <code>not_available = "keep"</code>; <code>NA</code>.</p></li>
+</ul><p><code>cases_uncapped</code> is, for rows filled in by <code>"state_rate"</code>, the estimate
+before <code>cap</code> and <code>floor</code> were applied: the state rate times the county
+population used (CDC's or ACS). It is a modeled number, not CDC's hidden
+count and not a way to recover it. It is <code>NA</code> for every other row:
+published counts, rows filled in by <code>"zero"</code>, and rows marked
+<code>"not estimated"</code> or <code>"not available"</code>. <code>cases</code> is the value to use;
+<code>cases_uncapped</code> shows what decided it:</p><ul><li><p><code>cases_uncapped &gt; cap</code>: the cap set <code>cases</code>.</p></li>
+<li><p><code>cases_uncapped &lt; floor</code>: the floor set <code>cases</code>.</p></li>
+<li><p>Otherwise <code>cases</code> equals <code>cases_uncapped</code>. An estimate exactly equal
+to <code>cap</code> or <code>floor</code> was not changed by it.</p></li>
 </ul><p><code>data_status</code> is unchanged, so suppressed rows can still be identified.
 <code>cap</code>, <code>floor</code>, <code>population</code> and <code>unestimated</code> apply only to
-<code>"state_rate"</code>.</p>
+<code>"state_rate"</code>. <code><a href="no_county_cases.html">no_county_cases()</a></code> and <code><a href="extrapolate_from_county.html">extrapolate_from_county()</a></code> use
+<code>cases</code> and ignore <code>cases_uncapped</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -202,6 +215,10 @@ for CDC's suppression rules.</p></div>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="va">county</span> <span class="op">&lt;-</span> <span class="fu"><a href="get_atlas.html">get_atlas</a></span><span class="op">(</span><span class="st">"hiv"</span>, <span class="st">"county"</span>, <span class="fl">2022</span>, stratify_by <span class="op">=</span> <span class="st">"sex"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">county</span> <span class="op">&lt;-</span> <span class="fu">impute_suppressed</span><span class="op">(</span><span class="va">county</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># How many filled-in rows did the cap (4 by default) decide?</span></span></span>
+<span class="r-in"><span><span class="va">filled</span> <span class="op">&lt;-</span> <span class="va">county</span><span class="op">[</span><span class="va">county</span><span class="op">$</span><span class="va">cases_source</span> <span class="op">==</span> <span class="st">"state_rate"</span>, <span class="op">]</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">filled</span><span class="op">$</span><span class="va">indicator</span>, capped <span class="op">=</span> <span class="va">filled</span><span class="op">$</span><span class="va">cases_uncapped</span> <span class="op">&gt;</span> <span class="fl">4</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Sensitivity analysis: suppressed counties have no cases</span></span></span>
 <span class="r-in"><span><span class="va">county_zero</span> <span class="op">&lt;-</span> <span class="fu">impute_suppressed</span><span class="op">(</span></span></span>

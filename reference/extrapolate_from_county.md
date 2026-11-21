@@ -203,7 +203,8 @@ extrapolate_from_county(
 
 ## Value
 
-A tibble with one row per area, indicator, year and stratum:
+A tibble with one row per county, area, indicator, year and stratum (see
+below for the one tract that is in two counties):
 
 - year, acs_year:
 
@@ -277,6 +278,26 @@ A tibble with one row per area, indicator, year and stratum:
 
 It can be negative where `empty_strata` shares cases into a stratum with
 no ACS population.
+
+`geoid` is unique within `county_fips` (for one indicator, year and
+stratum), not overall. With ACS 2010 to 2019, one 2010 tract
+(09013890201) is split between two of Connecticut's planning regions, so
+it has two rows with the same `geoid`, one for each planning region in
+`x`, and so does each of its block groups. Each row holds a share of the
+area: both `area_population_acs` and `area_total_population` are
+multiplied by the share of the tract's land area in that planning
+region, and `area_cases` is that county's count shared over them. Block
+groups inherit their parent tract's land-area shares, which are not
+measured shares of each block group's population. A warning of class
+`"cdcatlas_duplicated_geoid"` says how many areas are affected.
+
+To get one row per area, for example before joining to tract boundaries,
+sum `area_cases`, `area_population_acs` and `area_total_population` by
+`geoid` within year, indicator and stratum; keeping one of the two rows
+would understate the tract. The county columns repeat on every row of a
+county and must not be summed. The article ["Extrapolation to
+tracts"](https://vagishhemmige.github.io/CDCAtlas/articles/extrapolation.html)
+shows the step.
 
 Two attributes record what was not allocated:
 `attr(result, "no_county_cases")`, the

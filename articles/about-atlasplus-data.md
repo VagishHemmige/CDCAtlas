@@ -51,6 +51,11 @@ and stratum, times the county’s population, kept between `floor` and
 `cap`. Filling suppressed counts with zero is available as
 `method = "zero"`, as a sensitivity analysis.
 
+The column `cases_uncapped` keeps the estimate before `floor` and `cap`
+were applied, so `cases_uncapped > cap` picks out the rows whose value
+the cap set. It is a modeled number (state rate times county
+population), not CDC’s hidden count.
+
 The suppression rules differ by disease, according to CDC’s technical
 notes:
 

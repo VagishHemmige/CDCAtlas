@@ -229,7 +229,8 @@ uses each data year. A single year can be given only if <code>x</code> has one y
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A tibble with one row per area, indicator, year and stratum:</p><dl><dt>year, acs_year</dt>
+    <p>A tibble with one row per county, area, indicator, year and
+stratum (see below for the one tract that is in two counties):</p><dl><dt>year, acs_year</dt>
 <dd><p>Data year and ACS year used.</p></dd>
 
 <dt>area_type, geoid, area_name</dt>
@@ -287,6 +288,24 @@ chlamydia, gonorrhea and syphilis count infections rather than people;
 for Knowledge of Status the population isn't residents.</p></li>
 </ul><p>It can be negative where <code>empty_strata</code> shares cases into a stratum with
 no ACS population.</p>
+<p><code>geoid</code> is unique within <code>county_fips</code> (for one indicator, year and
+stratum), not overall. With ACS 2010 to 2019, one 2010 tract
+(09013890201) is split between two of Connecticut's planning regions, so
+it has two rows with the same <code>geoid</code>, one for each planning region in
+<code>x</code>, and so does each of its block groups. Each row holds a share of the
+area: both <code>area_population_acs</code> and <code>area_total_population</code> are
+multiplied by the share of the tract's land area in that planning
+region, and <code>area_cases</code> is that county's count shared over them. Block
+groups inherit their parent tract's land-area shares, which are not
+measured shares of each block group's population. A warning of class
+<code>"cdcatlas_duplicated_geoid"</code> says how many areas are affected.</p>
+<p>To get one row per area, for example before joining to tract boundaries,
+sum <code>area_cases</code>, <code>area_population_acs</code> and <code>area_total_population</code> by
+<code>geoid</code> within year, indicator and stratum; keeping one of the two rows
+would understate the tract. The county columns repeat on every row of a
+county and must not be summed. The article
+<a href="https://vagishhemmige.github.io/CDCAtlas/articles/extrapolation.html">"Extrapolation to tracts"</a>
+shows the step.</p>
 <p>Two attributes record what was not allocated:
 <code>attr(result, "no_county_cases")</code>, the <code><a href="no_county_cases.html">no_county_cases()</a></code> report, and
 <code>attr(result, "not_allocated")</code>, county rows left out, with a <code>reason</code>.</p>

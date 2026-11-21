@@ -628,6 +628,49 @@ releases from 2010 to 2019 cover them. A few combinations aren’t
 covered, such as Connecticut with the 2020 and 2021 releases; those
 counties are left out with a warning that says why. <a href="about-atlasplus-data.html#cdcs-county-map">About CDC AtlasPlus
 data</a> lists them.</p>
+<div class="section level3">
+<h3 id="the-one-tract-in-two-counties">The one tract in two counties<a class="anchor" aria-label="anchor" href="#the-one-tract-in-two-counties"></a>
+</h3>
+<p>One 2010 tract in Connecticut (GEOID 09013890201) lies in two of
+CDC’s current counties, the Capitol and Northeastern Connecticut
+planning regions. With ACS releases from 2010 to 2019, the result has
+two rows for it, one in each planning region, and two rows for each of
+its block groups with <code>to = "block group"</code>. So
+<code>geoid</code> is unique within <code>county_fips</code>, not
+overall, and <code><a href="../reference/extrapolate_from_county.html">extrapolate_from_county()</a></code> warns when this
+happens.</p>
+<p>Each row holds a share of the tract: its ACS populations are
+multiplied by the share of the tract’s land area in that planning region
+(about 39% and 61%), and its cases are that planning region’s count
+shared over them. A block group gets its parent tract’s shares, which
+are not measured shares of the block group’s own population.</p>
+<p>Before joining to boundaries, which have each tract once, sum the
+area columns by <code>geoid</code> within year, indicator and
+stratum:</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">hiv_tract_2017</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_atlas.html">get_atlas</a></span><span class="op">(</span></span>
+<span>  disease <span class="op">=</span> <span class="st">"hiv"</span>,</span>
+<span>  year <span class="op">=</span> <span class="fl">2017</span>,</span>
+<span>  geography <span class="op">=</span> <span class="st">"county"</span></span>
+<span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/impute_suppressed.html">impute_suppressed</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/extrapolate_from_county.html">extrapolate_from_county</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">hiv_tract_2017_one_row</span> <span class="op">&lt;-</span> <span class="va">hiv_tract_2017</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarize</a></span><span class="op">(</span></span>
+<span>    area_cases <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">area_cases</span><span class="op">)</span>,</span>
+<span>    area_population_acs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">area_population_acs</span><span class="op">)</span>,</span>
+<span>    area_total_population <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">area_total_population</span><span class="op">)</span>,</span>
+<span>    .by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">year</span>, <span class="va">indicator</span>, <span class="va">race_ethnicity</span>, <span class="va">sex</span>, <span class="va">age</span>, <span class="va">geoid</span>, <span class="va">area_name</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
+<p>Sum all three columns: keeping only one of the two rows, or the first
+population, would understate the tract. The county columns
+(<code>county_fips</code>, <code>county_cases</code>,
+<code>county_population_acs</code> and the rest) are left out of the
+summary because the combined row belongs to two counties; they repeat on
+every tract of a county, so they should not be summed across tracts
+either.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="multiple-stratification-variables">Multiple stratification variables<a class="anchor" aria-label="anchor" href="#multiple-stratification-variables"></a>
@@ -641,7 +684,9 @@ most one variable. <code><a href="../reference/get_atlas.html">get_atlas()</a></
 </h2>
 <p>The results have Census GEOIDs (<code>geoid</code>) but no
 boundaries. To map them, join them to tract boundaries, for example from
-the tigris package.</p>
+the tigris package. With ACS releases from 2010 to 2019, first sum the
+one tract that is in two counties (see <a href="#the-one-tract-in-two-counties">The one tract in two
+counties</a>).</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

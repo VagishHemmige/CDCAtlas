@@ -561,6 +561,52 @@ with a warning that says why. [About CDC AtlasPlus
 data](https://vagishhemmige.github.io/CDCAtlas/articles/about-atlasplus-data.html#cdcs-county-map)
 lists them.
 
+### The one tract in two counties
+
+One 2010 tract in Connecticut (GEOID 09013890201) lies in two of CDC’s
+current counties, the Capitol and Northeastern Connecticut planning
+regions. With ACS releases from 2010 to 2019, the result has two rows
+for it, one in each planning region, and two rows for each of its block
+groups with `to = "block group"`. So `geoid` is unique within
+`county_fips`, not overall, and
+[`extrapolate_from_county()`](https://vagishhemmige.github.io/CDCAtlas/reference/extrapolate_from_county.md)
+warns when this happens.
+
+Each row holds a share of the tract: its ACS populations are multiplied
+by the share of the tract’s land area in that planning region (about 39%
+and 61%), and its cases are that planning region’s count shared over
+them. A block group gets its parent tract’s shares, which are not
+measured shares of the block group’s own population.
+
+Before joining to boundaries, which have each tract once, sum the area
+columns by `geoid` within year, indicator and stratum:
+
+``` r
+
+hiv_tract_2017 <- get_atlas(
+  disease = "hiv",
+  year = 2017,
+  geography = "county"
+) |>
+  impute_suppressed() |>
+  extrapolate_from_county()
+
+hiv_tract_2017_one_row <- hiv_tract_2017 |>
+  summarize(
+    area_cases = sum(area_cases),
+    area_population_acs = sum(area_population_acs),
+    area_total_population = sum(area_total_population),
+    .by = c(year, indicator, race_ethnicity, sex, age, geoid, area_name)
+  )
+```
+
+Sum all three columns: keeping only one of the two rows, or the first
+population, would understate the tract. The county columns
+(`county_fips`, `county_cases`, `county_population_acs` and the rest)
+are left out of the summary because the combined row belongs to two
+counties; they repeat on every tract of a county, so they should not be
+summed across tracts either.
+
 ## Multiple stratification variables
 
 [`extrapolate_from_county()`](https://vagishhemmige.github.io/CDCAtlas/reference/extrapolate_from_county.md)
@@ -572,4 +618,7 @@ be extrapolated yet.
 ## Working with geometry
 
 The results have Census GEOIDs (`geoid`) but no boundaries. To map them,
-join them to tract boundaries, for example from the tigris package.
+join them to tract boundaries, for example from the tigris package. With
+ACS releases from 2010 to 2019, first sum the one tract that is in two
+counties (see [The one tract in two
+counties](#the-one-tract-in-two-counties)).
