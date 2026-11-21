@@ -1,5 +1,5 @@
-# Made-up data for test-pipeline-report.R. Every number is invented so that
-# each count in the report can be checked by hand.
+# Made-up data for test-pipeline-report.R and test-pipeline-summary.R. Every
+# number is invented so that each count in the report can be checked by hand.
 #
 # One state (01), 2022, by sex, six counties. For HIV prevalence, with
 # `cap = 4` and `floor = 1`:

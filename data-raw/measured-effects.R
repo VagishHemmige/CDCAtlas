@@ -9,7 +9,9 @@
 # keeps one indicator, and counts what each step did with .pipeline_report()
 # (R/pipeline-report.R). It then imputes again under each alternative
 # (`method = "zero"`, `cap = Inf`, `floor = 1`, `population = "acs"`) and
-# reports the imputation and remainder steps for it. The alternatives stop at
+# reports the imputation and remainder steps for it. .pipeline_summary()
+# (R/pipeline-summary.R) reduces all of that to the compact summary. The
+# alternatives stop at
 # imputation: extrapolation is not rerun for them, to keep the run time down,
 # so the summary has no tract-level results for the alternatives.
 #
@@ -96,9 +98,9 @@
 # One indicator is reported at a time, so diagnoses and prevalence are never
 # added together. Nothing here estimates a suppressed count.
 #
-# tests/testthat/test-pipeline-report.R runs this script end to end on
-# made-up data (MEASURED_EFFECTS_SOURCE_ONLY=true defines the functions
-# without running them). That shows it executes, not that its numbers are
+# tests/testthat/test-pipeline-report.R and test-pipeline-summary.R run this
+# script end to end on made-up data (MEASURED_EFFECTS_SOURCE_ONLY=true defines
+# the functions without running them). That shows it executes, not that its numbers are
 # right on real data.
 
 measured_effects_options <- function(args = character()) {

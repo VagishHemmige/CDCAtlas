@@ -20,6 +20,7 @@ on:
       - ".github/workflows/measured-effects-synthetic.yaml"
       - "data-raw/measured-effects.R"
       - "R/pipeline-report.R"
+      - "R/pipeline-summary.R"
       - "tests/testthat/helper-pipeline.R"
       - "tests/testthat/helper-pipeline-report.R"
 
