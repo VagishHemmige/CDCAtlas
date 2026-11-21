@@ -28,12 +28,9 @@ between \code{floor} and \code{cap}.
 \item{cap}{The largest count \code{"state_rate"} can give a suppressed county.
 Use \code{Inf} for no cap. The default, 4, reflects CDC suppressing counts of
 1 to 4, but complementary suppression can hide larger counts, so it is a
-default rather than a hard limit. For HIV prevalence, the state rate
-times a county's population is expected to be above the default cap in
-most suppressed counties, so the cap would usually set the value. That
-is an expectation, not a measurement: \code{cases_uncapped} in the output
-lets you count it. \code{floor = cap = 2.5} gives every row that can be
-estimated the same fixed value, 2.5.}
+default rather than a hard limit. \code{cases_uncapped} in the output lets
+you count how often the cap sets the value. \code{floor = cap = 2.5} gives
+every row that can be estimated the same fixed value, 2.5.}
 
 \item{floor}{The smallest count \code{"state_rate"} can give. The default, 0,
 allows for counties suppressed because their population is under 100,
