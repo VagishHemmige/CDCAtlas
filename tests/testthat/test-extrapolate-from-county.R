@@ -69,6 +69,39 @@ test_that("there is no area_noncases column (#117)", {
   expect_equal(names(tracts)[ncol(tracts)], "area_cases")
 })
 
+test_that("the output has no rate or rate-bound columns (#157)", {
+  # Records what extrapolate_from_county() does today, before #157 decides
+  # what the rate columns should hold after imputation: CDC's county rates,
+  # with or without one on a suppressed row, are not carried to the areas.
+  for (rate_without_count in c(FALSE, TRUE)) {
+    county <- with_fake_rates(
+      fake_county_atlas(suppressed = "01003"),
+      rate_without_count = rate_without_count
+    )
+    expect_contains(names(county), rate_columns)
+    for (to in c("tract", "block group")) {
+      areas <- run_extrapolation(county = county, to = to)
+      label <- paste(to, "rate without count:", rate_without_count)
+
+      expect_gt(nrow(areas), 0, label = label)
+      expect_equal(
+        intersect(names(areas), rate_columns),
+        character(0),
+        label = label
+      )
+    }
+  }
+
+  # A county that is left out, carrying rates: 01003 has no CDC data.
+  county <- with_fake_rates(fake_county_atlas(), rate_without_count = TRUE)
+  county$cases[county$fips == "01003"] <- NA
+  county$data_status[county$fips == "01003"] <- "Data not available"
+  left_out <- attr(run_extrapolation(county = county), "not_allocated")
+
+  expect_equal(left_out$county_fips, c("01003", "01003"))
+  expect_equal(intersect(names(left_out), rate_columns), character(0))
+})
+
 test_that("allocation uses known shares after saving and reordering county rows", {
   county <- data.frame(
     indicator = "Chlamydia",
