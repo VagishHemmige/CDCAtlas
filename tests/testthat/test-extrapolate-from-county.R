@@ -1402,3 +1402,30 @@ test_that("unknown_age is checked", {
     extrapolate_from_county(county, unknown_age = "spread")
   )
 })
+
+test_that("tracts are the same with or without cases_uncapped, and don't carry it (#151)", {
+  local_fake_sources()
+  # County 01003 has no CDC population in one indicator, so one suppressed row
+  # is estimated and one is left out.
+  county <- fake_county_atlas(suppressed = "01003")
+  county$population[
+    county$fips == "01003" & county$indicator == "HIV diagnoses"
+  ] <- NA
+  county <- suppressWarnings(impute_suppressed(county))
+  expect_contains(names(county), "cases_uncapped")
+  # Data imputed by a version without the column.
+  older <- county[setdiff(names(county), "cases_uncapped")]
+
+  tracts <- suppressMessages(
+    extrapolate_from_county(county, unestimated = "leave out")
+  )
+  tracts_older <- suppressMessages(
+    extrapolate_from_county(older, unestimated = "leave out")
+  )
+  expect_identical(tracts, tracts_older)
+  expect_false("cases_uncapped" %in% names(tracts))
+  expect_equal(nrow(attr(tracts, "not_allocated")), 1)
+  expect_false("cases_uncapped" %in% names(attr(tracts, "not_allocated")))
+  # The capped count is the one shared out: 4, not 11.6.
+  expect_equal(unique(tracts$county_cases[tracts$county_fips == "01003"]), 4)
+})

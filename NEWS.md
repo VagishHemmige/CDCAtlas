@@ -1,6 +1,7 @@
 # CDCAtlas (development version)
 
 * `extrapolate_from_county()` warns once (class `"cdcatlas_duplicated_geoid"`) when an area is split between counties and so has more than one row with the same `geoid`: with ACS 2010 to 2019, one Connecticut tract and its block groups. Its help and the "Extrapolation to tracts" article show how to sum the rows before joining to boundaries (#152).
+* `impute_suppressed()` returns a new column, `cases_uncapped`: for rows filled in by `method = "state_rate"`, the estimate before `cap` and `floor` (state rate times county population), and `NA` otherwise. `cases_uncapped > cap` marks the rows whose value the cap set. `cases` is unchanged (#151).
 
 # CDCAtlas 0.1.0
 

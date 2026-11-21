@@ -192,6 +192,15 @@
       Error in `impute_suppressed()`:
       ! `floor` must be a single number of 0 or more, or `Inf`.
 
+# impute_suppressed() stops if `x` already has cases_uncapped
+
+    Code
+      impute_suppressed(county, method = "zero")
+    Condition
+      Error in `impute_suppressed()`:
+      ! `x` already has a cases_uncapped column.
+      i `impute_suppressed()` adds a column of that name. Rename or remove yours first.
+
 # population = 'acs' stops on two-way strata before any request
 
     Code
