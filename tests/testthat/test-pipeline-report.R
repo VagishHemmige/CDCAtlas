@@ -1038,7 +1038,7 @@ test_that("data-raw/measured-effects.R runs end to end on made-up data", {
     MEASURED_STRATIFICATIONS = "none,sex",
     MEASURED_ALTERNATIVES = "zero,cap_inf,floor_1,acs",
     MEASURED_OUT_DIR = out_dir,
-    MEASURED_PRINT_SUMMARY = "true",
+    MEASURED_PRINT_SUMMARY = NA,
     MEASURED_EFFECTS_SYNTHETIC = NA,
     GITHUB_STEP_SUMMARY = step_summary,
     CENSUS_API_KEY = "made-up-key"
@@ -1138,11 +1138,11 @@ test_that("data-raw/measured-effects.R runs end to end on made-up data", {
     "more than 10 rows"
   )
 
-  # Unless asked, a run prints no figures and writes no job summary. What it
-  # does say is progress, the year found, file names and row counts: no
-  # figure, and none of the warnings it recorded.
+  # With printing turned off, a run prints no figures and writes no job
+  # summary. What it does say is progress, the year found, file names and row
+  # counts: no figure, and none of the warnings it recorded.
   unlink(step_summary)
-  withr::local_envvar(MEASURED_PRINT_SUMMARY = NA)
+  withr::local_envvar(MEASURED_PRINT_SUMMARY = "false")
   said <- NULL
   quiet <- utils::capture.output(
     said <- capture_messages(script_env$measured_effects())

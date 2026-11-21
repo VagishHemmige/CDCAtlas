@@ -34,15 +34,12 @@
 # rows the files are still written, but nothing is printed and the run stops:
 # the summary is then the wrong shape to commit.
 #
-# Real data are not printed unless asked. On a public repository a job log,
-# a job summary and an artifact are public, so whether figures from a real
-# run are shown anywhere is the maintainer's decision. By default a real run
-# only writes its files, and says only its progress, the year it found for
-# "latest", file names and numbers of rows; the warnings it records go into
-# the metadata file, not the log. (The workflow uploads none of the files
-# unless asked.) With MEASURED_PRINT_SUMMARY=true it also prints the
-# compact summary and the metadata between marker lines and, on GitHub, adds a
-# short table to the job summary.
+# By default a run prints the compact summary and the metadata between
+# marker lines and, on GitHub, adds a short table to the job summary, so the
+# result can be read without downloading anything. The maintainer decided on
+# 21 November 2026 that these figures, derived from CDC's public aggregates,
+# may be shared. MEASURED_PRINT_SUMMARY=false turns the printing off; the
+# files are written either way.
 #
 # Synthetic mode (MEASURED_EFFECTS_SYNTHETIC=true) runs the same code on the
 # made-up CDC and Census data of the offline tests
@@ -50,9 +47,9 @@
 # the repository; needs testthat). It sends no request to CDC AtlasPlus or the
 # Census, needs no Census API key and does not read one. Everything it
 # produces says SYNTHETIC: the file names, a first column in both CSV files,
-# the metadata, the marker lines and the job summary. It always prints,
-# because made-up numbers disclose nothing. Pull requests run this mode, to
-# exercise the whole path without real data.
+# the metadata, the marker lines and the job summary. It always prints. Pull
+# requests run this mode (measured-effects-synthetic.yaml), to exercise the
+# whole path without real data.
 #
 # Run from the package root, with a Census API key in CENSUS_API_KEY:
 #
@@ -60,9 +57,10 @@
 #
 # A full default run makes about 56 CDC requests and one national tract
 # download per year and stratification (twice with the "acs" alternative), so
-# allow one to two hours. `.github/workflows/measured-effects.yaml` can run it
-# on GitHub by hand; it uploads a file only when asked to, and the compact
-# summary and the metadata are committed by pull request.
+# allow one to two hours. `.github/workflows/measured-effects.yaml` runs it on
+# GitHub when the `measured-effects` label is added to a pull request, or by
+# hand, and uploads the three files; the compact summary and the metadata are
+# committed by pull request.
 #
 # Settings, as environment variables (defaults in brackets):
 #
@@ -81,8 +79,8 @@
 #                             ["true"]
 #   MEASURED_OUT_DIR          output folder, unless given as an argument
 #                             ["vignettes/articles/data"]
-#   MEASURED_PRINT_SUMMARY    print a real run's compact summary and metadata,
-#                             and write the job summary? ["false"]
+#   MEASURED_PRINT_SUMMARY    print the compact summary and metadata, and
+#                             write the job summary? ["true"]
 #   MEASURED_EFFECTS_SYNTHETIC  run on made-up data only? ["false"]
 #
 # "latest" starts at the latest year in the package's own code table and
@@ -130,7 +128,7 @@ measured_effects_options <- function(args = character()) {
     by_state = identical(tolower(setting("MEASURED_BY_STATE", "true")), "true"),
     out_dir = out_dir,
     print_summary = identical(
-      tolower(setting("MEASURED_PRINT_SUMMARY", "false")),
+      tolower(setting("MEASURED_PRINT_SUMMARY", "true")),
       "true"
     ),
     synthetic = identical(
@@ -414,8 +412,8 @@ measured_effects <- function(options = measured_effects_options()) {
              were written; look at {.file {files$csv}}."
     ))
   }
-  # Figures from real data are shown only when asked (see the top of this
-  # file); made-up figures always are.
+  # Printed unless turned off (see the top of this file); made-up figures
+  # always are.
   if (!synthetic && !isTRUE(options$print_summary)) {
     return(invisible(files))
   }
