@@ -13,11 +13,29 @@
 # imputation: extrapolation is not rerun for them, to keep the run time down,
 # so the summary has no tract-level results for the alternatives.
 #
-# It writes two files to the output folder:
+# It writes three files to the output folder:
 #
-#   measured-effects.csv        one row per measure (see .pipeline_report()),
-#                               with a `scenario` column
-#   measured-effects-meta.json  when and how the summary was made
+#   measured-effects.csv         the compact summary: the figures the articles
+#                                plot or quote (.pipeline_summary()), at most
+#                                3,000 rows. The only data file meant to be
+#                                committed.
+#   measured-effects-detail.csv  every measure, by group, state and scenario
+#                                (.pipeline_report() with a `scenario`
+#                                column): tens of thousands of rows. Kept as a
+#                                workflow artifact only; .gitignore lists it
+#                                so it cannot be committed by accident.
+#   measured-effects-meta.json   when and how the summary was made
+#
+# In both CSV files a missing value is an empty field: read them with
+# `na.strings = ""`.
+#
+# Every figure in the compact summary is computed from rows of the detail
+# table by .pipeline_summary(). So the result can be read without downloading
+# anything, the compact summary and the metadata are also printed between
+# marker lines, and on GitHub a short table is added to the job summary. If
+# the compact summary has more than 3,000 rows the files are still written,
+# but nothing is printed and the run stops: the summary is then the wrong
+# shape to commit.
 #
 # Run from the package root, with a Census API key in CENSUS_API_KEY:
 #
@@ -26,7 +44,8 @@
 # A full default run makes about 56 CDC requests and one national tract
 # download per year and stratification (twice with the "acs" alternative), so
 # allow one to two hours. `.github/workflows/measured-effects.yaml` runs it on
-# GitHub and uploads the two files; they are committed by pull request.
+# GitHub and uploads the three files; the compact summary and the metadata are
+# committed by pull request.
 #
 # Settings, as environment variables (defaults in brackets):
 #
@@ -40,7 +59,9 @@
 #   MEASURED_ALTERNATIVES     comma-separated: zero, cap_inf, floor_1, acs;
 #                             "none" for no alternatives
 #                             ["zero,cap_inf,floor_1,acs"]
-#   MEASURED_BY_STATE         also report each state? ["true"]
+#   MEASURED_BY_STATE         also report each state in the detail table, and
+#                             the figures across states in the summary?
+#                             ["true"]
 #   MEASURED_OUT_DIR          output folder, unless given as an argument
 #                             ["vignettes/articles/data"]
 #
@@ -87,7 +108,8 @@ measured_effects_options <- function(args = character()) {
     ),
     alternatives = setdiff(alternatives, "none"),
     by_state = identical(tolower(setting("MEASURED_BY_STATE", "true")), "true"),
-    out_dir = out_dir
+    out_dir = out_dir,
+    max_compact_rows = 3000
   )
 }
 
@@ -206,7 +228,8 @@ measured_effects <- function(options = measured_effects_options()) {
     }
   }
 
-  summary <- dplyr::bind_rows(results)
+  detail <- dplyr::bind_rows(results)
+  compact <- if (nrow(detail) > 0) pkg$.pipeline_summary(detail)
   runs <- dplyr::bind_rows(runs)
   complete <- all(is.na(runs$error))
   finished <- Sys.time()
@@ -227,7 +250,17 @@ measured_effects <- function(options = measured_effects_options()) {
     })
   }
   meta <- list(
-    summary = "measured-effects.csv",
+    files = list(
+      committed = "measured-effects.csv",
+      artifact_only = "measured-effects-detail.csv",
+      note = paste(
+        "measured-effects.csv is the compact summary: every figure in it is",
+        "computed from rows of measured-effects-detail.csv, which is kept as",
+        "a workflow artifact and is not committed."
+      )
+    ),
+    rows = list(compact = NROW(compact), detail = nrow(detail)),
+    quantile_type = pkg$.summary_quantile_type,
     complete = complete,
     run = list(started_utc = utc(started), finished_utc = utc(finished)),
     retrieval = paste(
@@ -288,10 +321,17 @@ measured_effects <- function(options = measured_effects_options()) {
   dir.create(options$out_dir, recursive = TRUE, showWarnings = FALSE)
   files <- list(
     csv = file.path(options$out_dir, "measured-effects.csv"),
+    detail = file.path(options$out_dir, "measured-effects-detail.csv"),
     meta = file.path(options$out_dir, "measured-effects-meta.json"),
     complete = complete
   )
-  utils::write.csv(summary, files$csv, row.names = FALSE, na = "")
+  utils::write.csv(detail, files$detail, row.names = FALSE, na = "")
+  utils::write.csv(
+    if (is.null(compact)) data.frame() else compact,
+    files$csv,
+    row.names = FALSE,
+    na = ""
+  )
   jsonlite::write_json(
     meta,
     files$meta,
@@ -302,14 +342,114 @@ measured_effects <- function(options = measured_effects_options()) {
     digits = NA
   )
   cli::cli_inform(c(
-    "v" = "Wrote {nrow(summary)} row{?s} to {.file {files$csv}}.",
+    "v" = "Wrote {NROW(compact)} row{?s} to {.file {files$csv}}.",
+    "v" = "Wrote {nrow(detail)} row{?s} to {.file {files$detail}}.",
     "v" = "Wrote {.file {files$meta}}.",
     "!" = if (!complete) {
       "{sum(!is.na(runs$error))} run{?s} failed; see {.field runs} in the
        metadata."
     }
   ))
+  if (NROW(compact) > options$max_compact_rows) {
+    cli::cli_abort(c(
+      "The compact summary has more than {options$max_compact_rows} rows
+       ({nrow(compact)}), so it is not printed.",
+      "i" = "It is meant to hold only figures to plot or quote. The files
+             were written; look at {.file {files$csv}}."
+    ))
+  }
+  measured_effects_print(files$csv, clean)
+  measured_effects_print(files$meta, clean)
+  step_summary <- Sys.getenv("GITHUB_STEP_SUMMARY")
+  if (nzchar(step_summary) && !is.null(compact)) {
+    cat(
+      measured_effects_markdown(compact, meta),
+      file = step_summary,
+      sep = "\n",
+      append = TRUE
+    )
+  }
   invisible(files)
+}
+
+# Print a file between marker lines, so it can be copied out of a job log.
+# `clean` removes the Census API key, should it ever appear.
+measured_effects_print <- function(path, clean) {
+  name <- basename(path)
+  writeLines(c(
+    paste("----- BEGIN", name, "-----"),
+    clean(readLines(path, warn = FALSE)),
+    paste("----- END", name, "-----")
+  ))
+}
+
+# A short Markdown table of the national remainder and imputation figures for
+# each year and stratification, groups together, for the job summary.
+measured_effects_markdown <- function(compact, meta) {
+  national <- compact[
+    compact$scenario == "default" &
+      compact$state_fips == "all" &
+      compact$group %in% c("all", "sum of groups"),
+  ]
+  figures <- c(
+    "Remainder, signed" = "remainder_signed",
+    "Positive only" = "remainder_positive",
+    "Negative only" = "remainder_negative",
+    "Signed, % of state cases" = "remainder_signed_share_of_state_cases",
+    "County rows suppressed, %" = "suppressed_rows_share_of_county_rows",
+    "Imputed, % of state cases" = "imputed_share_of_state_cases",
+    "Estimates above the cap, %" = "raw_above_cap_share_of_estimated_rows"
+  )
+  runs <- unique(national[c("year", "stratify_by")])
+  lines <- vapply(
+    seq_len(nrow(runs)),
+    function(i) {
+      run <- national[
+        national$year == runs$year[i] &
+          national$stratify_by == runs$stratify_by[i],
+      ]
+      cells <- vapply(
+        figures,
+        function(measure) {
+          row <- run[run$measure == measure, ]
+          if (nrow(row) != 1 || is.na(row$value)) {
+            "NA"
+          } else if (row$unit == "proportion") {
+            format(round(100 * row$value, 2), nsmall = 2)
+          } else {
+            format(round(row$value), big.mark = ",", trim = TRUE)
+          }
+        },
+        character(1)
+      )
+      paste0(
+        "| ",
+        paste(c(runs$year[i], runs$stratify_by[i], cells), collapse = " | "),
+        " |"
+      )
+    },
+    character(1)
+  )
+  header <- c("Year", "Stratified by", names(figures))
+  c(
+    paste("### Measured effects:", meta$request$indicator),
+    "",
+    paste0(
+      "Run ",
+      meta$run$started_utc,
+      " to ",
+      meta$run$finished_utc,
+      ", commit `",
+      meta$package$git_commit,
+      "`. Default pipeline, all groups together. Imputed cases are modelled, ",
+      "not observed. The remainder is a difference, not identified cases."
+    ),
+    "",
+    paste0("| ", paste(header, collapse = " | "), " |"),
+    paste0("|", strrep(" --- |", length(header))),
+    lines,
+    ""
+  )
 }
 
 # One year and stratification: the default pipeline and its report, then each

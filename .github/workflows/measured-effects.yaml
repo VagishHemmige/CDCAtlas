@@ -11,8 +11,15 @@
 #   it calls, so a change to how the summary is built is tried on real data.
 #
 # It does not commit anything: the workflow has read-only permissions. The
-# two files it writes are uploaded as the `measured-effects` artifact, and a
-# person commits them to `vignettes/articles/data/` in a pull request.
+# three files it writes are uploaded as the `measured-effects` artifact. A
+# person commits the compact summary (measured-effects.csv) and the metadata
+# to `vignettes/articles/data/` in a pull request; the detail table
+# (measured-effects-detail.csv) stays in the artifact and is git-ignored.
+#
+# The script also prints the compact summary and the metadata to the log of
+# the "Build the summary" step, between BEGIN and END marker lines, and adds a
+# short table to the job summary, so the result can be read without
+# downloading the artifact.
 #
 # Needs the CENSUS_API_KEY repository secret. GitHub does not pass secrets to
 # pull requests from forks, so this works only for branches in this
@@ -93,5 +100,6 @@ jobs:
           name: measured-effects
           path: |
             vignettes/articles/data/measured-effects.csv
+            vignettes/articles/data/measured-effects-detail.csv
             vignettes/articles/data/measured-effects-meta.json
           if-no-files-found: warn
