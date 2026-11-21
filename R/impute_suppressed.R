@@ -191,7 +191,8 @@ impute_suppressed <- function(
   x$cases_source[unexplained] <- "not estimated"
   # The "state_rate" estimate before `cap` and `floor`; NA for every row not
   # filled in that way. Shows whether a limit decided `cases` (#151).
-  x$cases_uncapped <- NA_real_
+  # Full length, not a scalar: `x` has no rows when every row was dropped.
+  x$cases_uncapped <- rep(NA_real_, nrow(x))
   if (any(unexplained)) {
     statuses <- unique(as.character(x$data_status[unexplained]))
     statuses[is.na(statuses)] <- "none"
