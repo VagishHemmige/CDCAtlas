@@ -19,3 +19,9 @@ inst/doc
 /doc/
 /docs/
 /Meta/
+
+# The measured-effects detail table is a workflow artifact, never committed;
+# only the compact measured-effects.csv and its metadata are.
+/vignettes/articles/data/measured-effects-detail.csv
+# Output of the script's synthetic mode (made-up data) is never committed.
+SYNTHETIC-measured-effects*

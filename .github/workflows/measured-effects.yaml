@@ -1,0 +1,153 @@
+# Builds the measured-effects summary (data-raw/measured-effects.R) from real
+# CDC AtlasPlus and Census data: what each pipeline step does to the numbers.
+# It runs the national pipeline for every year and stratification asked for,
+# so allow one to two hours. Only on request:
+#
+# - add the `measured-effects` label to a pull request (remove and re-add it
+#   to run again after more pushes): the script's default scope; or
+# - Actions tab -> measured-effects.yaml -> Run workflow, on any branch,
+#   choosing the years, stratifications and alternatives (this works only once
+#   this file is on the default branch).
+#
+# A push never starts it, and neither does any other label: adding another
+# label starts a run whose only job is skipped. Pull requests that change the
+# script are tried on made-up data by measured-effects-synthetic.yaml.
+#
+# What a run shares. The maintainer decided on 21 November 2026 that these
+# figures may be shared: they are derived from CDC's public aggregates, and
+# that includes the detail table by state and group. This repository is
+# public, so a run's log, job summary and artifacts are public. By default a
+# run:
+# - uploads the compact summary (measured-effects.csv) and the metadata as the
+#   `measured-effects` artifact, and the detail table
+#   (measured-effects-detail.csv) as `measured-effects-detail`;
+# - prints the compact summary and the metadata to the log of the "Build the
+#   summary" step, between BEGIN and END marker lines; and
+# - adds a short table to the job summary.
+# A run started by hand can turn each of these off.
+#
+# Nothing is committed: the workflow has read-only permissions. A person
+# commits the compact summary and the metadata to `vignettes/articles/data/`
+# in a pull request. The detail table is shared as an artifact only; it is
+# git-ignored and is not committed.
+#
+# The script stops with an error if the compact summary has more than 3,000
+# rows, or if any year and stratification failed. Its files are written
+# first and are still uploaded, so what went wrong can be inspected; in the
+# first case nothing is printed.
+#
+# The run writes to a new folder under the runner's temporary directory and
+# uploads only from there, never from `vignettes/articles/data/`. So an
+# artifact holds only what this run wrote: if the run stops before writing
+# anything, nothing is uploaded, and a summary committed earlier can never be
+# uploaded as if it were this run's.
+#
+# Needs the CENSUS_API_KEY repository secret. GitHub does not pass secrets to
+# pull requests from forks, so the label works only for branches in this
+# repository.
+on:
+  pull_request:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      years:
+        description: "Years, comma-separated; 'latest' is the newest year CDC has released"
+        type: string
+        default: "2017,2022,latest"
+      stratifications:
+        description: "Stratifications, comma-separated: none, sex, age, race"
+        type: string
+        default: "none,sex,age,race"
+      alternatives:
+        description: "Imputation alternatives: zero, cap_inf, floor_1, acs; or none"
+        type: string
+        default: "zero,cap_inf,floor_1,acs"
+      upload_summary:
+        description: "Upload the compact summary and the metadata"
+        type: boolean
+        default: true
+      upload_detail:
+        description: "Upload the detail table (every state and group)"
+        type: boolean
+        default: true
+      print_summary:
+        description: "Print the compact summary to the log and the job summary"
+        type: boolean
+        default: true
+
+name: measured-effects.yaml
+
+permissions: read-all
+
+jobs:
+  real-data:
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'measured-effects'
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    concurrency:
+      group: measured-effects-${{ github.ref }}
+      cancel-in-progress: true
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      CENSUS_API_KEY: ${{ secrets.CENSUS_API_KEY }}
+      NOT_CRAN: "true"
+      # The label uses the script's defaults: these are empty for it.
+      MEASURED_YEARS: ${{ inputs.years }}
+      MEASURED_STRATIFICATIONS: ${{ inputs.stratifications }}
+      MEASURED_ALTERNATIVES: ${{ inputs.alternatives }}
+      # On for the label; as chosen for a run started by hand.
+      MEASURED_PRINT_SUMMARY: ${{ github.event_name != 'workflow_dispatch' || inputs.print_summary }}
+      MEASURED_EFFECTS_SYNTHETIC: "false"
+
+    steps:
+      - name: Check the Census API key is set
+        run: |
+          if [ -z "$CENSUS_API_KEY" ]; then
+            echo "::error::CENSUS_API_KEY is not set. Add it under Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+
+      # On a pull request, build from the branch's own commit rather than the
+      # merge commit, so the commit recorded in the metadata is one that
+      # exists on the branch.
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::pkgload, any::tidycensus
+          needs: check
+
+      # A folder this run creates, so nothing in it is older than the run.
+      - name: Build the summary
+        run: |
+          out="$RUNNER_TEMP/measured-effects"
+          if [ -e "$out" ]; then
+            echo "::error::$out already exists; refusing to reuse it."
+            exit 1
+          fi
+          Rscript data-raw/measured-effects.R "$out"
+
+      # Uploaded even if the script stopped, so its files can be inspected.
+      - name: Upload the compact summary and the metadata
+        if: ${{ !cancelled() && (github.event_name != 'workflow_dispatch' || inputs.upload_summary) }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: measured-effects
+          path: |
+            ${{ runner.temp }}/measured-effects/measured-effects.csv
+            ${{ runner.temp }}/measured-effects/measured-effects-meta.json
+          if-no-files-found: warn
+
+      - name: Upload the detail table
+        if: ${{ !cancelled() && (github.event_name != 'workflow_dispatch' || inputs.upload_detail) }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: measured-effects-detail
+          path: ${{ runner.temp }}/measured-effects/measured-effects-detail.csv
+          if-no-files-found: warn
