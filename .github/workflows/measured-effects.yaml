@@ -1,36 +1,54 @@
 # Builds the measured-effects summary (data-raw/measured-effects.R): what each
-# pipeline step does to the numbers, on real CDC AtlasPlus and Census data.
-# It runs the national pipeline for every year and stratification asked for,
-# so allow one to two hours.
+# pipeline step does to the numbers.
 #
-# Runs:
-# - on request: Actions tab -> measured-effects.yaml -> Run workflow, on any
-#   branch, choosing the years and stratifications (this works only once this
-#   file is on the default branch); and
-# - on pull requests that change this file, the script or the report function
-#   it calls, so a change to how the summary is built is tried on real data.
+# READ FIRST: real-data output is public.
+# This repository is public, so everything a job shows is public: its log, its
+# job summary and its artifacts. Figures computed from real CDC AtlasPlus data
+# may only be shown or uploaded here as far as the maintainer has decided they
+# may be distributed. Until that decision is recorded, do not run the
+# real-data job. That is why, by default, the real-data job prints no figures,
+# writes no job summary, uploads only the compact summary and the metadata,
+# and uploads nothing at all if the run failed.
 #
-# It does not commit anything: the workflow has read-only permissions. The
-# three files it writes are uploaded as the `measured-effects` artifact. A
+# Two jobs, and which one runs depends only on what started the workflow:
+#
+# - `synthetic`, on pull requests that change this file, the script, the
+#   report functions it calls or the made-up test data. It runs the script in
+#   synthetic mode, on the made-up CDC and Census data of the offline tests.
+#   It is given no Census API key, and its script step sends every network
+#   request to a proxy that does not exist, so it cannot reach CDC AtlasPlus
+#   or the Census. Everything it produces is labelled SYNTHETIC: the file
+#   names, a column in both CSV files, the metadata, the log markers, the job
+#   summary and the artifact (`measured-effects-synthetic`). It exercises the
+#   whole path: script, both tables, printing, job summary and upload.
+#
+# - `real-data`, only on request (Actions tab -> measured-effects.yaml -> Run
+#   workflow), which works only once this file is on the default branch. It
+#   runs the national pipeline against CDC AtlasPlus and the Census for every
+#   year and stratification asked for: allow one to two hours. A pull request
+#   or a push can never start it. Inputs:
+#   - years, stratifications, alternatives: the scope;
+#   - upload_detail (default off): also upload the detail table, which has
+#     figures for every state and group;
+#   - print_summary (default off): also print the compact summary and the
+#     metadata to the log, between BEGIN and END marker lines, and add a
+#     short table to the job summary.
+#
+# Neither job commits anything: the workflow has read-only permissions. A
 # person commits the compact summary (measured-effects.csv) and the metadata
-# to `vignettes/articles/data/` in a pull request; the detail table
-# (measured-effects-detail.csv) stays in the artifact and is git-ignored.
+# to `vignettes/articles/data/` in a pull request; the detail table is
+# git-ignored there.
 #
-# The script also prints the compact summary and the metadata to the log of
-# the "Build the summary" step, between BEGIN and END marker lines, and adds a
-# short table to the job summary, so the result can be read without
-# downloading the artifact.
-#
-# Needs the CENSUS_API_KEY repository secret. GitHub does not pass secrets to
-# pull requests from forks, so this works only for branches in this
-# repository. Fails if any year and stratification failed; the artifact is
-# uploaded either way, and its metadata says which.
+# The real-data job needs the CENSUS_API_KEY repository secret, and fails if
+# any year and stratification failed.
 on:
   pull_request:
     paths:
       - ".github/workflows/measured-effects.yaml"
       - "data-raw/measured-effects.R"
       - "R/pipeline-report.R"
+      - "tests/testthat/helper-pipeline.R"
+      - "tests/testthat/helper-pipeline-report.R"
   workflow_dispatch:
     inputs:
       years:
@@ -45,26 +63,83 @@ on:
         description: "Imputation alternatives: zero, cap_inf, floor_1, acs; or none"
         type: string
         default: "zero,cap_inf,floor_1,acs"
+      upload_detail:
+        description: "Also upload the detail table (figures for every state and group). Public."
+        type: boolean
+        default: false
+      print_summary:
+        description: "Also print the compact summary to the log and the job summary. Public."
+        type: boolean
+        default: false
 
 name: measured-effects.yaml
 
 permissions: read-all
 
 jobs:
-  measured-effects:
+  # Made-up data only. No secret is passed to this job.
+  synthetic:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: measured-effects-synthetic-${{ github.ref }}
+      cancel-in-progress: true
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      NOT_CRAN: "true"
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::pkgload, any::testthat
+          needs: check
+
+      # The proxy settings point at a port nothing listens on, so a request
+      # to CDC AtlasPlus or the Census could not leave this step even if the
+      # script tried to send one.
+      - name: Build the SYNTHETIC summary (made-up data, no network)
+        env:
+          MEASURED_EFFECTS_SYNTHETIC: "true"
+          http_proxy: "http://127.0.0.1:9"
+          https_proxy: "http://127.0.0.1:9"
+          HTTP_PROXY: "http://127.0.0.1:9"
+          HTTPS_PROXY: "http://127.0.0.1:9"
+          no_proxy: ""
+          NO_PROXY: ""
+        run: Rscript data-raw/measured-effects.R "$RUNNER_TEMP/measured-effects-synthetic"
+
+      - name: Upload the SYNTHETIC summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: measured-effects-synthetic
+          path: ${{ runner.temp }}/measured-effects-synthetic/SYNTHETIC-*
+          if-no-files-found: warn
+
+  # Real CDC AtlasPlus and Census data. Only ever started by hand.
+  real-data:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 180
     concurrency:
-      group: measured-effects-${{ github.ref }}
+      group: measured-effects-real-${{ github.ref }}
       cancel-in-progress: true
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       CENSUS_API_KEY: ${{ secrets.CENSUS_API_KEY }}
       NOT_CRAN: "true"
-      # A pull request uses the script's defaults.
       MEASURED_YEARS: ${{ inputs.years }}
       MEASURED_STRATIFICATIONS: ${{ inputs.stratifications }}
       MEASURED_ALTERNATIVES: ${{ inputs.alternatives }}
+      MEASURED_PRINT_SUMMARY: ${{ inputs.print_summary && 'true' || 'false' }}
+      MEASURED_EFFECTS_SYNTHETIC: "false"
 
     steps:
       - name: Check the Census API key is set
@@ -74,12 +149,7 @@ jobs:
             exit 1
           fi
 
-      # On a pull request, build from the branch's own commit rather than the
-      # merge commit, so the commit recorded in the metadata is one that
-      # exists on the branch.
       - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - uses: r-lib/actions/setup-r@v2
         with:
@@ -90,16 +160,24 @@ jobs:
           extra-packages: any::pkgload, any::tidycensus
           needs: check
 
-      - name: Build the summary
+      - name: Build the summary from real data
         run: Rscript data-raw/measured-effects.R vignettes/articles/data
 
-      - name: Upload the summary
-        if: always()
+      # Nothing is uploaded from a failed run.
+      - name: Upload the compact summary and the metadata
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: measured-effects
           path: |
             vignettes/articles/data/measured-effects.csv
-            vignettes/articles/data/measured-effects-detail.csv
             vignettes/articles/data/measured-effects-meta.json
-          if-no-files-found: warn
+          if-no-files-found: error
+
+      - name: Upload the detail table
+        if: success() && inputs.upload_detail
+        uses: actions/upload-artifact@v4
+        with:
+          name: measured-effects-detail
+          path: vignettes/articles/data/measured-effects-detail.csv
+          if-no-files-found: error

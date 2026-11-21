@@ -30,12 +30,26 @@
 # `na.strings = ""`.
 #
 # Every figure in the compact summary is computed from rows of the detail
-# table by .pipeline_summary(). So the result can be read without downloading
-# anything, the compact summary and the metadata are also printed between
-# marker lines, and on GitHub a short table is added to the job summary. If
-# the compact summary has more than 3,000 rows the files are still written,
-# but nothing is printed and the run stops: the summary is then the wrong
-# shape to commit.
+# table by .pipeline_summary(). If the compact summary has more than 3,000
+# rows the files are still written, but nothing is printed and the run stops:
+# the summary is then the wrong shape to commit.
+#
+# Real data are not printed unless asked. On a public repository a job log,
+# a job summary and an artifact are public, so whether figures from a real
+# run are shown anywhere is the maintainer's decision. By default a real run
+# only writes its files. With MEASURED_PRINT_SUMMARY=true it also prints the
+# compact summary and the metadata between marker lines and, on GitHub, adds a
+# short table to the job summary.
+#
+# Synthetic mode (MEASURED_EFFECTS_SYNTHETIC=true) runs the same code on the
+# made-up CDC and Census data of the offline tests
+# (tests/testthat/helper-pipeline.R and helper-pipeline-report.R, sourced from
+# the repository; needs testthat). It sends no request to CDC AtlasPlus or the
+# Census, needs no Census API key and does not read one. Everything it
+# produces says SYNTHETIC: the file names, a first column in both CSV files,
+# the metadata, the marker lines and the job summary. It always prints,
+# because made-up numbers disclose nothing. Pull requests run this mode, to
+# exercise the whole path without real data.
 #
 # Run from the package root, with a Census API key in CENSUS_API_KEY:
 #
@@ -64,6 +78,9 @@
 #                             ["true"]
 #   MEASURED_OUT_DIR          output folder, unless given as an argument
 #                             ["vignettes/articles/data"]
+#   MEASURED_PRINT_SUMMARY    print a real run's compact summary and metadata,
+#                             and write the job summary? ["false"]
+#   MEASURED_EFFECTS_SYNTHETIC  run on made-up data only? ["false"]
 #
 # "latest" starts at the latest year in the package's own code table and
 # steps back, at most two years, until CDC returns state rows with counts for
@@ -109,6 +126,14 @@ measured_effects_options <- function(args = character()) {
     alternatives = setdiff(alternatives, "none"),
     by_state = identical(tolower(setting("MEASURED_BY_STATE", "true")), "true"),
     out_dir = out_dir,
+    print_summary = identical(
+      tolower(setting("MEASURED_PRINT_SUMMARY", "false")),
+      "true"
+    ),
+    synthetic = identical(
+      tolower(setting("MEASURED_EFFECTS_SYNTHETIC", "false")),
+      "true"
+    ),
     max_compact_rows = 3000
   )
 }
@@ -126,8 +151,11 @@ measured_effects <- function(options = measured_effects_options()) {
   pkg <- asNamespace("CDCAtlas")
   started <- Sys.time()
   utc <- function(time) format(time, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
-  # Text kept in the metadata never includes the Census API key.
-  key <- Sys.getenv("CENSUS_API_KEY")
+  synthetic <- isTRUE(options$synthetic)
+  synthetic_label <- "SYNTHETIC: made-up data, not CDC's or the Census's"
+  # Text kept in the metadata never includes the Census API key. Synthetic
+  # mode does not read the key at all.
+  key <- if (synthetic) "" else Sys.getenv("CENSUS_API_KEY")
   clean <- function(text) {
     text <- cli::ansi_strip(text)
     if (nzchar(key)) {
@@ -153,7 +181,9 @@ measured_effects <- function(options = measured_effects_options()) {
   if (length(bad) > 0) {
     cli::cli_abort("Unknown stratification{?s}: {.val {bad}}.")
   }
-  pkg$.check_census_ready(rlang::current_env())
+  if (!synthetic) {
+    pkg$.check_census_ready(rlang::current_env())
+  }
 
   # A new, empty cache for this run only (see the top of this file).
   cache <- tempfile("measured-effects-cache-")
@@ -263,13 +293,26 @@ measured_effects <- function(options = measured_effects_options()) {
     quantile_type = pkg$.summary_quantile_type,
     complete = complete,
     run = list(started_utc = utc(started), finished_utc = utc(finished)),
-    retrieval = paste(
-      "Per-response download times are not yet recorded by the package, so",
-      "the run window (run.started_utc to run.finished_utc) is the interval",
-      "in which every CDC AtlasPlus and Census response was retrieved. Saved",
-      "responses were not used: the run kept its cache in a new temporary",
-      "folder, so each response was downloaded once, during the run."
-    ),
+    synthetic = synthetic,
+    data = if (synthetic) {
+      synthetic_label
+    } else {
+      "CDC AtlasPlus and Census ACS data, downloaded during the run"
+    },
+    retrieval = if (synthetic) {
+      paste(
+        "SYNTHETIC run: nothing was retrieved. No request was sent to CDC",
+        "AtlasPlus or the Census; every response was made up."
+      )
+    } else {
+      paste(
+        "Per-response download times are not yet recorded by the package, so",
+        "the run window (run.started_utc to run.finished_utc) is the interval",
+        "in which every CDC AtlasPlus and Census response was retrieved. Saved",
+        "responses were not used: the run kept its cache in a new temporary",
+        "folder, so each response was downloaded once, during the run."
+      )
+    },
     package = list(
       name = "CDCAtlas",
       version = as.character(packageVersion("CDCAtlas")),
@@ -319,19 +362,29 @@ measured_effects <- function(options = measured_effects_options()) {
   )
 
   dir.create(options$out_dir, recursive = TRUE, showWarnings = FALSE)
+  prefix <- if (synthetic) "SYNTHETIC-" else ""
   files <- list(
-    csv = file.path(options$out_dir, "measured-effects.csv"),
-    detail = file.path(options$out_dir, "measured-effects-detail.csv"),
-    meta = file.path(options$out_dir, "measured-effects-meta.json"),
+    csv = file.path(options$out_dir, paste0(prefix, "measured-effects.csv")),
+    detail = file.path(
+      options$out_dir,
+      paste0(prefix, "measured-effects-detail.csv")
+    ),
+    meta = file.path(
+      options$out_dir,
+      paste0(prefix, "measured-effects-meta.json")
+    ),
     complete = complete
   )
-  utils::write.csv(detail, files$detail, row.names = FALSE, na = "")
-  utils::write.csv(
-    if (is.null(compact)) data.frame() else compact,
-    files$csv,
-    row.names = FALSE,
-    na = ""
-  )
+  # In synthetic mode every row of both tables says so, in a first column.
+  labelled <- function(table) {
+    table <- if (is.null(table)) data.frame() else as.data.frame(table)
+    if (synthetic) {
+      table <- cbind(synthetic = rep(synthetic_label, nrow(table)), table)
+    }
+    table
+  }
+  utils::write.csv(labelled(detail), files$detail, row.names = FALSE, na = "")
+  utils::write.csv(labelled(compact), files$csv, row.names = FALSE, na = "")
   jsonlite::write_json(
     meta,
     files$meta,
@@ -358,8 +411,13 @@ measured_effects <- function(options = measured_effects_options()) {
              were written; look at {.file {files$csv}}."
     ))
   }
-  measured_effects_print(files$csv, clean)
-  measured_effects_print(files$meta, clean)
+  # Figures from real data are shown only when asked (see the top of this
+  # file); made-up figures always are.
+  if (!synthetic && !isTRUE(options$print_summary)) {
+    return(invisible(files))
+  }
+  measured_effects_print(files$csv, clean, synthetic)
+  measured_effects_print(files$meta, clean, synthetic)
   step_summary <- Sys.getenv("GITHUB_STEP_SUMMARY")
   if (nzchar(step_summary) && !is.null(compact)) {
     cat(
@@ -372,10 +430,69 @@ measured_effects <- function(options = measured_effects_options()) {
   invisible(files)
 }
 
+# Synthetic mode: the same run with CDC and the Census replaced by the made-up
+# data of the offline tests. The test helpers are sourced from the repository
+# (they are not part of the script, so the made-up data live in one place),
+# and the package's own request functions are replaced, so nothing here can
+# reach CDC AtlasPlus or the Census: a real request function would stop.
+measured_effects_synthetic <- function(options) {
+  rlang::check_installed("testthat", reason = "for synthetic mode.")
+  helper_files <- file.path(
+    "tests",
+    "testthat",
+    c("helper-pipeline.R", "helper-pipeline-report.R")
+  )
+  if (!all(file.exists(helper_files))) {
+    cli::cli_abort(c(
+      "Synthetic mode needs {.file {helper_files}}.",
+      "i" = "Run the script from the package root of a repository checkout."
+    ))
+  }
+  # The helpers call testthat's mocking functions and the package's internals.
+  helpers <- new.env(parent = asNamespace("CDCAtlas"))
+  for (name in c("local_mocked_bindings", "test_path")) {
+    assign(name, getExportedValue("testthat", name), envir = helpers)
+  }
+  for (file in helper_files) {
+    sys.source(file, envir = helpers)
+  }
+
+  answered <- 0
+  refuse <- function(...) {
+    stop("Synthetic mode must not send a request to CDC AtlasPlus.")
+  }
+  helpers$local_fake_sources(env = environment())
+  testthat::local_mocked_bindings(
+    .request_atlas = function(payload) {
+      answered <<- answered + 1
+      helpers$report_fake_cdc(payload)
+    },
+    .request_atlas_internal = refuse,
+    .request_atlas_download = refuse,
+    .atlas_get = refuse,
+    .package = "CDCAtlas"
+  )
+  options$synthetic <- TRUE
+  cli::cli_inform(c(
+    "!" = "SYNTHETIC mode: made-up CDC and Census data. No figure below
+           describes real data."
+  ))
+  files <- measured_effects(options)
+  cli::cli_inform(c(
+    "v" = "SYNTHETIC run finished. No request was sent to CDC AtlasPlus or
+           the Census: {answered} CDC request{?s} and every Census request
+           were answered with made-up data."
+  ))
+  files
+}
+
 # Print a file between marker lines, so it can be copied out of a job log.
 # `clean` removes the Census API key, should it ever appear.
-measured_effects_print <- function(path, clean) {
-  name <- basename(path)
+measured_effects_print <- function(path, clean, synthetic = FALSE) {
+  name <- sub("^SYNTHETIC-", "", basename(path))
+  if (synthetic) {
+    name <- paste("SYNTHETIC", name)
+  }
   writeLines(c(
     paste("----- BEGIN", name, "-----"),
     clean(readLines(path, warn = FALSE)),
@@ -432,8 +549,19 @@ measured_effects_markdown <- function(compact, meta) {
   )
   header <- c("Year", "Stratified by", names(figures))
   c(
-    paste("### Measured effects:", meta$request$indicator),
+    paste0(
+      "### ",
+      if (isTRUE(meta$synthetic)) "SYNTHETIC (made-up data) " else "",
+      "Measured effects: ",
+      meta$request$indicator
+    ),
     "",
+    if (isTRUE(meta$synthetic)) {
+      c(
+        "**SYNTHETIC: every number below comes from made-up data. None describes CDC's or the Census's data.**",
+        ""
+      )
+    },
     paste0(
       "Run ",
       meta$run$started_utc,
@@ -559,9 +687,12 @@ measured_effects_commit <- function() {
 
 if (!identical(Sys.getenv("MEASURED_EFFECTS_SOURCE_ONLY"), "true")) {
   pkgload::load_all(quiet = TRUE)
-  files <- measured_effects(
-    measured_effects_options(commandArgs(trailingOnly = TRUE))
-  )
+  options <- measured_effects_options(commandArgs(trailingOnly = TRUE))
+  files <- if (options$synthetic) {
+    measured_effects_synthetic(options)
+  } else {
+    measured_effects(options)
+  }
   if (!files$complete) {
     stop("Some runs failed; the summary is incomplete.", call. = FALSE)
   }
