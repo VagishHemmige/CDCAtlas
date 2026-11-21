@@ -153,7 +153,8 @@ uses each data year. A single year can be given only if \code{x} has one year.}
 \item{weights}{Not yet supported; reserved for sub-county weights.}
 }
 \value{
-A tibble with one row per area, indicator, year and stratum:
+A tibble with one row per county, area, indicator, year and
+stratum (see below for the one tract that is in two counties):
 \describe{
 \item{year, acs_year}{Data year and ACS year used.}
 \item{area_type, geoid, area_name}{\code{to}, and the area's Census GEOID
@@ -194,6 +195,26 @@ for Knowledge of Status the population isn't residents.
 
 It can be negative where \code{empty_strata} shares cases into a stratum with
 no ACS population.
+
+\code{geoid} is unique within \code{county_fips} (for one indicator, year and
+stratum), not overall. With ACS 2010 to 2019, one 2010 tract
+(09013890201) is split between two of Connecticut's planning regions, so
+it has two rows with the same \code{geoid}, one for each planning region in
+\code{x}, and so does each of its block groups. Each row holds a share of the
+area: both \code{area_population_acs} and \code{area_total_population} are
+multiplied by the share of the tract's land area in that planning
+region, and \code{area_cases} is that county's count shared over them. Block
+groups inherit their parent tract's land-area shares, which are not
+measured shares of each block group's population. A warning of class
+\code{"cdcatlas_duplicated_geoid"} says how many areas are affected.
+
+To get one row per area, for example before joining to tract boundaries,
+sum \code{area_cases}, \code{area_population_acs} and \code{area_total_population} by
+\code{geoid} within year, indicator and stratum; keeping one of the two rows
+would understate the tract. The county columns repeat on every row of a
+county and must not be summed. The article
+\href{https://vagishhemmige.github.io/CDCAtlas/articles/extrapolation.html}{"Extrapolation to tracts"}
+shows the step.
 
 Two attributes record what was not allocated:
 \code{attr(result, "no_county_cases")}, the \code{\link[=no_county_cases]{no_county_cases()}} report, and
