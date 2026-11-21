@@ -739,6 +739,66 @@ test_that("the report refuses areas allocated from a different imputation", {
   )
 })
 
+test_that("the report refuses areas kept from before a population changed", {
+  local_fake_sources(state = report_state_atlas(), acs = report_acs())
+  county <- report_county_atlas()
+  suppressMessages(suppressWarnings({
+    imputed <- impute_suppressed(county)
+    areas <- extrapolate_from_county(imputed)
+  }))
+  # Only a published county's CDC population changes: every count, and the
+  # state remainder, stay the same.
+  changed <- county
+  row <- changed$fips == "01001" &
+    changed$sex == "Male" &
+    changed$indicator == "HIV prevalence"
+  changed$population[row] <- 60000
+  suppressMessages(suppressWarnings(
+    changed_imputed <- impute_suppressed(changed)
+  ))
+  expect_equal(changed_imputed$cases, imputed$cases)
+
+  expect_snapshot(
+    .pipeline_report(changed, changed_imputed, areas),
+    error = TRUE
+  )
+})
+
+test_that("the report refuses allocations it can't account for yet", {
+  # Unknown race shared across the known groups: the Unknown rows are in
+  # neither the areas nor the rows left out.
+  county <- county_with_unknown_race()
+  local_fake_sources(state = state_with_unknown_race())
+  suppressMessages({
+    imputed <- impute_suppressed(county)
+    reported <- extrapolate_from_county(imputed)
+    redistributed <- extrapolate_from_county(
+      imputed,
+      unknown_race = "redistribute"
+    )
+  })
+  expect_gt(sum(redistributed$county_cases_unknown), 0)
+  expect_no_error(.pipeline_report(county, imputed, reported))
+  expect_snapshot(
+    .pipeline_report(county, imputed, redistributed),
+    error = TRUE
+  )
+
+  # The remainder spread across counties: it would be counted both as the
+  # remainder and as allocated cases.
+  data <- two_state_atlas()
+  local_fake_sources(state = data$state, acs = data$acs)
+  suppressMessages({
+    imputed <- impute_suppressed(data$county)
+    spread <- extrapolate_from_county(imputed, no_county = "spread")
+  })
+  expect_gt(sum(spread$county_cases_spread), 0)
+  expect_snapshot(
+    .pipeline_report(data$county, imputed, spread),
+    error = TRUE
+  )
+})
+
 # .pipeline_summary(): the compact summary, derived from the detail table. The
 # made-up detail table is summary_detail() in helper-pipeline-report.R.
 
@@ -1078,14 +1138,28 @@ test_that("data-raw/measured-effects.R runs end to end on made-up data", {
     "more than 10 rows"
   )
 
-  # Unless asked, a run prints no figures and writes no job summary.
+  # Unless asked, a run prints no figures and writes no job summary. What it
+  # does say is progress, the year found, file names and row counts: no
+  # figure, and none of the warnings it recorded.
   unlink(step_summary)
   withr::local_envvar(MEASURED_PRINT_SUMMARY = NA)
+  said <- NULL
   quiet <- utils::capture.output(
-    suppressMessages(script_env$measured_effects())
+    said <- capture_messages(script_env$measured_effects())
   )
   expect_equal(quiet, character())
   expect_equal(file.exists(step_summary), FALSE)
+  said <- trimws(unlist(strsplit(cli::ansi_strip(said), "\n")))
+  said <- said[nzchar(said)]
+  allowed <- c(
+    "^Latest year with HIV prevalence: [0-9]{4}\\.$",
+    "^[0-9TZ:-]+ [0-9]{4} (none|sex): (started|done)\\.$",
+    "^v Wrote [0-9]+ rows to$",
+    "^v Wrote$",
+    "measured-effects(-detail|-meta)?\\.(csv|json)'\\.$"
+  )
+  expect_equal(said[!grepl(paste(allowed, collapse = "|"), said)], character())
+  expect_gt(length(said), 8)
 })
 
 test_that("the script's synthetic mode labels everything and needs no key", {
