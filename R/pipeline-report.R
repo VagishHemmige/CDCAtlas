@@ -2,8 +2,7 @@
 #'
 #' Counts what [impute_suppressed()], the state remainder and
 #' [extrapolate_from_county()] did to one request, as one long table. Internal
-#' while the table's shape settles; `data-raw/measured-effects.R` uses it to
-#' build the dated summary that the website reads.
+#' while the table's shape settles.
 #'
 #' Every count is within one indicator and year: diagnoses and prevalence are
 #' never added together. Sums of published counts, modelled counts (imputed or
