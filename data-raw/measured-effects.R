@@ -86,8 +86,12 @@
 #   MEASURED_EFFECTS_SYNTHETIC  run on made-up data only? ["false"]
 #
 # "latest" starts at the latest year in the package's own code table and
-# steps back, at most two years, until CDC returns state rows with counts for
-# the indicator. The year used and the years tried are recorded.
+# steps back, at most two years, until CDC's state response has the indicator
+# with a count. It steps back only past a year CDC has released in part (the
+# response has the disease's other indicator but not this one); a failed
+# request, or a response that doesn't match the request, stops the run. The
+# rule is the live tests' own (tests/testthat/helper-live.R, which the script
+# sources). The year used and the years tried are recorded.
 #
 # Saved CDC responses are not used: the run keeps its cache in a new temporary
 # folder, so every response is downloaded during the run, once, and the county
@@ -440,25 +444,15 @@ measured_effects <- function(options = measured_effects_options()) {
 # reach CDC AtlasPlus or the Census: a real request function would stop.
 measured_effects_synthetic <- function(options) {
   rlang::check_installed("testthat", reason = "for synthetic mode.")
-  helper_files <- file.path(
-    "tests",
-    "testthat",
-    c("helper-pipeline.R", "helper-measured-effects-script.R")
-  )
-  if (!all(file.exists(helper_files))) {
-    cli::cli_abort(c(
-      "Synthetic mode needs {.file {helper_files}}.",
-      "i" = "Run the script from the package root of a repository checkout."
-    ))
-  }
   # The helpers call testthat's mocking functions and the package's internals.
   helpers <- new.env(parent = asNamespace("CDCAtlas"))
   for (name in c("local_mocked_bindings", "test_path")) {
     assign(name, getExportedValue("testthat", name), envir = helpers)
   }
-  for (file in helper_files) {
-    sys.source(file, envir = helpers)
-  }
+  measured_effects_helpers(
+    c("helper-pipeline.R", "helper-measured-effects-script.R"),
+    envir = helpers
+  )
 
   answered <- 0
   refuse <- function(...) {
@@ -644,34 +638,82 @@ measured_effects_run <- function(options, year, stratify_by) {
 
 # The newest year CDC has released for the indicator: from the latest year in
 # the package's code table, back at most two years, the first whose state
-# rows have counts. Only CDC's "no data" answer moves on to the next year; any
-# other failure stops the run.
+# response has the indicator with a count.
+#
+# Whether a response is evidence at all is decided by the rule the live tests
+# use, live_released_from_state() in tests/testthat/helper-live.R, so the rule
+# is written, and tested, once. A year is passed over only when its response
+# is an answer to the request (the year asked for, only the disease's own
+# indicators, at least one of them) and yet lacks this indicator, or has it
+# with no count: a year released in part. Anything else stops the run with the
+# year: a failed request ("returned no data" included), a response for another
+# disease or another year, or a response with none of the indicators. None of
+# those shows the year is unreleased.
 measured_effects_latest_year <- function(disease, indicator) {
   pkg <- asNamespace("CDCAtlas")
+  rule <- measured_effects_helpers("helper-live.R")
+  known <- pkg$.disease_indicators()
+  requested <- known$indicator[known$disease == disease]
   newest <- pkg$.latest_atlas_year()
   tried <- numeric()
   for (year in newest - 0:2) {
     tried <- c(tried, year)
+    what <- paste0(disease, " ", year, ", unstratified")
     state <- tryCatch(
-      suppressWarnings(suppressMessages(pkg$get_atlas(disease, "state", year))),
+      rule$live_without_unreleased_warning(suppressMessages(
+        pkg$get_atlas(disease, "state", year)
+      )),
       error = function(e) {
-        if (grepl("returned no data", conditionMessage(e), fixed = TRUE)) {
-          return(NULL)
-        }
-        stop(e)
+        cli::cli_abort(
+          c(
+            "Couldn't establish whether CDC has released {what}: the state
+             request failed.",
+            "i" = "A failed request is not evidence that the year is
+                   unreleased, so an earlier year is not used instead.",
+            "i" = "Give the years in {.envvar MEASURED_YEARS} instead of
+                   {.val latest} to go on without this check."
+          ),
+          parent = e
+        )
       }
     )
-    released <- !is.null(state) &&
+    released <- rule$live_released_from_state(state, requested, year, what)
+    usable <- indicator %in%
+      released &&
       any(as.character(state$indicator) == indicator & !is.na(state$cases))
-    if (released) {
+    if (usable) {
       return(list(used = year, tried = tried))
     }
   }
   cli::cli_abort(c(
-    "CDC returned no {indicator} state counts for {.val {tried}}.",
+    "CDC has released {disease} for {.val {tried}}, but with no {indicator}
+     state counts.",
     "i" = "Give the years in {.envvar MEASURED_YEARS} instead of
            {.val latest}."
   ))
+}
+
+# Test helper files, sourced from the repository into an environment whose
+# parent is the package's namespace. The script is run from the package root;
+# the tests run it from tests/testthat.
+measured_effects_helpers <- function(files, envir = NULL) {
+  paths <- file.path("tests", "testthat", files)
+  if (!all(file.exists(paths))) {
+    paths <- files
+  }
+  if (!all(file.exists(paths))) {
+    cli::cli_abort(c(
+      "Can't find {.file {file.path('tests', 'testthat', files)}}.",
+      "i" = "Run the script from the package root of a repository checkout."
+    ))
+  }
+  if (is.null(envir)) {
+    envir <- new.env(parent = asNamespace("CDCAtlas"))
+  }
+  for (path in paths) {
+    sys.source(path, envir = envir)
+  }
+  envir
 }
 
 # The commit the summary was built from, or NA outside a git checkout.

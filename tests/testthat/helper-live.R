@@ -154,40 +154,86 @@ live_released_indicators <- function(
     }
   ))
   indicators <- .disease_indicators()
-  requested <- indicators$indicator[indicators$disease == disease]
-  returned <- unique(as.character(state$indicator))
-  what <- paste0(
-    disease,
-    " ",
-    year,
-    ", ",
-    if (is.null(stratify_by)) "unstratified" else paste("by", stratify_by)
+  live_released_from_state(
+    state,
+    requested = indicators$indicator[indicators$disease == disease],
+    year = year,
+    what = paste0(
+      disease,
+      " ",
+      year,
+      ", ",
+      if (is.null(stratify_by)) "unstratified" else paste("by", stratify_by)
+    )
   )
+}
+
+# The rule itself, with no request: which of the `requested` indicators a
+# state response (`state`, from get_atlas()) shows CDC has released for
+# `year`. `what` names the request in messages. It stops unless the response
+# is an answer to the request: only indicators that were asked for, only rows
+# for the year asked for, and at least one of the indicators. Rows for another
+# year are not evidence about this one, whichever indicators they hold.
+#
+# Kept apart from the request so that data-raw/measured-effects.R, which
+# sources this file, decides its "latest" year by the same rule as the live
+# tests. It uses nothing from testthat.
+live_released_from_state <- function(
+  state,
+  requested,
+  year,
+  what,
+  call = rlang::caller_env()
+) {
+  returned <- unique(as.character(state$indicator))
   not_relevant <- "so nothing is inferred from it and an earlier year is not used instead."
   unexpected <- setdiff(returned, requested)
   if (length(unexpected) > 0) {
-    rlang::abort(c(
-      paste0(
-        "Couldn't establish whether CDC has released ",
-        what,
-        ": the state response has indicators that weren't asked for."
+    rlang::abort(
+      c(
+        paste0(
+          "Couldn't establish whether CDC has released ",
+          what,
+          ": the state response has indicators that weren't asked for."
+        ),
+        "x" = paste0("Returned: ", paste(sort(returned), collapse = ", "), "."),
+        "x" = paste0("Asked for: ", paste(requested, collapse = ", "), "."),
+        "i" = paste("The response doesn't match the request,", not_relevant)
       ),
-      "x" = paste0("Returned: ", paste(sort(returned), collapse = ", "), "."),
-      "x" = paste0("Asked for: ", paste(requested, collapse = ", "), "."),
-      "i" = paste("The response doesn't match the request,", not_relevant)
-    ))
+      call = call
+    )
+  }
+  years <- unique(as.numeric(as.character(state$year)))
+  other_years <- years[is.na(years) | years != year]
+  if (length(other_years) > 0) {
+    rlang::abort(
+      c(
+        paste0(
+          "Couldn't establish whether CDC has released ",
+          what,
+          ": the state response has rows for another year."
+        ),
+        "x" = paste0("Returned: ", paste(sort(years), collapse = ", "), "."),
+        "x" = paste0("Asked for: ", year, "."),
+        "i" = paste("The response doesn't match the request,", not_relevant)
+      ),
+      call = call
+    )
   }
   released <- intersect(requested, returned)
   if (length(released) == 0) {
-    rlang::abort(c(
-      paste0(
-        "Couldn't establish whether CDC has released ",
-        what,
-        ": the state response has none of the indicators asked for."
+    rlang::abort(
+      c(
+        paste0(
+          "Couldn't establish whether CDC has released ",
+          what,
+          ": the state response has none of the indicators asked for."
+        ),
+        "x" = paste0("Asked for: ", paste(requested, collapse = ", "), "."),
+        "i" = paste("The response has no rows for the request,", not_relevant)
       ),
-      "x" = paste0("Asked for: ", paste(requested, collapse = ", "), "."),
-      "i" = paste("The response has no rows for the request,", not_relevant)
-    ))
+      call = call
+    )
   }
   released
 }

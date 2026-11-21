@@ -68,6 +68,32 @@
       x Asked for: HIV diagnoses, HIV prevalence.
       i The response has no rows for the request, so nothing is inferred from it and an earlier year is not used instead.
 
+# live_released_from_state() is the rule on its own, with no request
+
+    Code
+      released(state(requested, year = c(2025, 2024)))
+    Condition
+      Error in `released()`:
+      ! Couldn't establish whether CDC has released hiv 2025, unstratified: the state response has rows for another year.
+      x Returned: 2024, 2025.
+      x Asked for: 2025.
+      i The response doesn't match the request, so nothing is inferred from it and an earlier year is not used instead.
+    Code
+      released(state("Chlamydia"))
+    Condition
+      Error in `released()`:
+      ! Couldn't establish whether CDC has released hiv 2025, unstratified: the state response has indicators that weren't asked for.
+      x Returned: Chlamydia.
+      x Asked for: HIV diagnoses, HIV prevalence.
+      i The response doesn't match the request, so nothing is inferred from it and an earlier year is not used instead.
+    Code
+      released(state(character(), year = numeric()))
+    Condition
+      Error in `released()`:
+      ! Couldn't establish whether CDC has released hiv 2025, unstratified: the state response has none of the indicators asked for.
+      x Asked for: HIV diagnoses, HIV prevalence.
+      i The response has no rows for the request, so nothing is inferred from it and an earlier year is not used instead.
+
 # live_county_if_released() stops when counties lack an indicator states have
 
     Code

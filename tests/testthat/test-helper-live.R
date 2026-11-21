@@ -360,26 +360,21 @@ test_that("a state response with no rows is not read as an unreleased year (#157
 
 test_that("a state response for another year is not read as evidence about this one", {
   # CDC answers the 2025 request with rows for 2024. They can't show what
-  # 2025 holds, with or without prevalence among them: stop.
+  # 2025 holds: stop, and ask for no counties.
   local_fresh_live_cache()
-  for (indicators in list(c(203, 205), 203)) {
-    local_fresh_live_cache()
-    seen <- local_fake_cdc_replies(function(payload) {
-      other_year <- payload
-      other_year$VariableIDs <- sub(
-        paste0("(^|,)", 2025 - 1478, "(,|$)"),
-        paste0("\\1", 2024 - 1478, "\\2"),
-        payload$VariableIDs
-      )
-      fake_cdc_json(other_year, indicators)
-    })
-    expect_error(
-      live_released_indicators(2025),
-      "rows for another year"
+  seen <- local_fake_cdc_replies(function(payload) {
+    other_year <- payload
+    other_year$VariableIDs <- sub(
+      paste0("(^|,)", 2025 - 1478, "(,|$)"),
+      paste0("\\1", 2024 - 1478, "\\2"),
+      payload$VariableIDs
     )
-    expect_error(live_county_if_released(2025), "rows for another year")
-    expect_equal(seen$requests, "2025 states")
-  }
+    fake_cdc_json(other_year, c(203, 205))
+  })
+
+  expect_error(live_released_indicators(2025), "rows for another year")
+  expect_error(live_county_if_released(2025), "rows for another year")
+  expect_equal(seen$requests, "2025 states")
 })
 
 test_that("live_released_from_state() is the rule on its own, with no request", {
