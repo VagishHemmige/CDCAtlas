@@ -123,6 +123,37 @@ test_that("not_available = 'drop' drops rows marked 'Data not available' with no
   expect_equal(unique(out$fips), "01001")
 })
 
+test_that("not_available = 'drop' can drop every row, leaving the columns", {
+  local_mocked_bindings(.request_atlas = function(payload) {
+    stop("CDC was called")
+  })
+  county <- fake_county_atlas()
+  county$cases[] <- NA_real_
+  county$data_status[] <- "Data not available"
+  inputs <- list(data.frame = county, tibble = tibble::as_tibble(county))
+
+  for (class in names(inputs)) {
+    for (method in c("zero", "state_rate")) {
+      label <- paste(class, method)
+      input <- inputs[[class]]
+      out <- suppressMessages(suppressWarnings(
+        impute_suppressed(input, method = method, not_available = "drop")
+      ))
+
+      expect_equal(nrow(out), 0, label = label)
+      expect_identical(
+        names(out),
+        c(names(input), "cases_source", "cases_uncapped"),
+        label = label
+      )
+      # The input's columns, types and class, with no rows.
+      expect_identical(out[names(input)], input[0, ], label = label)
+      expect_identical(out$cases_source, character(0), label = label)
+      expect_identical(out$cases_uncapped, numeric(0), label = label)
+    }
+  }
+})
+
 test_that("a published count is kept even when marked 'Data not available'", {
   # Like Connecticut's planning regions in 2017: a count but no population.
   county <- fake_county_atlas()
