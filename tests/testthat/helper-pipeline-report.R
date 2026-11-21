@@ -293,3 +293,23 @@ summary_rows <- function(
 summary_row_bound <- function(groups, runs, states) {
   10 * groups + (76 + 19 + 2 * states) * runs
 }
+
+# two_state_atlas() run through the pipeline and both reports, after
+# `change_state` has altered the state rows. Returns the detail table (by
+# state) and the compact summary for HIV prevalence.
+report_two_states <- function(change_state, env = parent.frame()) {
+  data <- two_state_atlas()
+  local_fake_sources(
+    state = change_state(data$state),
+    acs = data$acs,
+    env = env
+  )
+  suppressMessages(suppressWarnings({
+    imputed <- impute_suppressed(data$county)
+    areas <- extrapolate_from_county(imputed)
+  }))
+  detail <- .pipeline_report(data$county, imputed, areas, by_state = TRUE)
+  detail <- detail[detail$indicator == "HIV prevalence", ]
+  detail$scenario <- "default"
+  list(detail = detail, compact = .pipeline_summary(detail))
+}

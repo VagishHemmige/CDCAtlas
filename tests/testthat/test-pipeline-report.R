@@ -577,6 +577,162 @@ test_that("the report refuses limits that the imputation didn't use", {
   )
 })
 
+test_that("a state with no published total is unknown, not zero", {
+  # State 02's prevalence total is absent; state 01's is 232.
+  run <- report_two_states(function(state) {
+    state[!(state$fips == "02" & state$indicator == "HIV prevalence"), ]
+  })
+  detail <- function(measure, state_fips) {
+    run$detail[
+      run$detail$measure == measure & run$detail$state_fips == state_fips,
+    ]
+  }
+
+  for (measure in c(
+    "state_cases",
+    "published_cases",
+    "imputed_cases",
+    "remainder_signed"
+  )) {
+    unknown <- detail(measure, "02")
+    expect_equal(unknown$value, NA_real_, label = measure)
+    expect_match(unknown$note, "no published state total", label = measure)
+  }
+  expect_equal(detail("state_strata_without_total", "02")$value, 1)
+  expect_equal(detail("state_strata_without_total", "01")$value, 0)
+  expect_equal(detail("state_cases", "01")$value, 232)
+  # Nationally the one known state is summed, and the gap is noted.
+  expect_equal(detail("state_cases", "all")$value, 232)
+  expect_match(detail("state_cases", "all")$note, "1 state strat")
+  expect_match(detail("remainder_signed", "all")$note, "1 state strat")
+  expect_equal(detail("remainder_signed", "all")$value, 232 - 111 - 4)
+  expect_equal(detail("state_strata_without_total", "all")$value, 1)
+
+  compact <- function(...) summary_rows(run$compact, ...)
+  series <- compact("state_remainder_share_of_state_cases", state_fips = "02")
+  expect_equal(series$value, NA_real_)
+  expect_match(series$note, "no published state total")
+  imputed <- compact("state_imputed_share_of_state_cases", state_fips = "02")
+  expect_equal(imputed$value, NA_real_)
+  expect_equal(compact("states_without_remainder_share")$value, 1)
+  expect_equal(compact("states_without_imputed_share")$value, 1)
+  expect_equal(compact("states_remainder_negative")$value, 0)
+  expect_equal(compact("states_remainder_share_above_5pct")$value, 1)
+  share <- compact("state_remainder_share", c("min", "max"))
+  expect_equal(share$value, rep(117 / 232, 2))
+  expect_equal(share$extreme_state, rep("Alabama (01)", 2))
+  expect_match(share$note, "over 1 states", fixed = TRUE)
+})
+
+test_that("no state with a published total leaves every case measure unknown", {
+  run <- report_two_states(function(state) {
+    state[state$indicator != "HIV prevalence", ]
+  })
+  national <- run$detail[run$detail$state_fips == "all", ]
+  cases <- c(
+    "state_cases",
+    "published_cases",
+    "unpublished_cases",
+    "imputed_cases",
+    "remainder_signed",
+    "remainder_positive",
+    "remainder_negative",
+    "state_strata_remainder_positive",
+    "state_strata_remainder_negative",
+    "state_strata_remainder_zero",
+    "remainder_signed_share_of_state_cases",
+    "remainder_positive_share_of_state_cases",
+    "imputed_share_of_state_cases"
+  )
+  unknown <- national[national$measure %in% cases, ]
+  expect_setequal(unknown$measure, cases)
+  expect_equal(unknown$value, rep(NA_real_, length(cases)))
+  expect_match(unknown$note, "no published state total")
+  expect_equal(
+    national$value[national$measure == "state_strata_without_total"],
+    2
+  )
+
+  compact <- run$compact[run$compact$step %in% "no county", ]
+  figures <- compact[
+    compact$unit %in% c("cases", "proportion") & compact$state_fips == "all",
+  ]
+  expect_equal(figures$value, rep(NA_real_, nrow(figures)))
+  expect_equal(sum(is.na(run$compact$value) & is.na(run$compact$note)), 0)
+  expect_equal(
+    summary_rows(run$compact, "states_without_remainder_share")$value,
+    2
+  )
+})
+
+test_that("a published state total of zero stays zero", {
+  # State 02 publishes 0 cases, though its counties publish 111.
+  run <- report_two_states(function(state) {
+    state$cases[state$fips == "02" & state$indicator == "HIV prevalence"] <- 0
+    state
+  })
+  detail <- function(measure, state_fips) {
+    run$detail[
+      run$detail$measure == measure & run$detail$state_fips == state_fips,
+    ]
+  }
+
+  zero <- detail("state_cases", "02")
+  expect_equal(zero$value, 0)
+  expect_equal(zero$note, NA_character_)
+  expect_equal(detail("state_strata_without_total", "02")$value, 0)
+  expect_equal(detail("published_cases", "02")$value, 111)
+  expect_equal(detail("imputed_cases", "02")$value, 0)
+  expect_equal(detail("remainder_signed", "02")$value, -111)
+  expect_equal(detail("state_cases", "all")$value, 232)
+  expect_equal(detail("remainder_signed", "all")$value, 117 - 111)
+
+  compact <- function(...) summary_rows(run$compact, ...)
+  series <- compact("state_remainder_share_of_state_cases", state_fips = "02")
+  expect_equal(series$value, NA_real_)
+  expect_match(series$note, "Denominator is 0", fixed = TRUE)
+  # Left out of the shares and counted; its negative remainder still counts.
+  expect_equal(compact("states_without_remainder_share")$value, 1)
+  expect_equal(compact("states_remainder_negative")$value, 1)
+  expect_equal(compact("state_remainder_share", "max")$value, 117 / 232)
+  expect_equal(compact("state_cases")$value, 232)
+})
+
+test_that("the report refuses areas allocated from a different imputation", {
+  local_fake_sources(state = report_state_atlas(), acs = report_acs())
+  county <- report_county_atlas()
+  suppressMessages(suppressWarnings({
+    default <- impute_suppressed(county)
+    uncapped <- impute_suppressed(county, cap = Inf)
+    default_areas <- extrapolate_from_county(default)
+    uncapped_areas <- extrapolate_from_county(uncapped)
+  }))
+
+  expect_no_error(.pipeline_report(county, default, default_areas))
+  expect_no_error(
+    .pipeline_report(county, uncapped, uncapped_areas, cap = Inf)
+  )
+  expect_snapshot(
+    .pipeline_report(county, default, uncapped_areas),
+    error = TRUE
+  )
+  expect_snapshot(
+    .pipeline_report(county, uncapped, default_areas, cap = Inf),
+    error = TRUE
+  )
+  # Areas for only part of the data are refused too.
+  expect_snapshot(
+    .pipeline_report(
+      county,
+      default,
+      suppressMessages(suppressWarnings(extrapolate_from_county(
+        default[default$indicator == "HIV prevalence", ]
+      )))
+    ),
+    error = TRUE
+  )
+})
+
 # .pipeline_summary(): the compact summary, derived from the detail table. The
 # made-up detail table is summary_detail() in helper-pipeline-report.R.
 
@@ -816,6 +972,8 @@ test_that("data-raw/measured-effects.R runs end to end on made-up data", {
     MEASURED_STRATIFICATIONS = "none,sex",
     MEASURED_ALTERNATIVES = "zero,cap_inf,floor_1,acs",
     MEASURED_OUT_DIR = out_dir,
+    MEASURED_PRINT_SUMMARY = "true",
+    MEASURED_EFFECTS_SYNTHETIC = NA,
     GITHUB_STEP_SUMMARY = step_summary,
     CENSUS_API_KEY = "made-up-key"
   )
@@ -913,6 +1071,87 @@ test_that("data-raw/measured-effects.R runs end to end on made-up data", {
     )),
     "more than 10 rows"
   )
+
+  # Unless asked, a run prints no figures and writes no job summary.
+  unlink(step_summary)
+  withr::local_envvar(MEASURED_PRINT_SUMMARY = NA)
+  quiet <- utils::capture.output(
+    suppressMessages(script_env$measured_effects())
+  )
+  expect_equal(quiet, character())
+  expect_equal(file.exists(step_summary), FALSE)
+})
+
+test_that("the script's synthetic mode labels everything and needs no key", {
+  script <- test_path("..", "..", "data-raw", "measured-effects.R")
+  skip_if_not(file.exists(script), "data-raw/ is not in the built package.")
+  skip_if_not_installed("pkgload")
+  out_dir <- withr::local_tempdir()
+  step_summary <- withr::local_tempfile()
+  # A subprocess, as the workflow runs it, with no key and no way out to the
+  # network: every request would go to a proxy that isn't there.
+  withr::local_envvar(
+    MEASURED_EFFECTS_SYNTHETIC = "true",
+    MEASURED_EFFECTS_SOURCE_ONLY = NA,
+    MEASURED_YEARS = "2022,latest",
+    MEASURED_STRATIFICATIONS = "none,sex",
+    MEASURED_ALTERNATIVES = NA,
+    MEASURED_BY_STATE = NA,
+    MEASURED_PRINT_SUMMARY = NA,
+    MEASURED_OUT_DIR = NA,
+    GITHUB_STEP_SUMMARY = step_summary,
+    CENSUS_API_KEY = NA,
+    http_proxy = "http://127.0.0.1:9",
+    https_proxy = "http://127.0.0.1:9",
+    NOT_CRAN = "true"
+  )
+  withr::local_dir(dirname(dirname(normalizePath(script))))
+  log <- suppressWarnings(system2(
+    file.path(R.home("bin"), "Rscript"),
+    c(shQuote(file.path("data-raw", "measured-effects.R")), shQuote(out_dir)),
+    stdout = TRUE,
+    stderr = TRUE
+  ))
+
+  expect_null(attr(log, "status"))
+  expect_setequal(
+    list.files(out_dir),
+    c(
+      "SYNTHETIC-measured-effects.csv",
+      "SYNTHETIC-measured-effects-detail.csv",
+      "SYNTHETIC-measured-effects-meta.json"
+    )
+  )
+  for (file in c(
+    "SYNTHETIC-measured-effects.csv",
+    "SYNTHETIC-measured-effects-detail.csv"
+  )) {
+    table <- utils::read.csv(file.path(out_dir, file))
+    expect_match(unique(table$synthetic), "^SYNTHETIC", label = file)
+    expect_equal(names(table)[1], "synthetic", label = file)
+  }
+  meta <- jsonlite::read_json(
+    file.path(out_dir, "SYNTHETIC-measured-effects-meta.json"),
+    simplifyVector = TRUE
+  )
+  expect_equal(meta$synthetic, TRUE)
+  expect_match(meta$data, "^SYNTHETIC")
+  expect_match(meta$retrieval, "^SYNTHETIC")
+  expect_in(
+    c(
+      "----- BEGIN SYNTHETIC measured-effects.csv -----",
+      "----- END SYNTHETIC measured-effects.csv -----",
+      "----- BEGIN SYNTHETIC measured-effects-meta.json -----"
+    ),
+    log
+  )
+  expect_match(
+    log,
+    "No request was sent to CDC AtlasPlus or the Census",
+    fixed = TRUE,
+    all = FALSE
+  )
+  expect_match(readLines(step_summary)[1], "SYNTHETIC", fixed = TRUE)
 })
 
 test_that("the compact summary for the default scope is at most 3,000 rows", {
