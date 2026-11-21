@@ -56,3 +56,33 @@
       x Its no_county_cases attribute covers different state strata (state, indicator, year and stratum).
       i Give the `extrapolate_from_county()` result for these `imputed` rows.
 
+# the report refuses areas kept from before a population changed
+
+    Code
+      .pipeline_report(changed, changed_imputed, areas)
+    Condition
+      Error in `.pipeline_report()`:
+      ! `areas` was not allocated from `imputed`.
+      x county_population_atlas differs in 1 county row.
+      i Give the `extrapolate_from_county()` result for these `imputed` rows.
+
+# the report refuses allocations it can't account for yet
+
+    Code
+      .pipeline_report(county, imputed, redistributed)
+    Condition
+      Error in `.pipeline_report()`:
+      ! The report can't account for cases of unknown race or age shared across the known groups yet.
+      x `areas` was made with `unknown_race = "redistribute" or unknown_age = "redistribute"`.
+      i Use the `extrapolate_from_county()` result with the default for that argument.
+
+---
+
+    Code
+      .pipeline_report(data$county, imputed, spread)
+    Condition
+      Error in `.pipeline_report()`:
+      ! The report can't account for a remainder spread across counties yet.
+      x `areas` was made with `no_county = "spread"`.
+      i Use the `extrapolate_from_county()` result with the default for that argument.
+

@@ -27,6 +27,10 @@
 #' @param areas The [extrapolate_from_county()] result for `imputed`, with its
 #'   `no_county_cases` and `not_allocated` attributes. `NULL` reports the
 #'   steps before allocation only, with the remainder computed from `imputed`.
+#'   The report stops if `areas` was not allocated from these `imputed` rows
+#'   (different rows, counts or CDC county populations), or was made with
+#'   `no_county = "spread"`, `unknown_race = "redistribute"` or `unknown_age =
+#'   "redistribute"`, which it cannot account for yet.
 #' @param cap,floor,population The values given to [impute_suppressed()]. The
 #'   report stops if they don't reproduce the imputed counts. With
 #'   `population = "acs"` the estimate before limits is not recomputed.
@@ -192,6 +196,38 @@
     )
   }
 
+  # The report accounts for the default allocation only. Cases moved between
+  # rows would be counted wrongly: a spread remainder both as the remainder
+  # and as allocated cases, and a redistributed Unknown row as neither
+  # allocated nor left out (extrapolate_from_county() drops the row and keeps
+  # no record of it on its result).
+  moved <- function(column) {
+    any(dplyr::coalesce(areas[[column]], 0) != 0)
+  }
+  unsupported <- function(what, argument) {
+    cli::cli_abort(
+      c(
+        "The report can't account for {what} yet.",
+        "x" = "{.arg areas} was made with {.code {argument}}.",
+        "i" = "Use the {.fn extrapolate_from_county} result with the default
+               for that argument."
+      ),
+      call = call
+    )
+  }
+  if (moved("county_cases_spread")) {
+    unsupported(
+      "a remainder spread across counties",
+      "no_county = \"spread\""
+    )
+  }
+  if (moved("county_cases_unknown")) {
+    unsupported(
+      "cases of unknown race or age shared across the known groups",
+      "unknown_race = \"redistribute\" or unknown_age = \"redistribute\""
+    )
+  }
+
   attached <- attr(areas, "no_county_cases")
   state_keys <- c("state_fips", .atlas_keys)
   attached_key <- .row_key(attached, state_keys)
@@ -214,25 +250,40 @@
   }
 
   county_keys <- c("county_fips", .atlas_keys)
+  columns <- c(county_keys, "county_cases", "county_population_atlas")
   accounted <- dplyr::bind_rows(
-    as.data.frame(areas)[c(county_keys, "county_cases")],
-    as.data.frame(attr(areas, "not_allocated"))[c(county_keys, "county_cases")]
+    as.data.frame(areas)[columns],
+    as.data.frame(attr(areas, "not_allocated"))[columns]
   )
   accounted <- accounted[!duplicated(.row_key(accounted, county_keys)), ]
   county <- .county_cases(imputed)
   accounted_key <- .row_key(accounted, county_keys)
   county_key <- .row_key(county, county_keys)
   if (!setequal(accounted_key, county_key)) {
+    # An Unknown row that was redistributed with nothing to share leaves no
+    # trace but its absence.
+    absent <- county[!county_key %in% accounted_key, , drop = FALSE]
+    if (
+      nrow(absent) > 0 &&
+        all(absent$race_ethnicity == "Unknown" | absent$age == "Unknown")
+    ) {
+      unsupported(
+        "cases of unknown race or age shared across the known groups",
+        "unknown_race = \"redistribute\" or unknown_age = \"redistribute\""
+      )
+    }
     stop_mismatch("It accounts for different county rows.")
   }
-  bad <- differs(
-    county$county_cases,
-    accounted$county_cases[match(county_key, accounted_key)]
-  )
-  if (any(bad)) {
-    stop_mismatch(
-      "{.field county_cases} differs in {sum(bad)} county row{?s}."
-    )
+  rows <- match(county_key, accounted_key)
+  # The counts, and CDC's county population, which the report compares with
+  # the ACS: a stale population would not change any count.
+  for (column in c("county_cases", "county_population_atlas")) {
+    bad <- differs(county[[column]], accounted[[column]][rows])
+    if (any(bad)) {
+      stop_mismatch(
+        "{.field {column}} differs in {sum(bad)} county row{?s}."
+      )
+    }
   }
   invisible()
 }
