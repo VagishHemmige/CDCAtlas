@@ -61,8 +61,8 @@ and implementation rather than treating every proposal as adopted policy.
 status, suppression, denominators and county map for users; keep it in step
 when changing how any of these are handled.
 `data-raw/DATASET.R` builds `R/sysdata.rda` from CDC's AtlasPlus set-up data;
-[#4](https://github.com/VagishHemmige/CDCAtlas/issues/4) tracks the remaining
-data-generation work (age schemes).
+[#137](https://github.com/VagishHemmige/CDCAtlas/issues/137) tracks recording
+the provenance of generated lookups and downloaded data.
 
 ## Implementation and approval
 
@@ -167,6 +167,20 @@ the fix is ready; do not install known failures, expected-failure assertions or
 unjustified skips as standing CI. Retire temporary duplicates once integrated.
 Keep methodological comparisons separate until the maintainer selects a contract.
 
+Assumptions become tests. A claim about what the package does, or about what
+CDC's data contain, that documentation or an issue relies on is written as a
+test before the documentation states it: an offline test for package behavior,
+a gated live test for CDC's data. Live checks of CDC's data cover every year
+from 2024 onward, so coverage grows as CDC releases data, plus spot checks in
+a few earlier years. Coverage is decided per indicator, because CDC releases
+indicators at different times: a test reports a year CDC has not yet released
+for an indicator rather than failing on it or skipping it silently, and names
+the year it used. Each property asserted needs a nonempty relevant response,
+so a check cannot pass on an empty subset. Such a test asserts what was
+observed to hold. If the
+claim proves false, correct the claim and keep the failing reproducer with its
+issue as above; do not commit it as a failing or expected-failure test.
+
 Separate source inspection, personally executed synthetic checks, recorded
 responses, live API checks, observed CI and author-reported validation.
 Record live retrieval dates, tested requests and coverage gaps without keys
@@ -224,6 +238,16 @@ messages, and website articles) never mentions GitHub issue or pull request
 numbers: issues are internal working records. Say what the package does and
 doesn't do instead. `NEWS.md` is the exception and keeps its `(#123)`
 references. Code comments, tests and `data-raw/` may cite issues.
+
+The documentation reports measured effects, not only descriptions: what each
+pipeline step changes, estimates, drops or moves on real data, with download
+dates ([#153](https://github.com/VagishHemmige/CDCAtlas/issues/153)). The
+numbers will come from a summary that an on-request workflow produces and
+commits, and that an article reads; neither exists yet. Once the summary
+exists: a change that alters the numbers the pipeline produces updates the
+measured-effects summary and the article in the same pull request, or says
+why not. A CDC outage is an acceptable reason when the pull request states
+it; the update then follows in a later pull request.
 
 [reference/](reference/README.md) holds background on CDC AtlasPlus, Census
 geography and estimation methods. Read
