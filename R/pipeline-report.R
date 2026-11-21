@@ -11,9 +11,12 @@
 #' public data cannot show a quantity, the row has `value = NA` and a `note`.
 #'
 #' The cap and floor are counted from the estimate before limits (state rate
-#' times CDC's county population), recomputed here from the same inputs
-#' [impute_suppressed()] uses. A limit counts only when the estimate is
-#' strictly beyond it, so an estimate exactly at the cap is not counted.
+#' times county population): the `cases_uncapped` column [impute_suppressed()]
+#' records, whichever population it used. For input with no such column the
+#' estimate is recomputed from the same inputs, which is possible only with
+#' CDC's population; with ACS populations those measures are then `NA` with a
+#' note. A limit counts only when the estimate is strictly beyond it, so an
+#' estimate exactly at the cap is not counted.
 #'
 #' Rows left out of the areas for want of a count (`"not available"`, `"not
 #' estimated"`) have unknown cases that are already inside the state
@@ -31,8 +34,9 @@
 #'   `no_county = "spread"`, `unknown_race = "redistribute"` or `unknown_age =
 #'   "redistribute"`, which it cannot account for yet.
 #' @param cap,floor,population The values given to [impute_suppressed()]. The
-#'   report stops if they don't reproduce the imputed counts. With
-#'   `population = "acs"` the estimate before limits is not recomputed.
+#'   report stops if `cap` and `floor` don't reproduce the imputed counts.
+#'   `population` matters only for input with no `cases_uncapped` column, and
+#'   for the reasons rows could not be estimated.
 #' @param by_state Also report each state's totals and remainder?
 #'
 #' @return A tibble with one row per measure:
@@ -128,6 +132,7 @@
     cap = cap,
     floor = floor,
     population = population,
+    raw_known = "cases_uncapped" %in% names(imputed) || population == "cdc",
     crosswalk = if (!is.null(areas)) unique(.tract_crosswalk()$tract_2010)
   )
 
@@ -287,10 +292,9 @@
   invisible()
 }
 
-# The estimate before limits for each row of `imputed`, as impute_suppressed()
-# computes it (state rate in the same indicator, year and stratum, times CDC's
-# county population), with why it is missing. Stops if `cap` and `floor` don't
-# turn it into the imputed counts.
+# The estimate before limits for each row of `imputed` (the state rate in the
+# same indicator, year and stratum, times the county population), with why it
+# is missing. Stops if `cap` and `floor` don't turn it into the imputed counts.
 .report_raw_estimates <- function(
   imputed,
   state,
@@ -315,12 +319,19 @@
   rate <- state_rate[match(row_keys, .row_key(state, keys))]
   imputed$no_rate <- is.na(rate)
   imputed$no_population <- is.na(imputed$population)
-  imputed$raw_estimate <- if (population == "cdc") {
+  # impute_suppressed() records the estimate before limits in
+  # `cases_uncapped`, with whichever population it used. Input imputed before
+  # that column existed has it recomputed here, which is possible only for
+  # CDC's population: the ACS one would need another download.
+  recorded <- "cases_uncapped" %in% names(imputed)
+  imputed$raw_estimate <- if (recorded) {
+    imputed$cases_uncapped
+  } else if (population == "cdc") {
     rate * imputed$population
   } else {
     NA_real_
   }
-  if (population != "cdc") {
+  if (!recorded && population != "cdc") {
     return(imputed)
   }
 
@@ -643,7 +654,7 @@
 .report_limits <- function(imputed, options) {
   step <- "imputation"
   by_rate <- imputed$cases_source %in% "state_rate"
-  if (options$population != "cdc" && any(by_rate)) {
+  if (!options$raw_known && any(by_rate)) {
     measures <- c(
       "suppressed_rows_raw_above_cap",
       "suppressed_rows_raw_below_floor",
@@ -659,7 +670,7 @@
         NA,
         if (startsWith(measure, "cases")) "cases" else "county rows",
         if (startsWith(measure, "cases")) "modelled" else "count",
-        note = "Not recomputed for population = \"acs\": it needs the ACS county populations."
+        note = "Not known: `imputed` has no `cases_uncapped` column, and recomputing the estimate for population = \"acs\" would need the ACS county populations."
       )
     })))
   }
