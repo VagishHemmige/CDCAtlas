@@ -87,9 +87,17 @@ live_county <- function(year, stratify_by = NULL, disease = "hiv") {
 
 # The indicators of `disease` CDC has released for a year and stratification,
 # from one small state-level request (made once per run): the indicators with
-# state rows. None when CDC has no data at all for the year. When CDC answers
-# for some indicators only (HIV 2025 came with diagnoses but not prevalence,
-# #149), get_atlas() warns; that warning is expected here and dropped.
+# state rows. An indicator counts as unreleased only on positive evidence: the
+# request was answered with rows, and none of them is for that indicator, as
+# for HIV 2025, which came with diagnoses but not prevalence (#149).
+# get_atlas() warns about that; the warning is expected here and dropped.
+#
+# A state request that fails is not evidence of anything, "CDC AtlasPlus
+# returned no data" included: the package says that whenever a response has no
+# `sourcedata`, whatever the reason. So any failure stops with the year and
+# stratification. The consequence is deliberate: if CDC ever has no state rows
+# at all for the disease in the package's latest year, a test using this
+# fails rather than moving to an earlier year, and a person needs to look.
 live_released_indicators <- function(
   year,
   stratify_by = NULL,
@@ -108,12 +116,28 @@ live_released_indicators <- function(
       ))
     ),
     error = function(e) {
-      # A state request is a single request, so "no data" is CDC's answer for
-      # the whole year, not for part of it.
-      if (grepl("returned no data", conditionMessage(e), fixed = TRUE)) {
-        return(NULL)
-      }
-      stop(e)
+      rlang::abort(
+        c(
+          paste0(
+            "Couldn't establish whether CDC has released ",
+            disease,
+            " ",
+            year,
+            ", ",
+            if (is.null(stratify_by)) {
+              "unstratified"
+            } else {
+              paste("by", stratify_by)
+            },
+            ": the state request failed."
+          ),
+          "i" = paste0(
+            "A failed request is not evidence that the year is unreleased, ",
+            "so an earlier year is not used instead."
+          )
+        ),
+        parent = e
+      )
     }
   ))
   indicators <- .disease_indicators()
@@ -137,8 +161,10 @@ live_without_unreleased_warning <- function(code) {
 }
 
 # live_county() for a year CDC may not have released. NULL only on positive
-# evidence that the year is unreleased: the state-level request has no rows
-# for any of the disease's indicators (the counties are then not requested).
+# evidence that the year is unreleased: the state-level request was answered
+# with rows, none of them for the disease's indicators (the counties are then
+# not requested). A state request that fails stops instead; see
+# live_released_indicators().
 # Otherwise the county download must work and must have rows for every
 # indicator CDC has released for states. A county download is one request per
 # state and stops at the first that fails, so its failing, "returned no data"

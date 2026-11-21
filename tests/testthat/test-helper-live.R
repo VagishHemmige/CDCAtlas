@@ -152,12 +152,6 @@ test_that("expect_no_rate_on_suppressed() fails when there is nothing to check",
 fake_cdc_rows <- function(payload, indicators = c(203, 205)) {
   ids <- as.numeric(strsplit(payload$VariableIDs, ",")[[1]])
   indicators <- intersect(indicators, ids)
-  if (length(indicators) == 0) {
-    cli::cli_abort(
-      "CDC AtlasPlus returned no data for this request.",
-      call = NULL
-    )
-  }
   state <- live_payload_state(payload)
   fips <- if (is.na(state)) "01" else paste0(gsub("\\D", "", state), "001")
   data.frame(
@@ -206,33 +200,137 @@ test_that("a county download that fails in one state is not read as an unrelease
   expect_equal(requests, c(NA, "Alabama (01)", "Alaska (02)"))
 })
 
-test_that("live_county_if_released() gives NULL only when CDC has no state rows for the year", {
-  local_fresh_live_cache()
-  requests <- character()
-  local_mocked_bindings(.request_atlas_internal = function(payload) {
-    requests <<- c(requests, live_payload_state(payload))
-    cli::cli_abort(
-      "CDC AtlasPlus returned no data for this request.",
-      call = NULL
+# CDC's reply to one request as the package receives it, before decoding: an
+# httr response holding `json`. Built by hand; nothing in httr is replaced.
+fake_cdc_reply <- function(json) {
+  structure(
+    list(
+      url = "https://cdc.invalid",
+      status_code = 200L,
+      headers = list("Content-Type" = "application/json"),
+      content = charToRaw(as.character(json))
+    ),
+    class = "response"
+  )
+}
+
+# CDC's JSON for one request, made up: a suppressed row with no count or rate
+# for each of `indicators`, in the first place and the year asked for.
+fake_cdc_json <- function(payload, indicators) {
+  ids <- as.numeric(strsplit(payload$VariableIDs, ",")[[1]])
+  places <- c(lookup[["state"]]$geo_id, lookup[["counties"]]$geo_id)
+  rows <- lapply(indicators, function(indicator) {
+    list(
+      indicator,
+      intersect(ids, varvals$id[varvals$vtid == 2]),
+      intersect(ids, places)[1],
+      405,
+      551,
+      601,
+      650,
+      801,
+      NA,
+      NA,
+      50000,
+      NA,
+      NA,
+      NA,
+      NA,
+      NA
     )
   })
+  jsonlite::toJSON(list(sourcedata = rows), auto_unbox = TRUE, na = "null")
+}
 
-  expect_null(live_county_if_released(2025))
-  # One state request; the counties are not asked for.
-  expect_equal(requests, NA_character_)
+# Replace CDC at .atlas_call(), the package's own wrapper round the HTTP call
+# and the lowest point the package owns. Everything after it is real: the
+# status check, the JSON decoding, the missing-`sourcedata` check and the
+# decoding of CDC's codes in .request_atlas_internal(), and get_atlas() above
+# it. Not run: the HTTP request itself, .atlas_call()'s own handling of
+# connection failures, and the wait between requests. `reply_for(payload)`
+# gives the JSON for a request; the requests made are returned as they come.
+local_fake_cdc_replies <- function(reply_for, env = parent.frame()) {
+  seen <- new.env()
+  seen$requests <- character()
+  local_mocked_bindings(
+    client_rate = function() invisible(NULL),
+    .atlas_call = function(request) {
+      # `request` is the unevaluated HTTP call and is never run. The payload
+      # is the one .request_atlas_internal() is sending.
+      payload <- get("payload", envir = parent.frame())
+      ids <- as.numeric(strsplit(payload$VariableIDs, ",")[[1]])
+      state <- live_payload_state(payload)
+      seen$requests <- c(
+        seen$requests,
+        paste(
+          intersect(ids, varvals$id[varvals$vtid == 2]) + 1478,
+          if (is.na(state)) "states" else state
+        )
+      )
+      fake_cdc_reply(reply_for(payload))
+    },
+    .env = env
+  )
+  seen
+}
+
+test_that("a state response with no data is not read as an unreleased year (#157)", {
+  # CDC answers the state request with valid JSON that has no `sourcedata`.
+  # The package reports that as "returned no data" whatever the reason, so it
+  # can't establish that the year is unreleased: stop, ask for no counties and
+  # don't return NULL, which would send the latest-years check to an earlier
+  # year.
+  local_fresh_live_cache()
+  seen <- local_fake_cdc_replies(function(payload) "{}")
+
+  expect_snapshot(error = TRUE, live_county_if_released(2025, "sex"))
+  expect_snapshot(error = TRUE, live_released_indicators(2025, "sex"))
+  # One state request, made once; no county request.
+  expect_equal(seen$requests, "2025 states")
 })
 
-test_that("live_county_if_released() returns a partly released year without a warning", {
-  # Diagnoses but not prevalence, for states and counties alike (#149).
+test_that("an indicator steps back a year only when the state response has rows without it (#157)", {
+  # As CDC answered in November 2026: 2025 has diagnoses but not prevalence
+  # (#149), for states and counties; 2024 has both.
   local_fresh_live_cache()
-  local_mocked_bindings(.request_atlas_internal = function(payload) {
-    fake_cdc_rows(payload, indicators = 203)
+  seen <- local_fake_cdc_replies(function(payload) {
+    ids <- as.numeric(strsplit(payload$VariableIDs, ",")[[1]])
+    fake_cdc_json(payload, if ((2025 - 1478) %in% ids) 203 else c(203, 205))
   })
+  both <- c("HIV diagnoses", "HIV prevalence")
 
-  expect_no_warning(county <- live_county_if_released(2025))
-  expect_equal(as.character(unique(county$indicator)), "HIV diagnoses")
-  expect_equal(length(unique(substr(county$fips, 1, 2))), 52)
   expect_equal(live_released_indicators(2025), "HIV diagnoses")
+  expect_equal(live_released_indicators(2024), both)
+  expect_no_warning(
+    responses <- list(
+      "2025" = live_county_if_released(2025),
+      "2024" = live_county_if_released(2024)
+    )
+  )
+  expect_equal(
+    as.character(unique(responses[["2025"]]$indicator)),
+    "HIV diagnoses"
+  )
+  expect_equal(
+    latest_year_with_rows(responses, both),
+    c("HIV diagnoses" = 2025, "HIV prevalence" = 2024)
+  )
+  # Each year: one state request, then every state's counties.
+  expect_equal(seen$requests[1:2], c("2025 states", "2024 states"))
+  expect_equal(
+    sum(grepl("^2025", seen$requests)),
+    sum(grepl("^2024", seen$requests))
+  )
+  expect_gt(sum(grepl("^2025", seen$requests)), 50)
+})
+
+test_that("live_county_if_released() gives NULL only when the state rows are all for other indicators", {
+  # Rows came back, none of them for HIV diagnoses or prevalence.
+  local_fresh_live_cache()
+  seen <- local_fake_cdc_replies(function(payload) fake_cdc_json(payload, 206))
+
+  expect_null(live_county_if_released(2025))
+  expect_equal(seen$requests, "2025 states")
 })
 
 test_that("live_county_if_released() stops when counties lack an indicator states have", {
@@ -248,13 +346,13 @@ test_that("live_county_if_released() stops when counties lack an indicator state
   expect_snapshot(error = TRUE, live_county_if_released(2025))
 })
 
-test_that("live_county_if_released() passes on other failures of the state request", {
+test_that("live_county_if_released() stops on any other failure of the state request", {
   local_fresh_live_cache()
   local_mocked_bindings(.request_atlas_internal = function(payload) {
-    stop("CDC is down")
+    cli::cli_abort("CDC is down", call = NULL)
   })
 
-  expect_error(live_county_if_released(2025), "CDC is down")
+  expect_snapshot(error = TRUE, live_county_if_released(2025))
 })
 
 test_that("latest_year_with_rows() steps back to the latest year with rows", {
