@@ -1,0 +1,428 @@
+# Builds the measured-effects summary: what each pipeline step does to the
+# numbers, on real CDC AtlasPlus and Census data (#153). The website articles
+# read the summary; they do not compute it.
+#
+# For each year and stratification it runs the default pipeline
+#
+#   get_atlas() -> impute_suppressed() -> extrapolate_from_county()
+#
+# keeps one indicator, and counts what each step did with .pipeline_report()
+# (R/pipeline-report.R). It then imputes again under each alternative
+# (`method = "zero"`, `cap = Inf`, `floor = 1`, `population = "acs"`) and
+# reports the imputation and remainder steps for it. The alternatives stop at
+# imputation: extrapolation is not rerun for them, to keep the run time down,
+# so the summary has no tract-level results for the alternatives.
+#
+# It writes two files to the output folder:
+#
+#   measured-effects.csv        one row per measure (see .pipeline_report()),
+#                               with a `scenario` column
+#   measured-effects-meta.json  when and how the summary was made
+#
+# Run from the package root, with a Census API key in CENSUS_API_KEY:
+#
+#   Rscript data-raw/measured-effects.R [output folder]
+#
+# A full default run makes about 56 CDC requests and one national tract
+# download per year and stratification (twice with the "acs" alternative), so
+# allow one to two hours. `.github/workflows/measured-effects.yaml` runs it on
+# GitHub and uploads the two files; they are committed by pull request.
+#
+# Settings, as environment variables (defaults in brackets):
+#
+#   MEASURED_DISEASE          get_atlas() disease ["hiv"]
+#   MEASURED_INDICATOR        the one indicator to report ["HIV prevalence"]
+#   MEASURED_YEARS            comma-separated years; "latest" is the newest
+#                             year CDC has released for the indicator
+#                             ["2017,2022,latest"]
+#   MEASURED_STRATIFICATIONS  comma-separated: none, sex, age, race
+#                             ["none,sex,age,race"]
+#   MEASURED_ALTERNATIVES     comma-separated: zero, cap_inf, floor_1, acs;
+#                             "none" for no alternatives
+#                             ["zero,cap_inf,floor_1,acs"]
+#   MEASURED_BY_STATE         also report each state? ["true"]
+#   MEASURED_OUT_DIR          output folder, unless given as an argument
+#                             ["vignettes/articles/data"]
+#
+# "latest" starts at the latest year in the package's own code table and
+# steps back, at most two years, until CDC returns state rows with counts for
+# the indicator. The year used and the years tried are recorded.
+#
+# Saved CDC responses are not used: the run keeps its cache in a new temporary
+# folder, so every response is downloaded during the run, once, and the county
+# data and state totals of a run come from the same downloads. The package
+# does not yet record a download time for each response (#150), so the run's
+# start and end times are the retrieval interval.
+#
+# One indicator is reported at a time, so diagnoses and prevalence are never
+# added together. Nothing here estimates a suppressed count.
+#
+# tests/testthat/test-pipeline-report.R runs this script end to end on
+# made-up data (MEASURED_EFFECTS_SOURCE_ONLY=true defines the functions
+# without running them). That shows it executes, not that its numbers are
+# right on real data.
+
+measured_effects_options <- function(args = character()) {
+  setting <- function(name, default) {
+    value <- Sys.getenv(name, "")
+    if (nzchar(value)) value else default
+  }
+  list_of <- function(value) {
+    trimws(strsplit(value, ",", fixed = TRUE)[[1]])
+  }
+  out_dir <- if (length(args) > 0 && nzchar(args[[1]])) {
+    args[[1]]
+  } else {
+    setting("MEASURED_OUT_DIR", file.path("vignettes", "articles", "data"))
+  }
+  alternatives <- list_of(
+    setting("MEASURED_ALTERNATIVES", "zero,cap_inf,floor_1,acs")
+  )
+  list(
+    disease = setting("MEASURED_DISEASE", "hiv"),
+    indicator = setting("MEASURED_INDICATOR", "HIV prevalence"),
+    years = list_of(setting("MEASURED_YEARS", "2017,2022,latest")),
+    stratifications = list_of(
+      setting("MEASURED_STRATIFICATIONS", "none,sex,age,race")
+    ),
+    alternatives = setdiff(alternatives, "none"),
+    by_state = identical(tolower(setting("MEASURED_BY_STATE", "true")), "true"),
+    out_dir = out_dir
+  )
+}
+
+# The alternatives to the default imputation: the impute_suppressed()
+# arguments that differ, and the limits .pipeline_report() needs to know.
+measured_effects_alternatives <- list(
+  zero = list(label = "method = zero", args = list(method = "zero")),
+  cap_inf = list(label = "cap = Inf", args = list(cap = Inf)),
+  floor_1 = list(label = "floor = 1", args = list(floor = 1)),
+  acs = list(label = "population = acs", args = list(population = "acs"))
+)
+
+measured_effects <- function(options = measured_effects_options()) {
+  pkg <- asNamespace("CDCAtlas")
+  started <- Sys.time()
+  utc <- function(time) format(time, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
+  # Text kept in the metadata never includes the Census API key.
+  key <- Sys.getenv("CENSUS_API_KEY")
+  clean <- function(text) {
+    text <- cli::ansi_strip(text)
+    if (nzchar(key)) {
+      text <- gsub(key, "<CENSUS_API_KEY>", text, fixed = TRUE)
+    }
+    text
+  }
+
+  known <- pkg$.disease_indicators()
+  indicators <- known$indicator[known$disease == options$disease]
+  if (!options$indicator %in% indicators) {
+    cli::cli_abort(c(
+      "{.val {options$indicator}} is not an indicator of
+       {.val {options$disease}}.",
+      "i" = "Its indicators are {.val {indicators}}."
+    ))
+  }
+  unknown <- setdiff(options$alternatives, names(measured_effects_alternatives))
+  if (length(unknown) > 0) {
+    cli::cli_abort("Unknown alternative{?s}: {.val {unknown}}.")
+  }
+  bad <- setdiff(options$stratifications, c("none", "sex", "age", "race"))
+  if (length(bad) > 0) {
+    cli::cli_abort("Unknown stratification{?s}: {.val {bad}}.")
+  }
+  pkg$.check_census_ready(rlang::current_env())
+
+  # A new, empty cache for this run only (see the top of this file).
+  cache <- tempfile("measured-effects-cache-")
+  old_cache <- Sys.getenv("R_USER_CACHE_DIR", unset = NA)
+  Sys.setenv(R_USER_CACHE_DIR = cache)
+  on.exit(
+    {
+      if (is.na(old_cache)) {
+        Sys.unsetenv("R_USER_CACHE_DIR")
+      } else {
+        Sys.setenv(R_USER_CACHE_DIR = old_cache)
+      }
+      unlink(cache, recursive = TRUE)
+    },
+    add = TRUE
+  )
+
+  latest <- NULL
+  if ("latest" %in% options$years) {
+    latest <- measured_effects_latest_year(options$disease, options$indicator)
+    cli::cli_inform("Latest year with {options$indicator}: {latest$used}.")
+  }
+  years <- sort(unique(as.numeric(c(
+    setdiff(options$years, "latest"),
+    latest$used
+  ))))
+  if (anyNA(years)) {
+    cli::cli_abort("{.envvar MEASURED_YEARS} must be years or {.val latest}.")
+  }
+
+  results <- list()
+  runs <- list()
+  for (year in years) {
+    for (stratification in options$stratifications) {
+      label <- paste(year, stratification)
+      cli::cli_inform("{utc(Sys.time())} {label}: started.")
+      run_started <- Sys.time()
+      warnings <- character()
+      acs_years <- NULL
+      result <- tryCatch(
+        withCallingHandlers(
+          suppressMessages(measured_effects_run(
+            options,
+            year,
+            if (stratification == "none") NULL else stratification
+          )),
+          warning = function(w) {
+            warnings <<- c(warnings, clean(conditionMessage(w)))
+            invokeRestart("muffleWarning")
+          }
+        ),
+        error = function(e) e
+      )
+      failed <- inherits(result, "error")
+      if (!failed) {
+        acs_years <- result$acs_years
+        results[[label]] <- result$report
+      }
+      runs[[label]] <- tibble::tibble(
+        year = year,
+        stratify_by = stratification,
+        started_utc = utc(run_started),
+        finished_utc = utc(Sys.time()),
+        acs_years = paste(acs_years, collapse = ","),
+        rows = if (failed) 0L else nrow(result$report),
+        warnings = list(unique(warnings)),
+        error = if (failed) clean(conditionMessage(result)) else NA_character_
+      )
+      cli::cli_inform(
+        "{utc(Sys.time())} {label}: {if (failed) 'FAILED' else 'done'}."
+      )
+    }
+  }
+
+  summary <- dplyr::bind_rows(results)
+  runs <- dplyr::bind_rows(runs)
+  complete <- all(is.na(runs$error))
+  finished <- Sys.time()
+
+  package_versions <- function(packages) {
+    installed <- packages[vapply(
+      packages,
+      requireNamespace,
+      logical(1),
+      quietly = TRUE
+    )]
+    lapply(rlang::set_names(installed), \(p) as.character(packageVersion(p)))
+  }
+  defaults <- function(fn) {
+    lapply(formals(fn)[-1], function(default) {
+      value <- eval(default)
+      if (is.null(value)) "NULL" else as.character(value[[1]])
+    })
+  }
+  meta <- list(
+    summary = "measured-effects.csv",
+    complete = complete,
+    run = list(started_utc = utc(started), finished_utc = utc(finished)),
+    retrieval = paste(
+      "Per-response download times are not yet recorded by the package, so",
+      "the run window (run.started_utc to run.finished_utc) is the interval",
+      "in which every CDC AtlasPlus and Census response was retrieved. Saved",
+      "responses were not used: the run kept its cache in a new temporary",
+      "folder, so each response was downloaded once, during the run."
+    ),
+    package = list(
+      name = "CDCAtlas",
+      version = as.character(packageVersion("CDCAtlas")),
+      git_commit = measured_effects_commit()
+    ),
+    request = list(
+      disease = options$disease,
+      indicator = options$indicator,
+      years = I(options$years),
+      stratifications = I(options$stratifications),
+      alternatives = I(vapply(
+        measured_effects_alternatives[options$alternatives],
+        \(alternative) alternative$label,
+        character(1),
+        USE.NAMES = FALSE
+      )),
+      by_state = options$by_state
+    ),
+    years = list(
+      used = I(years),
+      latest_in_code_table = pkg$.latest_atlas_year(),
+      latest_used = latest$used,
+      latest_tried = if (!is.null(latest)) I(latest$tried)
+    ),
+    scope = paste(
+      "Scenario 'default' is the default pipeline, every option at its",
+      "default. The other scenarios change one impute_suppressed() argument",
+      "and report the imputation and remainder steps only: extrapolation was",
+      "not rerun for them."
+    ),
+    options = list(
+      impute_suppressed = defaults(pkg$impute_suppressed),
+      extrapolate_from_county = defaults(pkg$extrapolate_from_county)
+    ),
+    runs = runs,
+    r = list(version = R.version.string, platform = R.version$platform),
+    packages = package_versions(c(
+      "tidycensus",
+      "dplyr",
+      "httr",
+      "jsonlite",
+      "memoise",
+      "cachem",
+      "cli",
+      "rlang"
+    ))
+  )
+
+  dir.create(options$out_dir, recursive = TRUE, showWarnings = FALSE)
+  files <- list(
+    csv = file.path(options$out_dir, "measured-effects.csv"),
+    meta = file.path(options$out_dir, "measured-effects-meta.json"),
+    complete = complete
+  )
+  utils::write.csv(summary, files$csv, row.names = FALSE, na = "")
+  jsonlite::write_json(
+    meta,
+    files$meta,
+    auto_unbox = TRUE,
+    pretty = TRUE,
+    null = "null",
+    na = "null",
+    digits = NA
+  )
+  cli::cli_inform(c(
+    "v" = "Wrote {nrow(summary)} row{?s} to {.file {files$csv}}.",
+    "v" = "Wrote {.file {files$meta}}.",
+    "!" = if (!complete) {
+      "{sum(!is.na(runs$error))} run{?s} failed; see {.field runs} in the
+       metadata."
+    }
+  ))
+  invisible(files)
+}
+
+# One year and stratification: the default pipeline and its report, then each
+# alternative imputation and the report of its imputation and remainder steps.
+measured_effects_run <- function(options, year, stratify_by) {
+  pkg <- asNamespace("CDCAtlas")
+  county <- pkg$get_atlas(
+    options$disease,
+    "county",
+    year,
+    stratify_by = stratify_by
+  )
+  # One indicator only. Every step works within an indicator, so dropping the
+  # others changes nothing for the one kept.
+  county <- county[as.character(county$indicator) == options$indicator, ]
+  if (nrow(county) == 0) {
+    cli::cli_abort(
+      "CDC returned no {options$indicator} county rows for {year}."
+    )
+  }
+
+  imputed <- pkg$impute_suppressed(county)
+  areas <- pkg$extrapolate_from_county(imputed)
+  default <- pkg$.pipeline_report(
+    county,
+    imputed,
+    areas,
+    by_state = options$by_state
+  )
+  default$scenario <- rep("default", nrow(default))
+  acs_years <- sort(unique(areas$acs_year))
+  rm(areas)
+
+  others <- lapply(options$alternatives, function(name) {
+    alternative <- measured_effects_alternatives[[name]]
+    imputed <- do.call(pkg$impute_suppressed, c(list(county), alternative$args))
+    limits <- alternative$args[intersect(
+      names(alternative$args),
+      c("cap", "floor", "population")
+    )]
+    report <- do.call(
+      pkg$.pipeline_report,
+      c(list(county, imputed, by_state = options$by_state), limits)
+    )
+    # Nationally: the imputation and remainder steps. By state: imputed cases.
+    keep <- report$step %in%
+      c("imputation", "no county") &
+      (report$state_fips == "all" | report$measure == "imputed_cases")
+    report <- report[keep, ]
+    report$scenario <- rep(alternative$label, nrow(report))
+    report
+  })
+
+  report <- dplyr::bind_rows(default, others)
+  columns <- c("year", "indicator", "stratify_by", "scenario")
+  list(
+    report = report[c(columns, setdiff(names(report), columns))],
+    acs_years = acs_years
+  )
+}
+
+# The newest year CDC has released for the indicator: from the latest year in
+# the package's code table, back at most two years, the first whose state
+# rows have counts. Only CDC's "no data" answer moves on to the next year; any
+# other failure stops the run.
+measured_effects_latest_year <- function(disease, indicator) {
+  pkg <- asNamespace("CDCAtlas")
+  newest <- pkg$.latest_atlas_year()
+  tried <- numeric()
+  for (year in newest - 0:2) {
+    tried <- c(tried, year)
+    state <- tryCatch(
+      suppressWarnings(suppressMessages(pkg$get_atlas(disease, "state", year))),
+      error = function(e) {
+        if (grepl("returned no data", conditionMessage(e), fixed = TRUE)) {
+          return(NULL)
+        }
+        stop(e)
+      }
+    )
+    released <- !is.null(state) &&
+      any(as.character(state$indicator) == indicator & !is.na(state$cases))
+    if (released) {
+      return(list(used = year, tried = tried))
+    }
+  }
+  cli::cli_abort(c(
+    "CDC returned no {indicator} state counts for {.val {tried}}.",
+    "i" = "Give the years in {.envvar MEASURED_YEARS} instead of
+           {.val latest}."
+  ))
+}
+
+# The commit the summary was built from, or NA outside a git checkout.
+measured_effects_commit <- function() {
+  commit <- tryCatch(
+    suppressWarnings(system2(
+      "git",
+      c("rev-parse", "HEAD"),
+      stdout = TRUE,
+      stderr = FALSE
+    )),
+    error = function(e) character()
+  )
+  if (length(commit) == 1 && nzchar(commit)) commit else NA_character_
+}
+
+if (!identical(Sys.getenv("MEASURED_EFFECTS_SOURCE_ONLY"), "true")) {
+  pkgload::load_all(quiet = TRUE)
+  files <- measured_effects(
+    measured_effects_options(commandArgs(trailingOnly = TRUE))
+  )
+  if (!files$complete) {
+    stop("Some runs failed; the summary is incomplete.", call. = FALSE)
+  }
+}
