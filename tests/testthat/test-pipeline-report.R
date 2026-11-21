@@ -936,6 +936,38 @@ test_that("data-raw/measured-effects.R runs end to end on made-up data", {
   expect_gt(length(said), 8)
 })
 
+test_that("a run that stops early leaves nothing in its output folder", {
+  script <- test_path("..", "..", "data-raw", "measured-effects.R")
+  skip_if_not(file.exists(script), "data-raw/ is not in the built package.")
+  local_fake_sources()
+  local_mocked_bindings(.request_atlas = report_fake_cdc)
+  # A summary left by an earlier run sits in the default folder; this run is
+  # given a new folder as its argument, as the workflow does.
+  earlier <- withr::local_tempdir()
+  stale <- c("measured-effects.csv", "measured-effects-meta.json")
+  file.create(file.path(earlier, stale))
+  out_dir <- file.path(withr::local_tempdir(), "measured-effects")
+  withr::local_envvar(
+    MEASURED_EFFECTS_SOURCE_ONLY = "true",
+    MEASURED_EFFECTS_SYNTHETIC = NA,
+    MEASURED_YEARS = "2022",
+    MEASURED_STRATIFICATIONS = "none,county",
+    MEASURED_OUT_DIR = earlier,
+    GITHUB_STEP_SUMMARY = NA
+  )
+  script_env <- new.env(parent = environment())
+  source(script, local = script_env)
+  options <- script_env$measured_effects_options(out_dir)
+
+  expect_equal(options$out_dir, out_dir)
+  expect_error(
+    suppressMessages(script_env$measured_effects(options)),
+    "Unknown stratification"
+  )
+  expect_equal(list.files(out_dir), character())
+  expect_setequal(list.files(earlier), stale)
+})
+
 test_that("the script's synthetic mode labels everything and needs no key", {
   script <- test_path("..", "..", "data-raw", "measured-effects.R")
   skip_if_not(file.exists(script), "data-raw/ is not in the built package.")

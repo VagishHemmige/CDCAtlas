@@ -36,6 +36,12 @@
 # first and are still uploaded, so what went wrong can be inspected; in the
 # first case nothing is printed.
 #
+# The run writes to a new folder under the runner's temporary directory and
+# uploads only from there, never from `vignettes/articles/data/`. So an
+# artifact holds only what this run wrote: if the run stops before writing
+# anything, nothing is uploaded, and a summary committed earlier can never be
+# uploaded as if it were this run's.
+#
 # Needs the CENSUS_API_KEY repository secret. GitHub does not pass secrets to
 # pull requests from forks, so the label works only for branches in this
 # repository.
@@ -117,8 +123,15 @@ jobs:
           extra-packages: any::pkgload, any::tidycensus
           needs: check
 
+      # A folder this run creates, so nothing in it is older than the run.
       - name: Build the summary
-        run: Rscript data-raw/measured-effects.R vignettes/articles/data
+        run: |
+          out="$RUNNER_TEMP/measured-effects"
+          if [ -e "$out" ]; then
+            echo "::error::$out already exists; refusing to reuse it."
+            exit 1
+          fi
+          Rscript data-raw/measured-effects.R "$out"
 
       # Uploaded even if the script stopped, so its files can be inspected.
       - name: Upload the compact summary and the metadata
@@ -127,8 +140,8 @@ jobs:
         with:
           name: measured-effects
           path: |
-            vignettes/articles/data/measured-effects.csv
-            vignettes/articles/data/measured-effects-meta.json
+            ${{ runner.temp }}/measured-effects/measured-effects.csv
+            ${{ runner.temp }}/measured-effects/measured-effects-meta.json
           if-no-files-found: warn
 
       - name: Upload the detail table
@@ -136,5 +149,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: measured-effects-detail
-          path: vignettes/articles/data/measured-effects-detail.csv
+          path: ${{ runner.temp }}/measured-effects/measured-effects-detail.csv
           if-no-files-found: warn
