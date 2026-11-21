@@ -36,11 +36,13 @@
 # first and are still uploaded, so what went wrong can be inspected; in the
 # first case nothing is printed.
 #
-# The run writes to a new folder under the runner's temporary directory and
-# uploads only from there, never from `vignettes/articles/data/`. So an
-# artifact holds only what this run wrote: if the run stops before writing
-# anything, nothing is uploaded, and a summary committed earlier can never be
-# uploaded as if it were this run's.
+# The run writes to a folder it creates itself (`mktemp -d` under the
+# runner's temporary directory) and uploads only from there, never from
+# `vignettes/articles/data/`. The upload steps need the path that step
+# reports, so if the folder could not be created nothing is uploaded. An
+# artifact therefore holds only what this run wrote: if the run stops before
+# writing anything, nothing is uploaded, and a summary committed earlier can
+# never be uploaded as if it were this run's.
 #
 # Needs the CENSUS_API_KEY repository secret. GitHub does not pass secrets to
 # pull requests from forks, so the label works only for branches in this
@@ -124,30 +126,33 @@ jobs:
           needs: check
 
       # A folder this run creates, so nothing in it is older than the run.
-      - name: Build the summary
+      # The uploads below need its path, so without it nothing is uploaded.
+      - name: Create a new output folder
+        id: out
         run: |
-          out="$RUNNER_TEMP/measured-effects"
-          if [ -e "$out" ]; then
-            echo "::error::$out already exists; refusing to reuse it."
-            exit 1
-          fi
-          Rscript data-raw/measured-effects.R "$out"
+          dir="$(mktemp -d "$RUNNER_TEMP/measured-effects.XXXXXXXX")"
+          echo "dir=$dir" >> "$GITHUB_OUTPUT"
+
+      - name: Build the summary
+        env:
+          MEASURED_OUT: ${{ steps.out.outputs.dir }}
+        run: Rscript data-raw/measured-effects.R "$MEASURED_OUT"
 
       # Uploaded even if the script stopped, so its files can be inspected.
       - name: Upload the compact summary and the metadata
-        if: ${{ !cancelled() && (github.event_name != 'workflow_dispatch' || inputs.upload_summary) }}
+        if: ${{ !cancelled() && steps.out.outputs.dir != '' && (github.event_name != 'workflow_dispatch' || inputs.upload_summary) }}
         uses: actions/upload-artifact@v4
         with:
           name: measured-effects
           path: |
-            ${{ runner.temp }}/measured-effects/measured-effects.csv
-            ${{ runner.temp }}/measured-effects/measured-effects-meta.json
+            ${{ steps.out.outputs.dir }}/measured-effects.csv
+            ${{ steps.out.outputs.dir }}/measured-effects-meta.json
           if-no-files-found: warn
 
       - name: Upload the detail table
-        if: ${{ !cancelled() && (github.event_name != 'workflow_dispatch' || inputs.upload_detail) }}
+        if: ${{ !cancelled() && steps.out.outputs.dir != '' && (github.event_name != 'workflow_dispatch' || inputs.upload_detail) }}
         uses: actions/upload-artifact@v4
         with:
           name: measured-effects-detail
-          path: ${{ runner.temp }}/measured-effects/measured-effects-detail.csv
+          path: ${{ steps.out.outputs.dir }}/measured-effects-detail.csv
           if-no-files-found: warn
