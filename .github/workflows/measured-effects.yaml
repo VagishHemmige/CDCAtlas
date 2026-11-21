@@ -3,12 +3,14 @@
 #
 # READ FIRST: real-data output is public.
 # This repository is public, so everything a job shows is public: its log, its
-# job summary and its artifacts. Figures computed from real CDC AtlasPlus data
-# may only be shown or uploaded here as far as the maintainer has decided they
-# may be distributed. Until that decision is recorded, do not run the
-# real-data job. That is why, by default, the real-data job prints no figures,
-# writes no job summary, uploads only the compact summary and the metadata,
-# and uploads nothing at all if the run failed.
+# job summary and its artifacts. Publication of any file or figure computed
+# from real CDC AtlasPlus data waits for the maintainer's recorded disclosure
+# decision. So the real-data job publishes nothing unless it is told to:
+# by default it uploads no file, prints no figure and writes no job summary.
+# It only succeeds or fails, and its log gives progress, the year found, file
+# names and the numbers of rows written. Each kind of publication is a
+# separate input, off by default; turn one on only for output the recorded
+# decision covers. Nothing is ever uploaded from a failed run.
 #
 # Two jobs, and which one runs depends only on what started the workflow:
 #
@@ -28,11 +30,16 @@
 #   year and stratification asked for: allow one to two hours. A pull request
 #   or a push can never start it. Inputs:
 #   - years, stratifications, alternatives: the scope;
-#   - upload_detail (default off): also upload the detail table, which has
-#     figures for every state and group;
-#   - print_summary (default off): also print the compact summary and the
+#   - upload_summary (default off): upload the compact summary, which has
+#     two figures for each state, and the metadata, which has the warnings
+#     the run recorded;
+#   - upload_detail (default off): upload the detail table, which has figures
+#     for every state and group;
+#   - print_summary (default off): print the compact summary and the
 #     metadata to the log, between BEGIN and END marker lines, and add a
 #     short table to the job summary.
+#   With all three off the files exist only on the runner and are discarded
+#   with it.
 #
 # Neither job commits anything: the workflow has read-only permissions. A
 # person commits the compact summary (measured-effects.csv) and the metadata
@@ -63,12 +70,16 @@ on:
         description: "Imputation alternatives: zero, cap_inf, floor_1, acs; or none"
         type: string
         default: "zero,cap_inf,floor_1,acs"
+      upload_summary:
+        description: "PUBLIC: upload the compact summary and the metadata. Only after the recorded disclosure decision."
+        type: boolean
+        default: false
       upload_detail:
-        description: "Also upload the detail table (figures for every state and group). Public."
+        description: "PUBLIC: upload the detail table (every state and group). Only after the recorded disclosure decision."
         type: boolean
         default: false
       print_summary:
-        description: "Also print the compact summary to the log and the job summary. Public."
+        description: "PUBLIC: print the compact summary to the log and the job summary. Only after the recorded disclosure decision."
         type: boolean
         default: false
 
@@ -162,9 +173,9 @@ jobs:
       - name: Build the summary from real data
         run: Rscript data-raw/measured-effects.R vignettes/articles/data
 
-      # Nothing is uploaded from a failed run.
+      # Nothing is uploaded unless asked, and never from a failed run.
       - name: Upload the compact summary and the metadata
-        if: success()
+        if: success() && inputs.upload_summary
         uses: actions/upload-artifact@v4
         with:
           name: measured-effects

@@ -37,7 +37,10 @@
 # Real data are not printed unless asked. On a public repository a job log,
 # a job summary and an artifact are public, so whether figures from a real
 # run are shown anywhere is the maintainer's decision. By default a real run
-# only writes its files. With MEASURED_PRINT_SUMMARY=true it also prints the
+# only writes its files, and says only its progress, the year it found for
+# "latest", file names and numbers of rows; the warnings it records go into
+# the metadata file, not the log. (The workflow uploads none of the files
+# unless asked.) With MEASURED_PRINT_SUMMARY=true it also prints the
 # compact summary and the metadata between marker lines and, on GitHub, adds a
 # short table to the job summary.
 #
@@ -57,9 +60,9 @@
 #
 # A full default run makes about 56 CDC requests and one national tract
 # download per year and stratification (twice with the "acs" alternative), so
-# allow one to two hours. `.github/workflows/measured-effects.yaml` runs it on
-# GitHub and uploads the three files; the compact summary and the metadata are
-# committed by pull request.
+# allow one to two hours. `.github/workflows/measured-effects.yaml` can run it
+# on GitHub by hand; it uploads a file only when asked to, and the compact
+# summary and the metadata are committed by pull request.
 #
 # Settings, as environment variables (defaults in brackets):
 #
