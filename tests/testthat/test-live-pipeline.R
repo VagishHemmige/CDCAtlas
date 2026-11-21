@@ -9,7 +9,8 @@
 #
 # They bypass the on-disk cache, so they test what CDC returns today. The years
 # are the ones HOPE uses, plus 2024 onward for the check of CDC's rates on
-# suppressed rows (#157), which adds county downloads but no Census requests.
+# suppressed rows (#157), which adds county downloads (and a state request
+# for each) but no Census requests.
 
 skip_if_not(
   identical(Sys.getenv("CDCATLAS_LIVE_TESTS"), "true"),
@@ -297,8 +298,11 @@ for (pipeline_run in pipeline_runs) {
 # year before every indicator has data for it (HIV prevalence 2025, #149), so
 # each indicator must have county rows in the latest year or one of the two
 # before it, and the year used is reported. A year before 2024 is downloaded
-# only if an indicator still has no rows. County downloads only: nothing is
-# imputed and the Census isn't asked.
+# only if an indicator still has no rows. An earlier year is used only when
+# CDC has no state rows for the indicator either (one small state request per
+# year and stratification, see live_county_if_released()); a county download
+# that fails for a released year fails the test. Nothing is imputed and the
+# Census isn't asked.
 for (strat in list(NULL, "sex", "age", "race")) {
   local({
     strat <- strat
@@ -322,7 +326,7 @@ for (strat in list(NULL, "sex", "age", "race")) {
           county <- live_county_if_released(year, strat)
           responses[as.character(year)] <- list(county)
           if (is.null(county)) {
-            message("HIV ", year, ", ", label, ": CDC returned no data.")
+            message("HIV ", year, ", ", label, ": CDC has no state rows.")
           } else {
             expect_no_rate_on_suppressed(county, paste("hiv", year, label))
           }

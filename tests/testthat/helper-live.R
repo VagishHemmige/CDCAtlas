@@ -11,7 +11,34 @@ skip_unless_census <- function() {
 }
 
 live_counties <- new.env()
+live_states <- new.env()
 live_runs <- new.env()
+
+# The state a county payload asks for (county requests are split by state),
+# as "Name (FIPS)"; NA for any other payload.
+live_payload_state <- function(payload) {
+  ids <- as.numeric(strsplit(payload$VariableIDs, ",")[[1]])
+  counties <- lookup[["counties"]]
+  fips <- unique(substr(counties$fips[counties$geo_id %in% ids], 1, 2))
+  if (length(fips) != 1) {
+    return(NA_character_)
+  }
+  states <- lookup[["state"]]
+  paste0(states$name[match(fips, states$fips)], " (", fips, ")")
+}
+
+# One uncached request to CDC. A failure keeps its own message and also
+# carries the state the request was for (`live_state`), so a county download
+# that fails part-way can say where.
+live_request <- function(payload) {
+  tryCatch(
+    .request_atlas_internal(payload),
+    error = function(e) {
+      e$live_state <- live_payload_state(payload)
+      stop(e)
+    }
+  )
+}
 
 # Runs `code` once per `key` in `store`, keeping its value, its warnings, or
 # its error. Later calls get the same value and see the same warnings, or the
@@ -45,7 +72,7 @@ live_once <- function(store, key, code) {
 # get_atlas(disease, "county", year, stratify_by), fresh from CDC (bypassing
 # the on-disk cache) the first time, then from memory.
 live_county <- function(year, stratify_by = NULL, disease = "hiv") {
-  local_mocked_bindings(.request_atlas = .request_atlas_internal)
+  local_mocked_bindings(.request_atlas = live_request)
   live_once(
     live_counties,
     paste(disease, year, stratify_by %||% "none"),
@@ -58,21 +85,47 @@ live_county <- function(year, stratify_by = NULL, disease = "hiv") {
   )
 }
 
-# live_county() for a year CDC may not have released: NULL when CDC has no
-# data at all for the year. When CDC answers for some indicators only (HIV
-# 2025 came with diagnoses but not prevalence, #149), get_atlas() warns; that
-# warning is expected here and dropped, and the rows CDC did return are kept.
-live_county_if_released <- function(year, stratify_by = NULL, disease = "hiv") {
-  withCallingHandlers(
-    tryCatch(
-      live_county(year, stratify_by, disease),
-      error = function(e) {
-        if (grepl("returned no data", conditionMessage(e), fixed = TRUE)) {
-          return(NULL)
-        }
-        stop(e)
-      }
+# The indicators of `disease` CDC has released for a year and stratification,
+# from one small state-level request (made once per run): the indicators with
+# state rows. None when CDC has no data at all for the year. When CDC answers
+# for some indicators only (HIV 2025 came with diagnoses but not prevalence,
+# #149), get_atlas() warns; that warning is expected here and dropped.
+live_released_indicators <- function(
+  year,
+  stratify_by = NULL,
+  disease = "hiv"
+) {
+  local_mocked_bindings(.request_atlas = live_request)
+  state <- live_without_unreleased_warning(tryCatch(
+    live_once(
+      live_states,
+      paste(disease, year, stratify_by %||% "none"),
+      suppressMessages(get_atlas(
+        disease,
+        "state",
+        year,
+        stratify_by = stratify_by
+      ))
     ),
+    error = function(e) {
+      # A state request is a single request, so "no data" is CDC's answer for
+      # the whole year, not for part of it.
+      if (grepl("returned no data", conditionMessage(e), fixed = TRUE)) {
+        return(NULL)
+      }
+      stop(e)
+    }
+  ))
+  indicators <- .disease_indicators()
+  intersect(
+    indicators$indicator[indicators$disease == disease],
+    unique(as.character(state$indicator))
+  )
+}
+
+live_without_unreleased_warning <- function(code) {
+  withCallingHandlers(
+    code,
     warning = function(w) {
       if (
         grepl("CDC returned no rows for", conditionMessage(w), fixed = TRUE)
@@ -81,6 +134,75 @@ live_county_if_released <- function(year, stratify_by = NULL, disease = "hiv") {
       }
     }
   )
+}
+
+# live_county() for a year CDC may not have released. NULL only on positive
+# evidence that the year is unreleased: the state-level request has no rows
+# for any of the disease's indicators (the counties are then not requested).
+# Otherwise the county download must work and must have rows for every
+# indicator CDC has released for states. A county download is one request per
+# state and stops at the first that fails, so its failing, "returned no data"
+# included, says nothing about the year as a whole: that stops with the year,
+# stratification and state rather than letting a test fall back to an earlier
+# year.
+live_county_if_released <- function(year, stratify_by = NULL, disease = "hiv") {
+  released <- live_released_indicators(year, stratify_by, disease)
+  if (length(released) == 0) {
+    return(NULL)
+  }
+  what <- paste0(
+    disease,
+    " ",
+    year,
+    ", ",
+    if (is.null(stratify_by)) "unstratified" else paste("by", stratify_by)
+  )
+  county <- live_without_unreleased_warning(tryCatch(
+    live_county(year, stratify_by, disease),
+    error = function(e) {
+      rlang::abort(
+        c(
+          paste0("The county download for ", what, " failed."),
+          "x" = paste0(
+            "Failing request: ",
+            if (is.null(e$live_state) || is.na(e$live_state)) {
+              "state not known"
+            } else {
+              e$live_state
+            },
+            "."
+          ),
+          "i" = paste0(
+            "CDC has state rows for ",
+            paste(released, collapse = " and "),
+            " in ",
+            year,
+            ", so the year is released and an earlier year is not used ",
+            "instead."
+          )
+        ),
+        parent = e
+      )
+    }
+  ))
+  absent <- setdiff(released, unique(as.character(county$indicator)))
+  if (length(absent) > 0) {
+    rlang::abort(c(
+      paste0(
+        "The county download for ",
+        what,
+        " has no rows for ",
+        paste(absent, collapse = " and "),
+        "."
+      ),
+      "i" = paste0(
+        "CDC has state rows for it in ",
+        year,
+        ", so an earlier year is not used instead."
+      )
+    ))
+  }
+  county
 }
 
 # Expects that CDC gave no rate where it gave no count (#157): every row of a

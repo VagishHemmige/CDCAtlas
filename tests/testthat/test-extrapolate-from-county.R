@@ -89,13 +89,17 @@ test_that("the output has no rate or rate-bound columns (#157)", {
         character(0),
         label = label
       )
-      expect_equal(
-        intersect(names(attr(areas, "not_allocated")), rate_columns),
-        character(0),
-        label = label
-      )
     }
   }
+
+  # A county that is left out, carrying rates: 01003 has no CDC data.
+  county <- with_fake_rates(fake_county_atlas(), rate_without_count = TRUE)
+  county$cases[county$fips == "01003"] <- NA
+  county$data_status[county$fips == "01003"] <- "Data not available"
+  left_out <- attr(run_extrapolation(county = county), "not_allocated")
+
+  expect_equal(left_out$county_fips, c("01003", "01003"))
+  expect_equal(intersect(names(left_out), rate_columns), character(0))
 })
 
 test_that("allocation uses known shares after saving and reordering county rows", {
