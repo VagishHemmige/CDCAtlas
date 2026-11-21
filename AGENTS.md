@@ -172,7 +172,12 @@ CDC's data contain, that documentation or an issue relies on is written as a
 test before the documentation states it: an offline test for package behavior,
 a gated live test for CDC's data. Live checks of CDC's data cover every year
 from 2024 onward, so coverage grows as CDC releases data, plus spot checks in
-a few earlier years. Such a test asserts what was observed to hold. If the
+a few earlier years. Coverage is decided per indicator, because CDC releases
+indicators at different times: a test reports a year CDC has not yet released
+for an indicator rather than failing on it or skipping it silently, and names
+the year it used. Each property asserted needs a nonempty relevant response,
+so a check cannot pass on an empty subset. Such a test asserts what was
+observed to hold. If the
 claim proves false, correct the claim and keep the failing reproducer with its
 issue as above; do not commit it as a failing or expected-failure test.
 
