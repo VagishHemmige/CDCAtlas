@@ -571,6 +571,86 @@ test_that("the report works without the tract step, for sensitivity runs", {
   expect_equal(report_value(report, "suppressed_rows_raw_above_cap"), 0)
 })
 
+test_that("the recorded estimate before limits is used, for ACS populations too", {
+  # One suppressed county. The state rate is 700 per 1,000,000 and the
+  # county's ACS population 10,000, so the estimate is 7 and the cap sets 4.
+  county <- fake_county_atlas(
+    suppressed = "01003",
+    indicators = "HIV prevalence"
+  )
+  local_fake_sources(
+    state = fake_state_atlas(no_county = 668, indicators = "HIV prevalence")
+  )
+  local_mocked_bindings(
+    .acs_county_population = function(x) rep(10000, nrow(x))
+  )
+  imputed <- impute_suppressed(county, population = "acs")
+  expect_equal(imputed$cases_uncapped[imputed$fips == "01003"], 7)
+
+  report <- .pipeline_report(county, imputed, population = "acs")
+  value <- function(measure) report_value(report, measure, group = "all")
+  expect_equal(value("suppressed_rows_raw_above_cap"), 1)
+  expect_equal(value("suppressed_rows_raw_below_floor"), 0)
+  expect_equal(value("suppressed_rows_raw_within_limits"), 0)
+  expect_equal(value("cases_raw_estimate"), 7)
+  expect_equal(value("cases_removed_by_cap"), 3)
+  expect_equal(value("cases_added_by_floor"), 0)
+  limits <- report[report$measure == "cases_removed_by_cap", ]
+  expect_equal(limits$note, NA_character_)
+
+  # The limits must still be the ones the imputation used.
+  expect_error(
+    .pipeline_report(county, imputed, cap = 5, population = "acs"),
+    "don't reproduce"
+  )
+})
+
+test_that("input from before `cases_uncapped` existed still works", {
+  run <- report_fixture()
+  with_column <- .pipeline_report(
+    run$county,
+    run$imputed,
+    run$areas,
+    cap = 4,
+    floor = 1
+  )
+  older <- run$imputed
+  older$cases_uncapped <- NULL
+  without_column <- .pipeline_report(
+    run$county,
+    older,
+    run$areas,
+    cap = 4,
+    floor = 1
+  )
+  # With CDC's population the recorded and the recomputed estimates agree.
+  expect_equal(without_column, with_column)
+  expect_equal(report_value(without_column, "cases_removed_by_cap"), 6)
+
+  # With ACS populations and no column, the estimate can't be recomputed
+  # without another download, so the six measures say so.
+  county <- fake_county_atlas(
+    suppressed = "01003",
+    indicators = "HIV prevalence"
+  )
+  local_fake_sources(
+    state = fake_state_atlas(no_county = 668, indicators = "HIV prevalence")
+  )
+  local_mocked_bindings(
+    .acs_county_population = function(x) rep(10000, nrow(x))
+  )
+  imputed <- impute_suppressed(county, population = "acs")
+  imputed$cases_uncapped <- NULL
+  report <- .pipeline_report(county, imputed, population = "acs")
+  unknown <- report[
+    report$measure %in%
+      c("suppressed_rows_raw_above_cap", "cases_removed_by_cap") &
+      report$group == "all",
+  ]
+  expect_equal(unknown$value, c(NA_real_, NA_real_))
+  expect_match(unknown$note, "cases_uncapped", fixed = TRUE)
+})
+
 test_that("the report refuses limits that the imputation didn't use", {
   run <- report_fixture()
   expect_snapshot(
