@@ -28,7 +28,12 @@ between \code{floor} and \code{cap}.
 \item{cap}{The largest count \code{"state_rate"} can give a suppressed county.
 Use \code{Inf} for no cap. The default, 4, reflects CDC suppressing counts of
 1 to 4, but complementary suppression can hide larger counts, so it is a
-default rather than a hard limit.}
+default rather than a hard limit. For HIV prevalence, the state rate
+times a county's population is expected to be above the default cap in
+most suppressed counties, so the cap would usually set the value. That
+is an expectation, not a measurement: \code{cases_uncapped} in the output
+lets you count it. \code{floor = cap = 2.5} gives every row that can be
+estimated the same fixed value, 2.5.}
 
 \item{floor}{The smallest count \code{"state_rate"} can give. The default, 0,
 allows for counties suppressed because their population is under 100,
@@ -75,8 +80,8 @@ no longer reported by \code{\link[=no_county_cases]{no_county_cases()}} or sprea
 }}
 }
 \value{
-\code{x} with suppressed counts filled in and a new column
-\code{cases_source}:
+\code{x} with suppressed counts filled in and two new columns,
+\code{cases_source} and \code{cases_uncapped}. \code{cases_source} is:
 \itemize{
 \item \code{"published"}: CDC's count.
 \item \code{"state_rate"} or \code{"zero"}: filled in by \code{method}.
@@ -86,9 +91,24 @@ with \code{unestimated = "zero"}), or it had no count and wasn't marked
 \item \code{"not available"}: kept with \code{not_available = "keep"}; \code{NA}.
 }
 
+\code{cases_uncapped} is, for rows filled in by \code{"state_rate"}, the estimate
+before \code{cap} and \code{floor} were applied: the state rate times the county
+population used (CDC's or ACS). It is a modeled number, not CDC's hidden
+count and not a way to recover it. It is \code{NA} for every other row:
+published counts, rows filled in by \code{"zero"}, and rows marked
+\code{"not estimated"} or \code{"not available"}. \code{cases} is the value to use;
+\code{cases_uncapped} shows what decided it:
+\itemize{
+\item \code{cases_uncapped > cap}: the cap set \code{cases}.
+\item \code{cases_uncapped < floor}: the floor set \code{cases}.
+\item Otherwise \code{cases} equals \code{cases_uncapped}. An estimate exactly equal
+to \code{cap} or \code{floor} was not changed by it.
+}
+
 \code{data_status} is unchanged, so suppressed rows can still be identified.
 \code{cap}, \code{floor}, \code{population} and \code{unestimated} apply only to
-\code{"state_rate"}.
+\code{"state_rate"}. \code{\link[=no_county_cases]{no_county_cases()}} and \code{\link[=extrapolate_from_county]{extrapolate_from_county()}} use
+\code{cases} and ignore \code{cases_uncapped}.
 }
 \description{
 CDC suppresses small county counts. \code{impute_suppressed()} gives each
@@ -120,6 +140,10 @@ tract populations from the Census.
 \dontrun{
 county <- get_atlas("hiv", "county", 2022, stratify_by = "sex")
 county <- impute_suppressed(county)
+
+# How many filled-in rows did the cap (4 by default) decide?
+filled <- county[county$cases_source == "state_rate", ]
+table(filled$indicator, capped = filled$cases_uncapped > 4)
 
 # Sensitivity analysis: suppressed counties have no cases
 county_zero <- impute_suppressed(
