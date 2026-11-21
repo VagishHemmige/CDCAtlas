@@ -123,6 +123,37 @@ test_that("not_available = 'drop' drops rows marked 'Data not available' with no
   expect_equal(unique(out$fips), "01001")
 })
 
+test_that("not_available = 'drop' can drop every row, leaving the columns", {
+  local_mocked_bindings(.request_atlas = function(payload) {
+    stop("CDC was called")
+  })
+  county <- fake_county_atlas()
+  county$cases[] <- NA_real_
+  county$data_status[] <- "Data not available"
+  inputs <- list(data.frame = county, tibble = tibble::as_tibble(county))
+
+  for (class in names(inputs)) {
+    for (method in c("zero", "state_rate")) {
+      label <- paste(class, method)
+      input <- inputs[[class]]
+      out <- suppressMessages(suppressWarnings(
+        impute_suppressed(input, method = method, not_available = "drop")
+      ))
+
+      expect_equal(nrow(out), 0, label = label)
+      expect_identical(
+        names(out),
+        c(names(input), "cases_source", "cases_uncapped"),
+        label = label
+      )
+      # The input's columns, types and class, with no rows.
+      expect_identical(out[names(input)], input[0, ], label = label)
+      expect_identical(out$cases_source, character(0), label = label)
+      expect_identical(out$cases_uncapped, numeric(0), label = label)
+    }
+  }
+})
+
 test_that("a published count is kept even when marked 'Data not available'", {
   # Like Connecticut's planning regions in 2017: a count but no population.
   county <- fake_county_atlas()
@@ -160,7 +191,10 @@ test_that("the input's columns and types are kept", {
   county <- fake_county_atlas()
 
   expect_equal(out[names(county)], county)
-  expect_equal(setdiff(names(out), names(county)), "cases_source")
+  expect_equal(
+    names(out),
+    c(names(county), "cases_source", "cases_uncapped")
+  )
 })
 
 test_that("impute_suppressed() rejects data it can't use", {
@@ -258,6 +292,226 @@ test_that("state_rate is floored at `floor`", {
   expect_equal(out$cases[out$fips == "01003"], c(2, 4))
   expect_snapshot(error = TRUE, impute_suppressed(county, floor = 5))
   expect_snapshot(error = TRUE, impute_suppressed(county, floor = NA))
+})
+
+# The estimate before `cap` and `floor` (#151) ----------------------------------
+
+test_that("cases_uncapped is the estimate before the cap, so it shows when the cap decided", {
+  local_fake_sources()
+  out <- impute_suppressed(fake_county_atlas(suppressed = "01003"))
+  filled <- out[out$fips == "01003", ]
+
+  # State rate x county population: diagnoses 1.6, prevalence 11.6. The cap
+  # of 4 decides prevalence only; diagnoses lie between floor and cap.
+  expect_equal(filled$cases, c(1.6, 4))
+  expect_equal(filled$cases_uncapped, c(1.6, 11.6))
+  expect_equal(filled$cases_uncapped > 4, c(FALSE, TRUE))
+  expect_identical(filled$cases_uncapped[1], filled$cases[1])
+  expect_type(out$cases_uncapped, "double")
+})
+
+test_that("an estimate exactly equal to the cap is not above it", {
+  # State rates 32 / 64 = 0.5 and 232 / 64 = 3.625, times a county population
+  # of 8: exactly 4 and 29, with no rounding.
+  state <- fake_state_atlas()
+  state$population <- 64
+  local_fake_sources(state = state)
+  county <- fake_county_atlas(suppressed = "01003")
+  county$population <- 8
+  out <- impute_suppressed(county, cap = 4)
+  filled <- out[out$fips == "01003", ]
+
+  expect_identical(filled$cases, c(4, 4))
+  expect_identical(filled$cases_uncapped, c(4, 29))
+  expect_identical(filled$cases_uncapped > 4, c(FALSE, TRUE))
+})
+
+test_that("cases_uncapped shows when a raised floor decided", {
+  local_fake_sources()
+  out <- impute_suppressed(fake_county_atlas(suppressed = "01003"), floor = 2)
+  filled <- out[out$fips == "01003", ]
+
+  expect_equal(filled$cases, c(2, 4))
+  expect_equal(filled$cases_uncapped, c(1.6, 11.6))
+  expect_equal(filled$cases_uncapped < 2, c(TRUE, FALSE))
+})
+
+test_that("cases_uncapped equals cases with cap = Inf and floor = 0", {
+  local_fake_sources()
+  out <- impute_suppressed(fake_county_atlas(suppressed = "01003"), cap = Inf)
+  filled <- out[out$fips == "01003", ]
+
+  expect_equal(filled$cases_uncapped, c(1.6, 11.6))
+  expect_identical(filled$cases_uncapped, filled$cases)
+})
+
+test_that("floor = cap gives a fixed value and cases_uncapped keeps the estimate", {
+  local_fake_sources()
+  out <- impute_suppressed(
+    fake_county_atlas(suppressed = "01003"),
+    floor = 2.5,
+    cap = 2.5
+  )
+  filled <- out[out$fips == "01003", ]
+
+  expect_equal(filled$cases, c(2.5, 2.5))
+  expect_equal(filled$cases_uncapped, c(1.6, 11.6))
+})
+
+test_that("cases_uncapped is NA for published rows", {
+  local_fake_sources()
+  out <- impute_suppressed(fake_county_atlas(suppressed = "01003"))
+  expect_equal(
+    out$cases_uncapped[out$cases_source == "published"],
+    c(NA_real_, NA_real_)
+  )
+
+  # Nothing suppressed: no estimate is made, and the column is still there.
+  none <- impute_suppressed(fake_county_atlas())
+  expect_identical(none$cases_uncapped, rep(NA_real_, nrow(none)))
+})
+
+test_that("cases_uncapped is NA with method = 'zero'", {
+  out <- impute_suppressed(
+    fake_county_atlas(suppressed = "01003"),
+    method = "zero"
+  )
+  expect_identical(out$cases_uncapped, rep(NA_real_, nrow(out)))
+})
+
+test_that("cases_uncapped is NA for rows that could not be estimated", {
+  local_fake_sources()
+  county <- fake_county_atlas(suppressed = "01003")
+  county$population[county$fips == "01003"] <- NA
+  for (unestimated in c("na", "zero")) {
+    out <- suppressWarnings(impute_suppressed(
+      county,
+      unestimated = unestimated
+    ))
+    rows <- out$cases_source == "not estimated"
+    expect_equal(sum(rows), 2, label = unestimated)
+    expect_identical(
+      out$cases_uncapped[rows],
+      c(NA_real_, NA_real_),
+      label = unestimated
+    )
+  }
+
+  # No state rate.
+  state <- fake_state_atlas()
+  state$population <- NA
+  local_fake_sources(state = state)
+  out <- suppressWarnings(
+    impute_suppressed(fake_county_atlas(suppressed = "01003"))
+  )
+  expect_identical(out$cases_uncapped, rep(NA_real_, nrow(out)))
+})
+
+test_that("cases_uncapped is NA for rows that are not filled in", {
+  local_fake_sources()
+  # One county "Data not available", the other with no count and a status that
+  # isn't suppression.
+  county <- fake_county_atlas()
+  county$cases <- NA_real_
+  county$data_status <- factor(ifelse(
+    county$fips == "01003",
+    "Data not available",
+    "No reported cases"
+  ))
+  out <- suppressWarnings(impute_suppressed(county))
+
+  expect_setequal(out$cases_source, c("not available", "not estimated"))
+  expect_identical(out$cases_uncapped, rep(NA_real_, nrow(out)))
+})
+
+test_that("cases_uncapped is computed in each stratum and state on its own", {
+  local_fake_sources(state = fake_state_atlas(stratify_by = "sex"))
+  out <- impute_suppressed(fake_county_atlas("sex", suppressed = "01003"))
+  filled <- out[out$fips == "01003", ]
+
+  # Per 1e6, times 50,000. Diagnoses: male 32, female 34. Prevalence: male
+  # 232, female 234.
+  expect_equal(as.character(filled$sex), c("Male", "Female", "Male", "Female"))
+  expect_equal(filled$cases_uncapped, c(1.6, 1.7, 11.6, 11.7))
+  expect_equal(filled$cases, c(1.6, 1.7, 4, 4))
+
+  # State 01: 32 and 232 per 1e6. State 02: 332 and 532 per 2e6.
+  local_fake_sources(state = two_state_atlas()$state)
+  two <- impute_suppressed(two_state_atlas()$county)
+  two <- two[two$cases_source == "state_rate", ]
+  expect_equal(two$fips, c("01003", "01003", "02003", "02003"))
+  expect_equal(two$cases_uncapped, c(1.6, 11.6, 8.3, 13.3))
+  expect_equal(two$cases, c(1.6, 4, 4, 4))
+})
+
+test_that("cases_uncapped uses the ACS population with population = 'acs'", {
+  local_fake_sources(state = fake_state_atlas(stratify_by = "sex"))
+  county <- fake_county_atlas("sex", suppressed = "01003")
+  out <- impute_suppressed(county, cap = 0.1, population = "acs")
+  male <- out[
+    out$fips == "01003" & out$sex == "Male" & out$indicator == "HIV diagnoses",
+  ]
+
+  pop <- fake_acs_tract("01003000100")
+  male_13 <- sum(pop[sprintf("B01001_%03d", 6:25)]) + 0.4 * pop[["B01001_005"]]
+  # CDC's population (50,000) would give 1.6.
+  expect_equal(male$cases_uncapped, 32 / 1e6 * male_13)
+  expect_false(isTRUE(all.equal(male$cases_uncapped, 1.6)))
+  expect_equal(male$cases, 0.1)
+})
+
+test_that("cases and cases_source are what they were before cases_uncapped", {
+  # Expected values are the output of the version without the column, on the
+  # same made-up input.
+  local_fake_sources()
+  county <- fake_county_atlas(suppressed = "01003")
+  unpopulated <- county
+  unpopulated$population[unpopulated$fips == "01003"] <- NA
+  before <- list(
+    list(out = impute_suppressed(county), cases = c(11, 1.6, 111, 4)),
+    list(out = impute_suppressed(county, cap = 1), cases = c(11, 1, 111, 1)),
+    list(out = impute_suppressed(county, floor = 2), cases = c(11, 2, 111, 4)),
+    list(
+      out = impute_suppressed(county, cap = Inf),
+      cases = c(11, 1.6, 111, 11.6)
+    ),
+    list(
+      out = impute_suppressed(county, cap = Inf, population = "acs"),
+      cases = c(11, 0.3512064, 111, 2.5462464)
+    ),
+    list(
+      out = impute_suppressed(county, method = "zero"),
+      cases = c(11, 0, 111, 0),
+      source = "zero"
+    ),
+    list(
+      out = suppressWarnings(impute_suppressed(unpopulated)),
+      cases = c(11, NA, 111, NA),
+      source = "not estimated"
+    ),
+    list(
+      out = suppressWarnings(
+        impute_suppressed(unpopulated, unestimated = "zero")
+      ),
+      cases = c(11, 0, 111, 0),
+      source = "not estimated"
+    )
+  )
+  for (i in seq_along(before)) {
+    source <- before[[i]]$source %||% "state_rate"
+    expect_equal(before[[i]]$out$cases, before[[i]]$cases, label = i)
+    expect_equal(
+      before[[i]]$out$cases_source,
+      c("published", source, "published", source),
+      label = i
+    )
+  }
+})
+
+test_that("impute_suppressed() stops if `x` already has cases_uncapped", {
+  county <- fake_county_atlas(suppressed = "01003")
+  county$cases_uncapped <- 1
+  expect_snapshot(error = TRUE, impute_suppressed(county, method = "zero"))
 })
 
 test_that("population = 'acs' uses the county's tracts in the same stratum", {
