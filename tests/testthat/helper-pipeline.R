@@ -181,6 +181,25 @@ fake_county_atlas <- function(
   out
 }
 
+# CDC's rate columns for made-up county rows (#157). Rows with a count get a
+# rate and bounds; rows with no count get none, as CDC is believed to return
+# them. `rate_without_count = TRUE` gives the rows with no count a rate too.
+# The values are arbitrary and differ on every row, and are deliberately not
+# cases / population, so a rate that was recomputed, or moved to another row,
+# can't pass for CDC's.
+rate_columns <- c("rate100000", "lowerci_rate", "upperci_rate")
+
+with_fake_rates <- function(county, rate_without_count = FALSE) {
+  rate <- 1000 + seq_len(nrow(county)) + 0.25
+  if (!rate_without_count) {
+    rate[is.na(county$cases)] <- NA_real_
+  }
+  county$rate100000 <- rate
+  county$lowerci_rate <- rate - 0.5
+  county$upperci_rate <- rate + 0.5
+  county
+}
+
 # State rows: the counties' true counts plus `no_county` extra cases, with a
 # population of 1,000,000 (so the state rate is cases / 1e6).
 fake_state_atlas <- function(no_county = 0, ...) {
