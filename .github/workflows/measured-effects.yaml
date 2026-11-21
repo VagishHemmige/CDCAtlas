@@ -107,13 +107,12 @@ jobs:
       - name: Build the SYNTHETIC summary (made-up data, no network)
         env:
           MEASURED_EFFECTS_SYNTHETIC: "true"
-          http_proxy: "http://127.0.0.1:9"
-          https_proxy: "http://127.0.0.1:9"
-          HTTP_PROXY: "http://127.0.0.1:9"
-          HTTPS_PROXY: "http://127.0.0.1:9"
-          no_proxy: ""
-          NO_PROXY: ""
-        run: Rscript data-raw/measured-effects.R "$RUNNER_TEMP/measured-effects-synthetic"
+        run: |
+          blocked="http://127.0.0.1:9"
+          export http_proxy="$blocked" https_proxy="$blocked" all_proxy="$blocked"
+          export HTTP_PROXY="$blocked" HTTPS_PROXY="$blocked" ALL_PROXY="$blocked"
+          export no_proxy="" NO_PROXY=""
+          Rscript data-raw/measured-effects.R "$RUNNER_TEMP/measured-effects-synthetic"
 
       - name: Upload the SYNTHETIC summary
         if: always()
