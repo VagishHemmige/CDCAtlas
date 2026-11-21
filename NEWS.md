@@ -1,5 +1,7 @@
 # CDCAtlas (development version)
 
+* `impute_suppressed()` returns a new column, `cases_uncapped`: for rows filled in by `method = "state_rate"`, the estimate before `cap` and `floor` (state rate times county population), and `NA` otherwise. `cases_uncapped > cap` marks the rows whose value the cap set. `cases` is unchanged (#151).
+
 # CDCAtlas 0.1.0
 
 First release. CDCAtlas downloads surveillance data from CDC AtlasPlus and estimates counts below the county level. Earlier development versions had only `get_atlas()`.
