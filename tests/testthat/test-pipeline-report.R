@@ -485,7 +485,11 @@ test_that("crosswalked and duplicated areas are counted", {
   local_fake_sources(state = fake_state_atlas(years = 2017))
   suppressMessages({
     imputed <- impute_suppressed(county)
-    areas <- extrapolate_from_county(imputed)
+    # extrapolate_from_county() warns about the split tract itself.
+    expect_warning(
+      areas <- extrapolate_from_county(imputed),
+      "split between counties"
+    )
   })
   report <- .pipeline_report(county, imputed, areas)
   value <- function(measure) {
