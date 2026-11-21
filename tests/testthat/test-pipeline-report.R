@@ -649,6 +649,18 @@ test_that("the compact summary compares each alternative with the default", {
   largest <- one("largest_state_percent_change_from_default", "method = zero")
   expect_equal(largest$value, -100 * 10 / 160)
   expect_equal(largest$extreme_state, "Arizona (04)")
+  # No state is named when the alternative changes nothing.
+  same <- summary_detail()
+  same$value[same$scenario == "cap = Inf" & same$state_fips != "all"] <-
+    c(40, 10, 10)
+  unchanged <- summary_rows(
+    .pipeline_summary(same),
+    "largest_state_percent_change_from_default",
+    scenario = "cap = Inf"
+  )
+  expect_equal(unchanged$value, 0)
+  expect_equal(unchanged$extreme_state, NA_character_)
+  expect_match(unchanged$note, "No state changes")
   expect_setequal(
     compact$scenario[compact$step == "sensitivity"],
     c("cap = Inf", "method = zero")
@@ -847,7 +859,8 @@ test_that("data-raw/measured-effects.R runs end to end on made-up data", {
   }
   expect_equal(one("default", "cases_by_source", "state_rate"), 4)
   expect_equal(one("method = zero", "cases_by_source", "zero"), 0)
-  expect_equal(one("cap = Inf", "cases_by_source", "state_rate"), 14.1)
+  # Uncapped: the state rate (292 per 1,000,000) times 50,000 people.
+  expect_equal(one("cap = Inf", "cases_by_source", "state_rate"), 14.6)
   expect_equal(one("default", "suppressed_rows_raw_above_cap"), 1)
   # Sensitivity runs stop at imputation: no tract steps.
   expect_setequal(
