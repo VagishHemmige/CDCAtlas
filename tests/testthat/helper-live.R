@@ -86,18 +86,31 @@ live_county <- function(year, stratify_by = NULL, disease = "hiv") {
 }
 
 # The indicators of `disease` CDC has released for a year and stratification,
-# from one small state-level request (made once per run): the indicators with
-# state rows. An indicator counts as unreleased only on positive evidence: the
-# request was answered with rows, and none of them is for that indicator, as
-# for HIV 2025, which came with diagnoses but not prevalence (#149).
-# get_atlas() warns about that; the warning is expected here and dropped.
+# from one small state-level request (made once per run): the requested
+# indicators that have state rows. Never none: nothing is inferred from a
+# response until it is shown to be an answer to the request.
 #
-# A state request that fails is not evidence of anything, "CDC AtlasPlus
-# returned no data" included: the package says that whenever a response has no
-# `sourcedata`, whatever the reason. So any failure stops with the year and
-# stratification. The consequence is deliberate: if CDC ever has no state rows
-# at all for the disease in the package's latest year, a test using this
-# fails rather than moving to an earlier year, and a person needs to look.
+# An indicator counts as unreleased only on positive evidence: the state
+# response holds only indicators that were asked for, at least one other of
+# them has rows, and this one has none, as for HIV 2025, which came with
+# diagnoses but not prevalence (#149). get_atlas() warns about that; the
+# warning is expected here and dropped.
+#
+# Everything else stops with the year and stratification:
+# - the state request fails, "CDC AtlasPlus returned no data" included (the
+#   package says that whenever a response has no `sourcedata`, whatever the
+#   reason);
+# - the response has an indicator that wasn't asked for (chlamydia rows for
+#   an HIV request are a wrong response, not a sign HIV is unreleased);
+# - the response has none of the indicators asked for.
+#
+# Two consequences, both deliberate: if CDC ever has no state rows at all for
+# the disease in the package's latest year, a test using this fails rather
+# than moving to an earlier year, and a person needs to look. And for a
+# disease with a single indicator (chlamydia, say), its absence can never be
+# told from a wrong or empty response, so there is no stepping back at all:
+# an unreleased year always fails. The latest-years check uses HIV, which has
+# two.
 live_released_indicators <- function(
   year,
   stratify_by = NULL,
@@ -141,10 +154,42 @@ live_released_indicators <- function(
     }
   ))
   indicators <- .disease_indicators()
-  intersect(
-    indicators$indicator[indicators$disease == disease],
-    unique(as.character(state$indicator))
+  requested <- indicators$indicator[indicators$disease == disease]
+  returned <- unique(as.character(state$indicator))
+  what <- paste0(
+    disease,
+    " ",
+    year,
+    ", ",
+    if (is.null(stratify_by)) "unstratified" else paste("by", stratify_by)
   )
+  not_relevant <- "so nothing is inferred from it and an earlier year is not used instead."
+  unexpected <- setdiff(returned, requested)
+  if (length(unexpected) > 0) {
+    rlang::abort(c(
+      paste0(
+        "Couldn't establish whether CDC has released ",
+        what,
+        ": the state response has indicators that weren't asked for."
+      ),
+      "x" = paste0("Returned: ", paste(sort(returned), collapse = ", "), "."),
+      "x" = paste0("Asked for: ", paste(requested, collapse = ", "), "."),
+      "i" = paste("The response doesn't match the request,", not_relevant)
+    ))
+  }
+  released <- intersect(requested, returned)
+  if (length(released) == 0) {
+    rlang::abort(c(
+      paste0(
+        "Couldn't establish whether CDC has released ",
+        what,
+        ": the state response has none of the indicators asked for."
+      ),
+      "x" = paste0("Asked for: ", paste(requested, collapse = ", "), "."),
+      "i" = paste("The response has no rows for the request,", not_relevant)
+    ))
+  }
+  released
 }
 
 live_without_unreleased_warning <- function(code) {
@@ -160,22 +205,18 @@ live_without_unreleased_warning <- function(code) {
   )
 }
 
-# live_county() for a year CDC may not have released. NULL only on positive
-# evidence that the year is unreleased: the state-level request was answered
-# with rows, none of them for the disease's indicators (the counties are then
-# not requested). A state request that fails stops instead; see
-# live_released_indicators().
-# Otherwise the county download must work and must have rows for every
-# indicator CDC has released for states. A county download is one request per
+# live_county() for a year CDC may have released only in part. It never gives
+# up on a year: live_released_indicators() must first show which indicators
+# CDC has released for states (and stops if it can't), then the county
+# download must work and must have rows for every one of those. The result
+# can lack an indicator only when the state response lacked it too, beside
+# another that was there. A county download is one request per
 # state and stops at the first that fails, so its failing, "returned no data"
 # included, says nothing about the year as a whole: that stops with the year,
 # stratification and state rather than letting a test fall back to an earlier
 # year.
 live_county_if_released <- function(year, stratify_by = NULL, disease = "hiv") {
   released <- live_released_indicators(year, stratify_by, disease)
-  if (length(released) == 0) {
-    return(NULL)
-  }
   what <- paste0(
     disease,
     " ",
@@ -319,8 +360,8 @@ expect_no_rate_on_suppressed <- function(
 }
 
 # For each of `indicators`, the most recent year with rows for it among
-# `responses`, a list of get_atlas() results named by year (NULL for a year
-# CDC has no data for). NA when no response has rows for the indicator.
+# `responses`, a list of get_atlas() results named by year. NA when no
+# response has rows for the indicator.
 latest_year_with_rows <- function(responses, indicators) {
   years <- sort(as.numeric(names(responses)), decreasing = TRUE)
   out <- rlang::set_names(rep(NA_real_, length(indicators)), indicators)

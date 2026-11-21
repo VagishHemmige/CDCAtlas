@@ -324,13 +324,38 @@ test_that("an indicator steps back a year only when the state response has rows 
   expect_gt(sum(grepl("^2025", seen$requests)), 50)
 })
 
-test_that("live_county_if_released() gives NULL only when the state rows are all for other indicators", {
-  # Rows came back, none of them for HIV diagnoses or prevalence.
+test_that("a state response for another disease is not read as an unreleased year (#157)", {
+  # An HIV request answered with chlamydia rows is a wrong response. It says
+  # nothing about HIV, so: stop, ask for no counties, and don't give up on
+  # the year.
   local_fresh_live_cache()
   seen <- local_fake_cdc_replies(function(payload) fake_cdc_json(payload, 206))
 
-  expect_null(live_county_if_released(2025))
+  expect_snapshot(error = TRUE, live_county_if_released(2025))
   expect_equal(seen$requests, "2025 states")
+})
+
+test_that("a state response with another disease beside the one asked for stops too (#157)", {
+  local_fresh_live_cache()
+  seen <- local_fake_cdc_replies(function(payload) {
+    fake_cdc_json(payload, c(203, 206))
+  })
+
+  expect_snapshot(error = TRUE, live_county_if_released(2025))
+  expect_equal(seen$requests, "2025 states")
+})
+
+test_that("a state response with no rows is not read as an unreleased year (#157)", {
+  local_fresh_live_cache()
+  requests <- character()
+  local_mocked_bindings(.request_atlas_internal = function(payload) {
+    requests <<- c(requests, live_payload_state(payload))
+    fake_cdc_rows(payload)[0, ]
+  })
+
+  expect_snapshot(error = TRUE, live_county_if_released(2025))
+  # One state request; the counties are not asked for.
+  expect_equal(requests, NA_character_)
 })
 
 test_that("live_county_if_released() stops when counties lack an indicator states have", {

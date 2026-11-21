@@ -298,13 +298,14 @@ for (pipeline_run in pipeline_runs) {
 # year before every indicator has data for it (HIV prevalence 2025, #149), so
 # each indicator must have county rows in the latest year or one of the two
 # before it, and the year used is reported. A year before 2024 is downloaded
-# only if an indicator still has no rows. An earlier year is used only when
-# CDC answers a state request for the year with rows, none of them for the
-# indicator (one small state request per year and stratification, see
-# live_county_if_released()). A state request that fails, a county download
-# that fails, or a latest year with no state rows at all for HIV fails the
-# test rather than moving it to an earlier year. Nothing is imputed and the
-# Census isn't asked.
+# only if an indicator still has no rows. An earlier year is used for an
+# indicator only when CDC answers a state request for the year with HIV rows
+# and nothing else, some of them for the other indicator and none for this
+# one (one small state request per year and stratification, see
+# live_released_indicators()). A state request that fails or doesn't match
+# the request, a county download that fails, or a latest year with no state
+# rows at all for HIV fails the test rather than moving it to an earlier
+# year. Nothing is imputed and the Census isn't asked.
 for (strat in list(NULL, "sex", "age", "race")) {
   local({
     strat <- strat
@@ -326,18 +327,8 @@ for (strat in list(NULL, "sex", "age", "race")) {
             next
           }
           county <- live_county_if_released(year, strat)
-          responses[as.character(year)] <- list(county)
-          if (is.null(county)) {
-            message(
-              "HIV ",
-              year,
-              ", ",
-              label,
-              ": no HIV rows among CDC's state rows."
-            )
-          } else {
-            expect_no_rate_on_suppressed(county, paste("hiv", year, label))
-          }
+          responses[[as.character(year)]] <- county
+          expect_no_rate_on_suppressed(county, paste("hiv", year, label))
         }
 
         used <- latest_year_with_rows(in_window(), indicators)
