@@ -284,6 +284,28 @@
       * HIV diagnoses 2022: 10
       * HIV prevalence 2022: 10
 
+# a tract split between counties gives one warning (#152)
+
+    Code
+      invisible(run_2017())
+    Condition
+      Warning:
+      1 tract is split between counties, so its geoid is in more than one row for the same year, indicator and stratum.
+      i Each row holds the share of the tract assigned to that row's county_fips.
+      i Before joining to tract boundaries, sum area_cases, area_population_acs and area_total_population by geoid within year, indicator and stratum.
+      i The county columns repeat on every row of a county; don't sum them.
+
+# the split-area warning counts areas, not rows (#152)
+
+    Code
+      invisible(run_2017(to = "block group"))
+    Condition
+      Warning:
+      2 block groups are split between counties, so their geoid is in more than one row for the same year, indicator and stratum.
+      i Each row holds the share of the block group assigned to that row's county_fips.
+      i Before joining to block group boundaries, sum area_cases, area_population_acs and area_total_population by geoid within year, indicator and stratum.
+      i The county columns repeat on every row of a county; don't sum them.
+
 # Connecticut with ACS 2020 or 2021 says why it has no tracts (#112)
 
     Code

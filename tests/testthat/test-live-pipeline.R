@@ -121,11 +121,12 @@ is_known_left_out <- function(left_out, year) {
     old_connecticut
 }
 
-# Warnings the default pipeline is known to give, by year. Chlamydia by age
-# also warns that suppressed rows couldn't be estimated (unknown age and
-# Connecticut's old counties; the rows themselves are checked above).
+# Warnings the default pipeline is known to give, by year. 2017 also warns
+# that one 2010 tract is split between two planning regions (#152). Chlamydia
+# by age also warns that suppressed rows couldn't be estimated (unknown age
+# and Connecticut's old counties; the rows themselves are checked above).
 known_warnings <- c(
-  "2017" = "no matching ACS tracts|Planning Region, CT|Valdez-Cordova|Municipio, PR",
+  "2017" = "no matching ACS tracts|Planning Region, CT|Valdez-Cordova|Municipio, PR|split between counties",
   "2022" = "Valdez-Cordova Census Area, AK|no matching ACS tracts|Municipio, PR"
 )
 known_disease_warnings <- c(
