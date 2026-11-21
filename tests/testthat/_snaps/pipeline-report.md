@@ -25,3 +25,34 @@
       ! `imputed` has not been through `impute_suppressed()`.
       i Run `impute_suppressed(imputed)` first.
 
+# the report refuses areas allocated from a different imputation
+
+    Code
+      .pipeline_report(county, default, uncapped_areas)
+    Condition
+      Error in `.pipeline_report()`:
+      ! `areas` was not allocated from `imputed`.
+      x imputed_cases in its no_county_cases attribute differs in 1 state stratum.
+      i Give the `extrapolate_from_county()` result for these `imputed` rows.
+
+---
+
+    Code
+      .pipeline_report(county, uncapped, default_areas, cap = Inf)
+    Condition
+      Error in `.pipeline_report()`:
+      ! `areas` was not allocated from `imputed`.
+      x imputed_cases in its no_county_cases attribute differs in 1 state stratum.
+      i Give the `extrapolate_from_county()` result for these `imputed` rows.
+
+---
+
+    Code
+      .pipeline_report(county, default, suppressMessages(suppressWarnings(
+        extrapolate_from_county(default[default$indicator == "HIV prevalence", ]))))
+    Condition
+      Error in `.pipeline_report()`:
+      ! `areas` was not allocated from `imputed`.
+      x Its no_county_cases attribute covers different state strata (state, indicator, year and stratum).
+      i Give the `extrapolate_from_county()` result for these `imputed` rows.
+

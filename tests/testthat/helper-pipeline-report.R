@@ -282,7 +282,7 @@ summary_rows <- function(
   rows <- compact$measure == measure &
     compact$scenario == scenario &
     compact$state_fips %in% state_fips &
-    (if (is.na(category)) TRUE else compact$category %in% category)
+    (if (anyNA(category)) TRUE else compact$category %in% category)
   compact[rows, ]
 }
 

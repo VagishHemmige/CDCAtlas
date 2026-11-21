@@ -106,10 +106,10 @@
 
   state <- .fetch_state_totals(imputed)
   imputed <- .report_raw_estimates(imputed, state, cap, floor, population, call)
-  remainder <- if (is.null(areas)) {
-    .no_county_cases(imputed, state)
-  } else {
-    attr(areas, "no_county_cases")
+  remainder <- .no_county_cases(imputed, state)
+  if (!is.null(areas)) {
+    .check_report_same_run(imputed, areas, remainder, call)
+    remainder <- attr(areas, "no_county_cases")
   }
 
   frames <- list(
@@ -167,6 +167,74 @@
       call = call
     )
   }
+}
+
+# `areas` must have been allocated from these `imputed` rows: otherwise the
+# report would join one run's imputation to another run's remainder and
+# allocation. Compares the remainder attached to `areas` with the remainder
+# of `imputed` (`expected`), state stratum by state stratum, and the county
+# rows `areas` accounts for (allocated or left out) with the rows of
+# `imputed`, count by count.
+.check_report_same_run <- function(imputed, areas, expected, call) {
+  tolerance <- 1e-8
+  differs <- function(x, y) {
+    is.na(x) != is.na(y) | (!is.na(x) & !is.na(y) & abs(x - y) > tolerance)
+  }
+  stop_mismatch <- function(what) {
+    cli::cli_abort(
+      c(
+        "{.arg areas} was not allocated from {.arg imputed}.",
+        "x" = what,
+        "i" = "Give the {.fn extrapolate_from_county} result for these
+               {.arg imputed} rows."
+      ),
+      call = call
+    )
+  }
+
+  attached <- attr(areas, "no_county_cases")
+  state_keys <- c("state_fips", .atlas_keys)
+  attached_key <- .row_key(attached, state_keys)
+  expected_key <- .row_key(expected, state_keys)
+  if (!setequal(attached_key, expected_key)) {
+    stop_mismatch(
+      "Its {.field no_county_cases} attribute covers different state strata
+       (state, indicator, year and stratum)."
+    )
+  }
+  rows <- match(expected_key, attached_key)
+  for (column in c("state_cases", "published_cases", "imputed_cases")) {
+    bad <- differs(expected[[column]], attached[[column]][rows])
+    if (any(bad)) {
+      stop_mismatch(
+        "{.field {column}} in its {.field no_county_cases} attribute differs
+         in {sum(bad)} state strat{?um/a}."
+      )
+    }
+  }
+
+  county_keys <- c("county_fips", .atlas_keys)
+  accounted <- dplyr::bind_rows(
+    as.data.frame(areas)[c(county_keys, "county_cases")],
+    as.data.frame(attr(areas, "not_allocated"))[c(county_keys, "county_cases")]
+  )
+  accounted <- accounted[!duplicated(.row_key(accounted, county_keys)), ]
+  county <- .county_cases(imputed)
+  accounted_key <- .row_key(accounted, county_keys)
+  county_key <- .row_key(county, county_keys)
+  if (!setequal(accounted_key, county_key)) {
+    stop_mismatch("It accounts for different county rows.")
+  }
+  bad <- differs(
+    county$county_cases,
+    accounted$county_cases[match(county_key, accounted_key)]
+  )
+  if (any(bad)) {
+    stop_mismatch(
+      "{.field county_cases} differs in {sum(bad)} county row{?s}."
+    )
+  }
+  invisible()
 }
 
 # The estimate before limits for each row of `imputed`, as impute_suppressed()
@@ -384,9 +452,14 @@
     .report_rows(
       step,
       "published_county_cases",
-      sum(county$cases, na.rm = TRUE),
+      if (all(no_count)) NA else sum(county$cases, na.rm = TRUE),
       "cases",
-      "published"
+      "published",
+      note = if (all(no_count)) {
+        "No county row here has a published count, so this is unknown, not 0."
+      } else {
+        NA_character_
+      }
     ),
     .report_rows(
       step,
@@ -453,6 +526,13 @@
   has_total <- !is.na(remainder$state_cases)
   state_cases <- sum(remainder$state_cases[has_total])
   imputed_cases <- sum(remainder$imputed_cases[has_total])
+  share_note <- if (!any(has_total)) {
+    .report_no_total_note
+  } else if (state_cases == 0) {
+    "The published state total is 0, so there is nothing to divide by."
+  } else {
+    NA_character_
+  }
 
   dplyr::bind_rows(
     .report_rows(
@@ -492,15 +572,11 @@
     .report_rows(
       step,
       "imputed_share_of_state_cases",
-      if (state_cases > 0) imputed_cases / state_cases else NA,
+      if (is.na(share_note)) imputed_cases / state_cases else NA,
       "proportion",
       "derived",
       denominator = "state_cases: CDC's state totals, in state strata with a published total",
-      note = if (state_cases > 0) {
-        NA_character_
-      } else {
-        "No state total to divide by."
-      }
+      note = share_note
     ),
     .report_rows(
       step,
@@ -590,29 +666,12 @@
   has_total <- !is.na(remainder$state_cases)
   with_total <- remainder[has_total, , drop = FALSE]
   left <- with_total$no_county_cases
-  state_cases <- sum(with_total$state_cases)
-  share <- function(measure, value) {
-    .report_rows(
-      step,
-      measure,
-      if (state_cases > 0) value / state_cases else NA,
-      "proportion",
-      "derived",
-      denominator = "state_cases: CDC's state totals, in state strata with a published total",
-      note = if (state_cases > 0) {
-        NA_character_
-      } else {
-        "No state total to divide by."
-      }
-    )
-  }
-  count <- function(measure, value) {
-    .report_rows(step, measure, value, "state strata", "count")
-  }
-  cases <- function(measure, value, basis, note = NA_character_) {
-    .report_rows(step, measure, value, "cases", basis, note = note)
-  }
-  no_total_note <- if (any(!has_total)) {
+  # With no published state total here, nothing below is known: an empty sum
+  # would be 0, which would read as a published zero.
+  known <- any(has_total)
+  coverage <- if (!known) {
+    .report_no_total_note
+  } else if (any(!has_total)) {
     paste(
       sum(!has_total),
       "state strata have no published state total and are left out, not counted as 0."
@@ -620,35 +679,77 @@
   } else {
     NA_character_
   }
+  state_cases <- sum(with_total$state_cases)
+  share <- function(measure, value) {
+    note <- if (!known) {
+      coverage
+    } else if (state_cases == 0) {
+      "The published state total is 0, so there is nothing to divide by."
+    } else {
+      coverage
+    }
+    .report_rows(
+      step,
+      measure,
+      if (known && state_cases != 0) value / state_cases else NA,
+      "proportion",
+      "derived",
+      denominator = "state_cases: CDC's state totals, in state strata with a published total",
+      note = note
+    )
+  }
+  count <- function(measure, value, note = NA_character_) {
+    .report_rows(step, measure, value, "state strata", "count", note = note)
+  }
+  # A sum, or a count, over the state strata with a published total.
+  cases <- function(measure, value, basis) {
+    .report_rows(
+      step,
+      measure,
+      if (known) value else NA,
+      "cases",
+      basis,
+      note = coverage
+    )
+  }
+  with_remainder <- function(measure, value) {
+    count(measure, if (known) value else NA, coverage)
+  }
   dplyr::bind_rows(
     count("state_strata", nrow(remainder)),
     count("state_strata_without_total", sum(!has_total)),
-    cases("state_cases", state_cases, "published", no_total_note),
+    cases("state_cases", state_cases, "published"),
     cases("published_cases", sum(with_total$published_cases), "published"),
     cases("unpublished_cases", sum(with_total$unpublished_cases), "derived"),
     cases("imputed_cases", sum(with_total$imputed_cases), "modelled"),
     cases("remainder_signed", sum(left), "derived"),
     cases("remainder_positive", sum(pmax(left, 0)), "derived"),
     cases("remainder_negative", sum(pmin(left, 0)), "derived"),
-    count("state_strata_remainder_positive", sum(left > 0)),
-    count("state_strata_remainder_negative", sum(left < 0)),
-    count("state_strata_remainder_zero", sum(left == 0)),
+    with_remainder("state_strata_remainder_positive", sum(left > 0)),
+    with_remainder("state_strata_remainder_negative", sum(left < 0)),
+    with_remainder("state_strata_remainder_zero", sum(left == 0)),
     share("remainder_signed_share_of_state_cases", sum(left)),
     share("remainder_positive_share_of_state_cases", sum(pmax(left, 0))),
-    cases(
+    .report_rows(
+      step,
       "cases_with_unknown_county_of_residence",
       NA,
+      "cases",
       "published",
-      "The remainder is a difference (state total minus published and imputed county counts), not a count of identified cases. Public data do not say what it consists of."
+      note = "The remainder is a difference (state total minus published and imputed county counts), not a count of identified cases. Public data do not say what it consists of."
     )
   )
 }
 
-# One state's totals and remainder. A single state stratum has one remainder,
-# so its positive and negative parts are given only for groups together.
+.report_no_total_note <- "Unknown, not 0: the state strata here have no published state total."
+
+# One state's totals and remainder, with the number of its strata that have no
+# published total. A single state stratum has one remainder, so its positive
+# and negative parts are given only for groups together.
 .report_state_remainder <- function(remainder) {
   out <- .report_remainder(remainder)
   keep <- c(
+    "state_strata_without_total",
     "state_cases",
     "published_cases",
     "imputed_cases",
@@ -1113,7 +1214,12 @@
     if (!any(slice$step == step)) {
       return(NA_real_)
     }
-    sum(slice$value[slice$measure == measure & keep], na.rm = TRUE)
+    values <- slice$value[slice$measure == measure & keep]
+    # A measure whose every row is NA is unknown; one with no rows is 0.
+    if (length(values) > 0 && all(is.na(values))) {
+      return(NA_real_)
+    }
+    sum(values, na.rm = TRUE)
   }
   copy <- function(measures, categories = NULL, note = NULL) {
     rows <- slice[slice$measure %in% measures, , drop = FALSE]
@@ -1400,14 +1506,20 @@
   }
   fips <- sort(unique(states$state_fips))
   state_cases <- .summary_state_values(states, "state_cases", fips)
-  remainder <- .summary_divide(
-    .summary_state_values(states, "remainder_signed", fips),
-    state_cases
-  )
-  imputed <- .summary_divide(
+  signed <- .summary_state_values(states, "remainder_signed", fips)
+  # A state whose total is unknown keeps the detail table's reason.
+  total_rows <- states[states$measure == "state_cases", , drop = FALSE]
+  unknown <- total_rows$note[match(fips, total_rows$state_fips)]
+  with_reason <- function(share) {
+    explained <- is.na(state_cases) & !is.na(unknown)
+    share$note[explained] <- unknown[explained]
+    share
+  }
+  remainder <- with_reason(.summary_divide(signed, state_cases))
+  imputed <- with_reason(.summary_divide(
     .summary_state_values(states, "imputed_cases", fips),
     state_cases
-  )
+  ))
   denominator <- "the state's state_cases, groups together"
   count <- function(step, measure, value, note = NA_character_) {
     .summary_rows(step, measure, value, "states", "count", note = note)
@@ -1429,7 +1541,7 @@
   above <- function(threshold) sum(remainder$value > threshold, na.rm = TRUE)
   remainder_text <- "the state's remainder_signed, groups together"
   imputed_text <- "the state's imputed_cases, groups together"
-  without_note <- "States whose state cases are 0 or missing; they are left out of the figures across states."
+  without_note <- "States whose state cases are 0 or unknown (no published state total); they are left out of the shares across states, not counted as 0."
 
   dplyr::bind_rows(
     .summary_distribution(
@@ -1443,7 +1555,8 @@
     count(
       "no county",
       "states_remainder_negative",
-      sum(remainder$value < 0, na.rm = TRUE)
+      sum(signed < 0, na.rm = TRUE),
+      "States whose signed remainder is below 0, including any whose state cases are 0."
     ),
     count("no county", "states_remainder_share_above_5pct", above(0.05)),
     count("no county", "states_remainder_share_above_10pct", above(0.10)),

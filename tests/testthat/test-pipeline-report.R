@@ -533,7 +533,13 @@ test_that("by_state adds each state's totals and remainder", {
   expect_setequal(by_state$state_fips, c("01", "02"))
   expect_setequal(
     by_state$measure,
-    c("state_cases", "published_cases", "imputed_cases", "remainder_signed")
+    c(
+      "state_strata_without_total",
+      "state_cases",
+      "published_cases",
+      "imputed_cases",
+      "remainder_signed"
+    )
   )
   # Prevalence: counties hold 111 and 121; 01003 and 02003 are suppressed and
   # capped at 4. State 02 has 300 more cases with no county.
