@@ -1,5 +1,7 @@
 # CDCAtlas (development version)
 
+* `extrapolate_from_county()` warns once (class `"cdcatlas_duplicated_geoid"`) when an area is split between counties and so has more than one row with the same `geoid`: with ACS 2010 to 2019, one Connecticut tract and its block groups. Its help and the "Extrapolation to tracts" article show how to sum the rows before joining to boundaries (#152).
+
 # CDCAtlas 0.1.0
 
 First release. CDCAtlas downloads surveillance data from CDC AtlasPlus and estimates counts below the county level. Earlier development versions had only `get_atlas()`.
