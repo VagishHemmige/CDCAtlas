@@ -139,6 +139,60 @@ test_that("data-raw/measured-effects.R runs end to end on made-up data", {
   expect_gt(length(said), 8)
 })
 
+test_that("'latest' steps back only on evidence that the year is released in part", {
+  script <- test_path("..", "..", "data-raw", "measured-effects.R")
+  skip_if_not(file.exists(script), "data-raw/ is not in the built package.")
+  local_fake_sources()
+  withr::local_envvar(MEASURED_EFFECTS_SOURCE_ONLY = "true")
+  script_env <- new.env(parent = environment())
+  source(script, local = script_env)
+  latest <- function() {
+    suppressMessages(
+      script_env$measured_effects_latest_year("hiv", "HIV prevalence")
+    )
+  }
+  state_rows <- function(...) {
+    rows <- fake_state_atlas(...)
+    function(payload) rows
+  }
+
+  # A valid partial release: 2025 and 2024 have diagnoses only; 2023 has both.
+  local_mocked_bindings(.request_atlas = report_fake_cdc)
+  expect_equal(latest(), list(used = 2023, tried = c(2025, 2024, 2023)))
+
+  # Prevalence rows with no count are not a release either.
+  local_mocked_bindings(
+    .request_atlas = function(payload) {
+      rows <- report_fake_cdc(payload)
+      if (!any(rows$year == 2025)) {
+        return(rows)
+      }
+      rows <- fake_state_response(fake_state_atlas(years = 2025), payload)
+      rows$cases[rows$indicator == "HIV prevalence"] <- NA
+      rows
+    }
+  )
+  expect_equal(latest()$tried, c(2025, 2024, 2023))
+
+  # A response for another disease says nothing about HIV: stop, with the year.
+  local_mocked_bindings(
+    .request_atlas = state_rows(indicators = "Chlamydia", years = 2025)
+  )
+  expect_snapshot(latest(), error = TRUE)
+
+  # Rows for another year say nothing about the year asked for.
+  local_mocked_bindings(.request_atlas = state_rows(years = 2024))
+  expect_snapshot(latest(), error = TRUE)
+
+  # A failed request, "returned no data" included, is not evidence either.
+  local_mocked_bindings(
+    .request_atlas = function(payload) {
+      cli::cli_abort("CDC AtlasPlus returned no data for this request.")
+    }
+  )
+  expect_snapshot(latest(), error = TRUE)
+})
+
 test_that("a run that stops early leaves nothing in its output folder", {
   script <- test_path("..", "..", "data-raw", "measured-effects.R")
   skip_if_not(file.exists(script), "data-raw/ is not in the built package.")

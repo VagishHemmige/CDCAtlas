@@ -358,6 +358,48 @@ test_that("a state response with no rows is not read as an unreleased year (#157
   expect_equal(requests, NA_character_)
 })
 
+test_that("a state response for another year is not read as evidence about this one", {
+  # CDC answers the 2025 request with rows for 2024. They can't show what
+  # 2025 holds, with or without prevalence among them: stop.
+  local_fresh_live_cache()
+  for (indicators in list(c(203, 205), 203)) {
+    local_fresh_live_cache()
+    seen <- local_fake_cdc_replies(function(payload) {
+      other_year <- payload
+      other_year$VariableIDs <- sub(
+        paste0("(^|,)", 2025 - 1478, "(,|$)"),
+        paste0("\\1", 2024 - 1478, "\\2"),
+        payload$VariableIDs
+      )
+      fake_cdc_json(other_year, indicators)
+    })
+    expect_error(
+      live_released_indicators(2025),
+      "rows for another year"
+    )
+    expect_error(live_county_if_released(2025), "rows for another year")
+    expect_equal(seen$requests, "2025 states")
+  }
+})
+
+test_that("live_released_from_state() is the rule on its own, with no request", {
+  requested <- c("HIV diagnoses", "HIV prevalence")
+  state <- function(indicator, year = 2025) {
+    data.frame(indicator = indicator, year = year)
+  }
+  released <- function(rows) {
+    live_released_from_state(rows, requested, 2025, "hiv 2025, unstratified")
+  }
+
+  expect_equal(released(state(requested)), requested)
+  expect_equal(released(state("HIV diagnoses")), "HIV diagnoses")
+  expect_snapshot(error = TRUE, {
+    released(state(requested, year = c(2025, 2024)))
+    released(state("Chlamydia"))
+    released(state(character(), year = numeric()))
+  })
+})
+
 test_that("live_county_if_released() stops when counties lack an indicator states have", {
   local_fresh_live_cache()
   local_mocked_bindings(.request_atlas_internal = function(payload) {
