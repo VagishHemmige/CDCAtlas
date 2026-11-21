@@ -29,7 +29,9 @@
 #' @param cap The largest count `"state_rate"` can give a suppressed county.
 #'   Use `Inf` for no cap. The default, 4, reflects CDC suppressing counts of
 #'   1 to 4, but complementary suppression can hide larger counts, so it is a
-#'   default rather than a hard limit.
+#'   default rather than a hard limit. `cases_uncapped` in the output lets
+#'   you count how often the cap sets the value. `floor = cap = 2.5` gives
+#'   every row that can be estimated the same fixed value, 2.5.
 #' @param floor The smallest count `"state_rate"` can give. The default, 0,
 #'   allows for counties suppressed because their population is under 100,
 #'   which may have no cases. Use 1 to treat every suppressed county as having
@@ -65,8 +67,8 @@
 #'     no longer reported by [no_county_cases()] or spread by
 #'     [extrapolate_from_county()], so this warns and names them.
 #'
-#' @return `x` with suppressed counts filled in and a new column
-#'   `cases_source`:
+#' @return `x` with suppressed counts filled in and two new columns,
+#'   `cases_source` and `cases_uncapped`. `cases_source` is:
 #'   * `"published"`: CDC's count.
 #'   * `"state_rate"` or `"zero"`: filled in by `method`.
 #'   * `"not estimated"`: `"state_rate"` couldn't estimate it (`NA`, or 0
@@ -74,9 +76,22 @@
 #'     "Data suppressed" (always `NA`).
 #'   * `"not available"`: kept with `not_available = "keep"`; `NA`.
 #'
+#'   `cases_uncapped` is, for rows filled in by `"state_rate"`, the estimate
+#'   before `cap` and `floor` were applied: the state rate times the county
+#'   population used (CDC's or ACS). It is a modeled number, not CDC's hidden
+#'   count and not a way to recover it. It is `NA` for every other row:
+#'   published counts, rows filled in by `"zero"`, and rows marked
+#'   `"not estimated"` or `"not available"`. `cases` is the value to use;
+#'   `cases_uncapped` shows what decided it:
+#'   * `cases_uncapped > cap`: the cap set `cases`.
+#'   * `cases_uncapped < floor`: the floor set `cases`.
+#'   * Otherwise `cases` equals `cases_uncapped`. An estimate exactly equal
+#'     to `cap` or `floor` was not changed by it.
+#'
 #'   `data_status` is unchanged, so suppressed rows can still be identified.
 #'   `cap`, `floor`, `population` and `unestimated` apply only to
-#'   `"state_rate"`.
+#'   `"state_rate"`. [no_county_cases()] and [extrapolate_from_county()] use
+#'   `cases` and ignore `cases_uncapped`.
 #'
 #' @details
 #' `"state_rate"` downloads the state data matching `x` (same diseases, years
@@ -92,6 +107,10 @@
 #' \dontrun{
 #' county <- get_atlas("hiv", "county", 2022, stratify_by = "sex")
 #' county <- impute_suppressed(county)
+#'
+#' # How many filled-in rows did the cap (4 by default) decide?
+#' filled <- county[county$cases_source == "state_rate", ]
+#' table(filled$indicator, capped = filled$cases_uncapped > 4)
 #'
 #' # Sensitivity analysis: suppressed counties have no cases
 #' county_zero <- impute_suppressed(
@@ -117,6 +136,16 @@ impute_suppressed <- function(
       c(
         "{.arg x} has already been through {.fn impute_suppressed}.",
         "i" = "It has a {.field cases_source} column."
+      ),
+      call = call
+    )
+  }
+  if ("cases_uncapped" %in% names(x)) {
+    cli::cli_abort(
+      c(
+        "{.arg x} already has a {.field cases_uncapped} column.",
+        "i" = "{.fn impute_suppressed} adds a column of that name. Rename or
+               remove yours first."
       ),
       call = call
     )
@@ -157,6 +186,10 @@ impute_suppressed <- function(
   x$cases_source <- ifelse(suppressed, method, "published")
   x$cases_source[unavailable] <- "not available"
   x$cases_source[unexplained] <- "not estimated"
+  # The "state_rate" estimate before `cap` and `floor`; NA for every row not
+  # filled in that way. Shows whether a limit decided `cases` (#151).
+  # Full length, not a scalar: `x` has no rows when every row was dropped.
+  x$cases_uncapped <- rep(NA_real_, nrow(x))
   if (any(unexplained)) {
     statuses <- unique(as.character(x$data_status[unexplained]))
     statuses[is.na(statuses)] <- "none"
@@ -219,8 +252,10 @@ impute_suppressed <- function(
   } else {
     .acs_county_population(x)
   }
-  estimate <- pmin(cap, pmax(floor, rate * county_population))
+  uncapped <- rate * county_population
+  estimate <- pmin(cap, pmax(floor, uncapped))
   x$cases[suppressed] <- estimate[suppressed]
+  x$cases_uncapped[suppressed] <- uncapped[suppressed]
 
   missing <- suppressed & is.na(x$cases)
   x$cases_source[missing] <- "not estimated"

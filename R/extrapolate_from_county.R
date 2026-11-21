@@ -116,7 +116,8 @@
 #'   uses each data year. A single year can be given only if `x` has one year.
 #' @param weights Not yet supported; reserved for sub-county weights.
 #'
-#' @return A tibble with one row per area, indicator, year and stratum:
+#' @return A tibble with one row per county, area, indicator, year and
+#'   stratum (see below for the one tract that is in two counties):
 #'   \describe{
 #'     \item{year, acs_year}{Data year and ACS year used.}
 #'     \item{area_type, geoid, area_name}{`to`, and the area's Census GEOID
@@ -157,6 +158,26 @@
 #'
 #'   It can be negative where `empty_strata` shares cases into a stratum with
 #'   no ACS population.
+#'
+#'   `geoid` is unique within `county_fips` (for one indicator, year and
+#'   stratum), not overall. With ACS 2010 to 2019, one 2010 tract
+#'   (09013890201) is split between two of Connecticut's planning regions, so
+#'   it has two rows with the same `geoid`, one for each planning region in
+#'   `x`, and so does each of its block groups. Each row holds a share of the
+#'   area: both `area_population_acs` and `area_total_population` are
+#'   multiplied by the share of the tract's land area in that planning
+#'   region, and `area_cases` is that county's count shared over them. Block
+#'   groups inherit their parent tract's land-area shares, which are not
+#'   measured shares of each block group's population. A warning of class
+#'   `"cdcatlas_duplicated_geoid"` says how many areas are affected.
+#'
+#'   To get one row per area, for example before joining to tract boundaries,
+#'   sum `area_cases`, `area_population_acs` and `area_total_population` by
+#'   `geoid` within year, indicator and stratum; keeping one of the two rows
+#'   would understate the tract. The county columns repeat on every row of a
+#'   county and must not be summed. The article
+#'   ["Extrapolation to tracts"](https://vagishhemmige.github.io/CDCAtlas/articles/extrapolation.html)
+#'   shows the step.
 #'
 #'   Two attributes record what was not allocated:
 #'   `attr(result, "no_county_cases")`, the [no_county_cases()] report, and
@@ -402,6 +423,7 @@ extrapolate_from_county <- function(
   if (no_county == "spread") {
     .announce_spread(areas, report, to)
   }
+  .warn_split_areas(out, to)
   out
 }
 
@@ -1272,6 +1294,40 @@ extrapolate_from_county <- function(
              them anyway."
     ))
   }
+}
+
+# An area split between two current counties (see .apply_tract_crosswalk())
+# has one row in each, so its `geoid` repeats within a year, indicator and
+# stratum. Joining the result to area boundaries by `geoid` would then repeat
+# the area, so say how many areas are affected and what to do, once per call.
+# The same area in different years, indicators or strata is not a repeat, and
+# neither is an area moved whole to another county.
+.warn_split_areas <- function(out, to) {
+  counties <- out |>
+    dplyr::summarize(
+      n = dplyr::n_distinct(.data$county_fips),
+      .by = dplyr::all_of(c("geoid", .atlas_keys))
+    )
+  n <- dplyr::n_distinct(counties$geoid[counties$n > 1])
+  if (n == 0) {
+    return(invisible())
+  }
+  what <- if (n == 1) to else .area_plural(to)
+  cli::cli_warn(
+    c(
+      "{n} {what} {cli::qty(n)}{?is/are} split between counties, so
+       {?its/their} {.field geoid} is in more than one row for the same year,
+       indicator and stratum.",
+      "i" = "Each row holds the share of the {to} assigned to that row's
+             {.field county_fips}.",
+      "i" = "Before joining to {to} boundaries, sum {.field area_cases},
+             {.field area_population_acs} and {.field area_total_population}
+             by {.field geoid} within year, indicator and stratum.",
+      "i" = "The county columns repeat on every row of a county; don't sum
+             them."
+    ),
+    class = "cdcatlas_duplicated_geoid"
+  )
 }
 
 # How much of the positive remainder was spread, and how much could not be

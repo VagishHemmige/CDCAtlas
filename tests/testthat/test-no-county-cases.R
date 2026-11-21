@@ -167,3 +167,15 @@ test_that("not_available = 'drop' warns when it removes a whole state's rows (#1
   )
   expect_equal(unique(county$fips), "01001")
 })
+
+test_that("the report is the same with or without cases_uncapped (#151)", {
+  local_fake_sources()
+  county <- impute_suppressed(fake_county_atlas(suppressed = "01003"))
+  expect_contains(names(county), "cases_uncapped")
+  # Data imputed by a version without the column.
+  older <- county[setdiff(names(county), "cases_uncapped")]
+
+  expect_identical(no_county_cases(county), no_county_cases(older))
+  # The capped counts are the ones counted: 1.6 and 4, not 1.6 and 11.6.
+  expect_equal(no_county_cases(county)$imputed_cases, c(1.6, 4))
+})
