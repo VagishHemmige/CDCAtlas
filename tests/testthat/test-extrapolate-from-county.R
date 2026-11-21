@@ -69,6 +69,39 @@ test_that("there is no area_noncases column (#117)", {
   expect_equal(names(tracts)[ncol(tracts)], "area_cases")
 })
 
+test_that("the output has no rate or rate-bound columns (#157)", {
+  # Records what extrapolate_from_county() does today, before #157 decides
+  # what the rate columns should hold after imputation: CDC's county rates,
+  # with or without one on a suppressed row, are not carried to the areas.
+  for (rate_without_count in c(FALSE, TRUE)) {
+    county <- with_fake_rates(
+      fake_county_atlas(suppressed = "01003"),
+      rate_without_count = rate_without_count
+    )
+    expect_contains(names(county), rate_columns)
+    for (to in c("tract", "block group")) {
+      areas <- run_extrapolation(county = county, to = to)
+      label <- paste(to, "rate without count:", rate_without_count)
+
+      expect_gt(nrow(areas), 0, label = label)
+      expect_equal(
+        intersect(names(areas), rate_columns),
+        character(0),
+        label = label
+      )
+    }
+  }
+
+  # A county that is left out, carrying rates: 01003 has no CDC data.
+  county <- with_fake_rates(fake_county_atlas(), rate_without_count = TRUE)
+  county$cases[county$fips == "01003"] <- NA
+  county$data_status[county$fips == "01003"] <- "Data not available"
+  left_out <- attr(run_extrapolation(county = county), "not_allocated")
+
+  expect_equal(left_out$county_fips, c("01003", "01003"))
+  expect_equal(intersect(names(left_out), rate_columns), character(0))
+})
+
 test_that("allocation uses known shares after saving and reordering county rows", {
   county <- data.frame(
     indicator = "Chlamydia",
@@ -1023,17 +1056,17 @@ fake_crosswalk <- data.frame(
   share = c(0.5, 0.5, 1)
 )
 
-run_2017 <- function(...) {
+run_2017 <- function(stratify_by = NULL, years = 2017, ...) {
   local_mocked_bindings(.tract_crosswalk = function() fake_crosswalk)
   run_extrapolation(
-    county = fake_county_atlas(years = 2017),
-    state = fake_state_atlas(years = 2017),
+    county = fake_county_atlas(stratify_by, years = years),
+    state = fake_state_atlas(stratify_by = stratify_by, years = years),
     ...
   )
 }
 
 test_that("2010 tracts are moved to CDC's current counties by the crosswalk", {
-  tracts <- run_2017()
+  expect_warning(tracts <- run_2017(), class = "cdcatlas_duplicated_geoid")
   pop <- fake_acs_tract("01001000200")
   total <- sum(pop[sprintf("B01001_%03d", c(6:25, 30:49))]) +
     0.4 * (pop[["B01001_005"]] + pop[["B01001_029"]])
@@ -1055,8 +1088,134 @@ test_that("2010 tracts are moved to CDC's current counties by the crosswalk", {
 })
 
 test_that("crosswalked 2010 tracts still add up to county counts", {
-  check <- county_vs_areas(run_2017())
+  expect_warning(tracts <- run_2017(), class = "cdcatlas_duplicated_geoid")
+  check <- county_vs_areas(tracts)
   expect_equal(check$area_cases_sum, check$county_cases, tolerance = 1e-8)
+})
+
+# An area split between two current counties has one row in each (#152).
+
+# A call's value, with the first class and the message of every warning it
+# gives.
+catch_warnings <- function(expr) {
+  classes <- character()
+  messages <- character()
+  value <- withCallingHandlers(
+    expr,
+    warning = function(w) {
+      classes <<- c(classes, class(w)[[1]])
+      messages <<- c(messages, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    }
+  )
+  list(value = value, classes = classes, messages = messages)
+}
+
+# The step the help and the article give for one row per area: sum the area
+# columns by `geoid` within year, indicator and stratum.
+sum_split_areas <- function(areas) {
+  areas |>
+    dplyr::summarize(
+      area_cases = sum(area_cases),
+      area_population_acs = sum(area_population_acs),
+      area_total_population = sum(area_total_population),
+      .by = c(year, indicator, race_ethnicity, sex, age, geoid, area_name)
+    )
+}
+
+test_that("a tract split between counties gives one warning (#152)", {
+  caught <- catch_warnings(run_2017())
+  tracts <- caught$value
+
+  expect_equal(caught$classes, "cdcatlas_duplicated_geoid")
+  expect_snapshot(invisible(run_2017()))
+
+  # One row for each county, for each indicator.
+  split <- tracts[tracts$geoid == "01001000200", ]
+  expect_equal(
+    split$county_fips[order(split$indicator, split$county_fips)],
+    rep(c("01001", "01003"), 2)
+  )
+})
+
+test_that("the split-area warning counts areas, not rows (#152)", {
+  # One tract, however many indicators, years and strata repeat it.
+  caught <- catch_warnings(run_2017("sex", years = 2016:2017))
+  expect_equal(caught$classes, "cdcatlas_duplicated_geoid")
+  expect_match(caught$messages, "^1 tract is split")
+
+  # The split tract's two block groups follow it into both counties.
+  caught <- catch_warnings(run_2017(to = "block group"))
+  expect_equal(caught$classes, "cdcatlas_duplicated_geoid")
+  expect_snapshot(invisible(run_2017(to = "block group")))
+  expect_setequal(
+    with(caught$value, geoid[duplicated(data.frame(geoid, indicator))]),
+    c("010010002001", "010010002002")
+  )
+})
+
+test_that("no split-area warning when every area is in one county (#152)", {
+  # A whole tract moved to another county is not split.
+  local_mocked_bindings(.tract_crosswalk = function() fake_crosswalk[3, ])
+  expect_no_warning(
+    moved <- run_extrapolation(
+      county = fake_county_atlas(years = 2017),
+      state = fake_state_atlas(years = 2017)
+    )
+  )
+  expect_false(anyDuplicated(moved[c("geoid", "indicator")]) > 0)
+
+  # The same areas in two years, two indicators and two strata.
+  expect_no_warning(
+    run_extrapolation(
+      "sex",
+      county = fake_county_atlas("sex", years = 2021:2022),
+      state = fake_state_atlas(stratify_by = "sex", years = 2021:2022)
+    )
+  )
+})
+
+test_that("summing a split tract by geoid gives the whole tract (#152)", {
+  expect_warning(tracts <- run_2017(), class = "cdcatlas_duplicated_geoid")
+  summed <- sum_split_areas(tracts)
+
+  # Ages 13 and older in each made-up tract, as the unsplit ACS gives them.
+  adults <- vapply(
+    fake_tracts$geoid,
+    function(geoid) {
+      pop <- fake_acs_tract(geoid)
+      sum(pop[sprintf("B01001_%03d", c(6:25, 30:49))]) +
+        0.4 * (pop[["B01001_005"]] + pop[["B01001_029"]])
+    },
+    numeric(1)
+  )
+
+  expect_equal(anyDuplicated(summed[c("geoid", "indicator")]), 0)
+  diagnoses <- summed[summed$indicator == "HIV diagnoses", ]
+  diagnoses <- diagnoses[match(fake_tracts$geoid, diagnoses$geoid), ]
+  expect_equal(diagnoses$area_population_acs, unname(adults))
+  expect_equal(diagnoses$area_total_population, unname(adults))
+
+  # With the made-up crosswalk, county 01001 is tract 1 and half of tract 2;
+  # county 01003 is the other half, tract 3 and its own tract. Their 2017
+  # diagnoses are 11 and 21.
+  county_01001 <- adults[[1]] + 0.5 * adults[[2]]
+  county_01003 <- 0.5 * adults[[2]] + adults[[3]] + adults[[4]]
+  expect_equal(
+    diagnoses$area_cases[2],
+    11 *
+      0.5 *
+      adults[[2]] /
+      county_01001 +
+      21 * 0.5 * adults[[2]] / county_01003
+  )
+  expect_equal(sum(diagnoses$area_cases), 11 + 21)
+
+  # Keeping one of the two rows instead would understate the tract.
+  first_row <- tracts[
+    tracts$geoid == "01001000200" & tracts$indicator == "HIV diagnoses",
+  ][1, ]
+  expect_equal(first_row$area_population_acs, 0.5 * adults[[2]])
 })
 
 test_that("the crosswalk isn't used with 2020 tracts", {

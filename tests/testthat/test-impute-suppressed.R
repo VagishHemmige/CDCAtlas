@@ -187,14 +187,99 @@ test_that("suppressed rows with no state rate stay NA, with a warning", {
 })
 
 test_that("the input's columns and types are kept", {
-  out <- impute_suppressed(fake_county_atlas(), method = "zero")
-  county <- fake_county_atlas()
+  county <- with_fake_rates(fake_county_atlas())
+  out <- impute_suppressed(county, method = "zero")
 
   expect_equal(out[names(county)], county)
   expect_equal(
     names(out),
     c(names(county), "cases_source", "cases_uncapped")
   )
+})
+
+# The rate columns after imputation (#157) ---------------------------------------
+# These record what impute_suppressed() does today, before #157 decides what
+# it should do: `cases` on a suppressed row becomes the package's estimate,
+# while rate100000, lowerci_rate and upperci_rate stay as CDC returned them.
+
+test_that("the rate columns are returned unchanged on every row (#157)", {
+  local_fake_sources()
+  fixtures <- list(
+    "no rate on suppressed rows" = with_fake_rates(
+      fake_county_atlas(suppressed = "01003")
+    ),
+    "a rate on suppressed rows" = with_fake_rates(
+      fake_county_atlas(suppressed = "01003"),
+      rate_without_count = TRUE
+    )
+  )
+  # The fixtures are what their names say: a rate on every row of the
+  # second, and on the published rows only of the first.
+  with_rate <- fixtures[["a rate on suppressed rows"]]
+  expect_equal(sum(is.na(as.matrix(with_rate[rate_columns]))), 0)
+  expect_equal(
+    is.na(fixtures[["no rate on suppressed rows"]]$rate100000),
+    with_rate$fips == "01003"
+  )
+
+  for (fixture in names(fixtures)) {
+    county <- fixtures[[fixture]]
+    for (method in c("state_rate", "zero")) {
+      for (population in c("cdc", "acs")) {
+        label <- paste(fixture, method, population, sep = ", ")
+        out <- impute_suppressed(
+          county,
+          method = method,
+          population = population
+        )
+
+        # The suppressed rows were filled in, so their rates had the chance
+        # to change.
+        filled <- out$fips == "01003"
+        expect_equal(out$cases_source[filled], rep(method, 2), label = label)
+        expect_equal(sum(is.na(out$cases[filled])), 0, label = label)
+        expect_identical(
+          out[rate_columns],
+          county[rate_columns],
+          label = label
+        )
+      }
+    }
+  }
+})
+
+test_that("published rows keep CDC's rate exactly, whatever is dropped (#157)", {
+  local_fake_sources()
+  # Row order: 01001 and 01003 for diagnoses, then for prevalence. Rates are
+  # 1001.25 to 1004.25 by row; 01003's prevalence row is not available and
+  # is dropped.
+  county <- with_fake_rates(fake_county_atlas(suppressed = "01003"))
+  not_available <- county$fips == "01003" &
+    county$indicator == "HIV prevalence"
+  county$data_status[not_available] <- "Data not available"
+
+  for (method in c("state_rate", "zero")) {
+    out <- suppressMessages(suppressWarnings(impute_suppressed(
+      county,
+      method = method,
+      not_available = "drop"
+    )))
+    published <- out[out$cases_source == "published", ]
+
+    expect_equal(published$fips, c("01001", "01001"), label = method)
+    expect_identical(published$rate100000, c(1001.25, 1003.25), label = method)
+    expect_identical(
+      published$lowerci_rate,
+      c(1000.75, 1002.75),
+      label = method
+    )
+    expect_identical(
+      published$upperci_rate,
+      c(1001.75, 1003.75),
+      label = method
+    )
+    expect_identical(out$rate100000[out$fips == "01003"], NA_real_)
+  }
 })
 
 test_that("impute_suppressed() rejects data it can't use", {

@@ -8,7 +8,9 @@
 #   devtools::test(filter = "live-pipeline")
 #
 # They bypass the on-disk cache, so they test what CDC returns today. The years
-# are the ones HOPE uses.
+# are the ones HOPE uses, plus 2024 onward for the check of CDC's rates on
+# suppressed rows (#157), which adds county downloads (and a state request
+# for each) but no Census requests.
 
 skip_if_not(
   identical(Sys.getenv("CDCATLAS_LIVE_TESTS"), "true"),
@@ -121,11 +123,12 @@ is_known_left_out <- function(left_out, year) {
     old_connecticut
 }
 
-# Warnings the default pipeline is known to give, by year. Chlamydia by age
-# also warns that suppressed rows couldn't be estimated (unknown age and
-# Connecticut's old counties; the rows themselves are checked above).
+# Warnings the default pipeline is known to give, by year. 2017 also warns
+# that one 2010 tract is split between two planning regions (#152). Chlamydia
+# by age also warns that suppressed rows couldn't be estimated (unknown age
+# and Connecticut's old counties; the rows themselves are checked above).
 known_warnings <- c(
-  "2017" = "no matching ACS tracts|Planning Region, CT|Valdez-Cordova|Municipio, PR",
+  "2017" = "no matching ACS tracts|Planning Region, CT|Valdez-Cordova|Municipio, PR|split between counties",
   "2022" = "Valdez-Cordova Census Area, AK|no matching ACS tracts|Municipio, PR"
 )
 known_disease_warnings <- c(
@@ -179,6 +182,14 @@ for (pipeline_run in pipeline_runs) {
       ", ",
       if (is.null(strat)) "unstratified" else paste("by", strat)
     )
+
+    test_that(paste("suppressed rows with no count have no rate,", label), {
+      # The county download the tests below share: no extra request (#157).
+      expect_no_rate_on_suppressed(
+        live_county(year, strat, disease),
+        paste(disease, label)
+      )
+    })
 
     test_that(
       paste("tract estimates add up to the counts they share,", label),
@@ -279,6 +290,77 @@ for (pipeline_run in pipeline_runs) {
         "warnings"
       )
     })
+  })
+}
+
+# CDC's rates on suppressed rows in its latest years (#157). The runs above
+# check 2017 and 2022; these check every year from 2024 to the latest year in
+# the package's code table, so the set grows as CDC adds years. CDC lists a
+# year before every indicator has data for it (HIV prevalence 2025, #149), so
+# each indicator must have county rows in the latest year or one of the two
+# before it, and the year used is reported. A year before 2024 is downloaded
+# only if an indicator still has no rows. An earlier year is used for an
+# indicator only when CDC answers a state request for the year with HIV rows
+# and nothing else, some of them for the other indicator and none for this
+# one (one small state request per year and stratification, see
+# live_released_indicators()). A state request that fails or doesn't match
+# the request, a county download that fails, or a latest year with no state
+# rows at all for HIV fails the test rather than moving it to an earlier
+# year. Nothing is imputed and the Census isn't asked.
+for (strat in list(NULL, "sex", "age", "race")) {
+  local({
+    strat <- strat
+    label <- if (is.null(strat)) "unstratified" else paste("by", strat)
+
+    test_that(
+      paste("suppressed rows have no rate in CDC's latest HIV years,", label),
+      {
+        latest <- .latest_atlas_year()
+        window <- latest - 0:2
+        indicators <- .disease_indicators()
+        indicators <- indicators$indicator[indicators$disease == "hiv"]
+
+        responses <- list()
+        in_window <- function() responses[names(responses) %in% window]
+        for (year in seq(latest, min(2024, latest - 2))) {
+          found <- latest_year_with_rows(in_window(), indicators)
+          if (year < 2024 && !anyNA(found)) {
+            next
+          }
+          county <- live_county_if_released(year, strat)
+          responses[[as.character(year)]] <- county
+          expect_no_rate_on_suppressed(county, paste("hiv", year, label))
+        }
+
+        used <- latest_year_with_rows(in_window(), indicators)
+        for (indicator in indicators) {
+          message(
+            indicator,
+            ", ",
+            label,
+            ": latest year with county rows is ",
+            used[[indicator]],
+            " (package's latest year: ",
+            latest,
+            ")."
+          )
+          expect(
+            !is.na(used[[indicator]]),
+            paste0(
+              "CDC returned no county rows for ",
+              indicator,
+              " (",
+              label,
+              ") in ",
+              min(window),
+              " to ",
+              latest,
+              "."
+            )
+          )
+        }
+      }
+    )
   })
 }
 
