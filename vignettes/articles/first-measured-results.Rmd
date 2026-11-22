@@ -123,15 +123,16 @@ row.
 | Strata sum to less than the county's count | 47 | 51 | 54 |
 
 Counties with a published count and exactly one suppressed stratum cell are
-rare. There were none in 2022, 2024 or 2025, for either indicator, by sex,
-age or race. In 2017 there were a few: 1 for diagnoses by age, 2 for
+rare. There were none from 2022 on, for either indicator, by sex, age or
+race, in any year CDC returned (diagnoses to 2025, prevalence to 2024). In
+2017 there were a few: 1 for diagnoses by age, 2 for
 diagnoses by race and 5 for prevalence by race.
 
 ## What this means for users now
 
 - **Unstratified estimates.** Nationally, county and tract estimates changed
   little with the imputation settings. That does not hold in the states
-  listed above, where most cases are in no county row.
+  listed above, where a large share of cases is in no county row.
 - **Estimates by sex, age or race.** Under the default, about 3% to 4% of
   national cases in 2022 were in no county row, against about 2% without
   stratification, and far more in some states and counties.
