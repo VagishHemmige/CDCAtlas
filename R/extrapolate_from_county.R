@@ -49,9 +49,9 @@
 #'   With either choice, a warning (class `"cdcatlas_state_unplaced_cases"`)
 #'   names any state with more than 25% of its published state total in no
 #'   county row of `x`; see [no_county_cases()]. With `"report"`, county and
-#'   area estimates for such a state are too low by about that share. With
-#'   `"spread"`, any of those cases that reach areas are placed by
-#'   assumption, not by data on where they are.
+#'   area estimates for such a state are too low by about that share, for
+#'   the strata in `x`. With `"spread"`, any of those cases that reach areas
+#'   are placed by assumption, not by data on where they are.
 #' @param spread_by How `no_county = "spread"` shares a state's remainder
 #'   among its counties:
 #'   * `"population"` (default): by each county's ACS population in the
@@ -1253,7 +1253,7 @@ extrapolate_from_county <- function(
       "County and ",
       to,
       " estimates for {?this state/these states} leave those cases out, so
-       they are too low by about that share overall."
+       they are too low by about that share for those strata."
     )
   } else {
     "With {.code no_county = \"spread\"}, any of those cases that reach areas
