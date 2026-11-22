@@ -400,3 +400,313 @@ test_that("latest_year_with_rows() steps back to the latest year with rows", {
     c("HIV diagnoses" = NA_real_)
   )
 })
+
+# The counts of suppressed stratum cells (#164) ----------------------------------
+
+# Made-up county rows for the counts below, in get_atlas()'s columns: one row
+# per count in `cases`, which is named by county FIPS code. NA is a suppressed
+# count unless the county is in `not_available`.
+fake_count_rows <- function(
+  cases,
+  age = "Ages 13 years and older",
+  indicator = "HIV prevalence",
+  not_available = character()
+) {
+  data.frame(
+    indicator = factor(indicator),
+    year = 2022,
+    data_status = factor(
+      ifelse(
+        !is.na(cases),
+        "Not Suppressed",
+        ifelse(
+          names(cases) %in% not_available,
+          "Data not available",
+          "Data suppressed"
+        )
+      ),
+      levels = c("Not Suppressed", "Data suppressed", "Data not available")
+    ),
+    race_ethnicity = factor("All races/ethnicities"),
+    sex = factor("Both sexes"),
+    age = age,
+    cases = unname(cases),
+    fips = names(cases)
+  )
+}
+
+# Two made-up responses for one year: unstratified, and by three made-up age
+# groups. S is a suppressed count, n/a "Data not available", - no row.
+#
+# HIV prevalence
+# | County | Total | 13-24 | 25-44 | 45+ | What it is                         |
+# |--------|-------|-------|-------|-----|------------------------------------|
+# | 01001  | 30    | 5     | 10    | 15  | all published, sum equal           |
+# | 01003  | 40    | 5     | 10    | 15  | all published, sum less            |
+# | 01005  | 20    | 12    | S     | S   | two suppressed cells               |
+# | 01007  | 20    | 5     | 9     | S   | exactly one suppressed cell        |
+# | 01009  | S     | 5     | S     | S   | total suppressed: left out         |
+# | 01011  | 25    | 5     | 10    | -   | a stratum row is absent            |
+# | 01013  | 50    | -     | -     | -   | only in the unstratified response  |
+# | 01015  | -     | 5     | 10    | 15  | only in the stratified response    |
+# | 01017  | 10    | 6     | 7     | 8   | all published, sum more            |
+# | 01019  | 10    | 12    | S     | S   | two suppressed; published exceed   |
+# | 01021  | 15    | 5     | n/a   | 5   | a cell with no count, not suppressed |
+# | 01023  | n/a   | 5     | 10    | 15  | total not available: left out      |
+#
+# HIV diagnoses
+# | 01001  | 3     | 1     | 1     | 1   | all published, sum equal           |
+# | 01003  | 9     | S     | S     | 2   | two suppressed cells               |
+fake_count_responses <- function() {
+  s <- NA_real_
+  prevalence <- list(
+    total = c(
+      "01001" = 30,
+      "01003" = 40,
+      "01005" = 20,
+      "01007" = 20,
+      "01009" = s,
+      "01011" = 25,
+      "01013" = 50,
+      "01017" = 10,
+      "01019" = 10,
+      "01021" = 15,
+      "01023" = s
+    ),
+    "13-24" = c(
+      "01001" = 5,
+      "01003" = 5,
+      "01005" = 12,
+      "01007" = 5,
+      "01009" = 5,
+      "01011" = 5,
+      "01015" = 5,
+      "01017" = 6,
+      "01019" = 12,
+      "01021" = 5,
+      "01023" = 5
+    ),
+    "25-44" = c(
+      "01001" = 10,
+      "01003" = 10,
+      "01005" = s,
+      "01007" = 9,
+      "01009" = s,
+      "01011" = 10,
+      "01015" = 10,
+      "01017" = 7,
+      "01019" = s,
+      "01021" = s,
+      "01023" = 10
+    ),
+    "45+" = c(
+      "01001" = 15,
+      "01003" = 15,
+      "01005" = s,
+      "01007" = s,
+      "01009" = s,
+      "01015" = 15,
+      "01017" = 8,
+      "01019" = s,
+      "01021" = 5,
+      "01023" = 15
+    )
+  )
+  diagnoses <- list(
+    total = c("01001" = 3, "01003" = 9),
+    "13-24" = c("01001" = 1, "01003" = s),
+    "25-44" = c("01001" = 1, "01003" = s),
+    "45+" = c("01001" = 1, "01003" = 2)
+  )
+  ages <- c("13-24", "25-44", "45+")
+  strata <- function(counts, ...) {
+    do.call(
+      rbind,
+      lapply(ages, \(age) fake_count_rows(counts[[age]], age, ...))
+    )
+  }
+  list(
+    unstratified = rbind(
+      fake_count_rows(prevalence$total, not_available = "01023"),
+      fake_count_rows(diagnoses$total, indicator = "HIV diagnoses")
+    ),
+    stratified = rbind(
+      strata(prevalence, not_available = "01021"),
+      strata(diagnoses, indicator = "HIV diagnoses")
+    )
+  )
+}
+
+test_that("count_suppressed_strata() counts counties by their suppressed stratum cells", {
+  fake <- fake_count_responses()
+
+  counts <- count_suppressed_strata(fake$stratified, fake$unstratified)
+
+  expect_equal(
+    counts,
+    data.frame(
+      indicator = c("HIV diagnoses", "HIV prevalence"),
+      year = "2022",
+      stratified_by = "age",
+      strata = 3L,
+      # Counties in one response only are counted and left out.
+      counties_stratified_only = c(0L, 1L),
+      counties_unstratified_only = c(0L, 1L),
+      counties_in_both = c(2L, 10L),
+      # The unstratified count: suppressed, other (not available), published.
+      total_suppressed = c(0L, 1L),
+      total_other = c(0L, 1L),
+      total_published = c(2L, 8L),
+      # Among counties with a published unstratified count.
+      none_suppressed = c(1L, 5L),
+      one_suppressed = c(0L, 1L),
+      two_or_more_suppressed = c(1L, 2L),
+      incomplete_strata = c(0L, 1L),
+      other_cells = c(0L, 1L),
+      all_published = c(1L, 3L),
+      sum_equal = c(1L, 1L),
+      sum_less = c(0L, 1L),
+      sum_more = c(0L, 1L),
+      published_exceed = c(0L, 2L)
+    )
+  )
+})
+
+test_that("count_suppressed_strata() doesn't depend on row order or factors", {
+  fake <- fake_count_responses()
+  shuffled <- lapply(fake, function(rows) {
+    rows <- rows[rev(seq_len(nrow(rows))), ]
+    rows$indicator <- as.character(rows$indicator)
+    rows$data_status <- as.character(rows$data_status)
+    rows$year <- factor(rows$year)
+    rows
+  })
+
+  expect_equal(
+    count_suppressed_strata(shuffled$stratified, shuffled$unstratified),
+    count_suppressed_strata(fake$stratified, fake$unstratified)
+  )
+})
+
+test_that("count_suppressed_strata() names no county, in what it returns or says", {
+  fake <- fake_count_responses()
+  fips <- unique(c(fake$stratified$fips, fake$unstratified$fips))
+  names_a_county <- function(text) {
+    any(vapply(fips, grepl, logical(1), x = paste(text, collapse = "\n")))
+  }
+
+  expect_no_message(
+    counts <- count_suppressed_strata(fake$stratified, fake$unstratified)
+  )
+  # Counts only: one row per indicator and year, whole numbers, no county
+  # column, and no county's code anywhere in it.
+  expect_equal(nrow(counts), 2)
+  expect_false(any(c("fips", "geography") %in% names(counts)))
+  numbers <- counts[setdiff(
+    names(counts),
+    c("indicator", "year", "stratified_by")
+  )]
+  expect_true(all(vapply(numbers, is.integer, logical(1))))
+  expect_null(attributes(counts)$counties)
+  expect_setequal(names(attributes(counts)), c("names", "class", "row.names"))
+  expect_false(names_a_county(utils::capture.output(print(counts))))
+  expect_false(names_a_county(utils::capture.output(dput(counts))))
+
+  lines <- describe_suppressed_strata(counts, "made-up")
+  expect_length(lines, 2)
+  expect_false(names_a_county(lines))
+  # The fixture's own check that the search would find a county's code.
+  expect_true(names_a_county(fake$unstratified$fips[1]))
+})
+
+test_that("describe_suppressed_strata() reports every count, one line per indicator", {
+  fake <- fake_count_responses()
+  counts <- count_suppressed_strata(fake$stratified, fake$unstratified)
+
+  expect_snapshot(writeLines(describe_suppressed_strata(counts, "made-up")))
+})
+
+test_that("count_suppressed_strata() keeps an indicator that only one response has", {
+  fake <- fake_count_responses()
+  no_diagnoses <- fake$unstratified[
+    fake$unstratified$indicator != "HIV diagnoses",
+  ]
+
+  counts <- count_suppressed_strata(fake$stratified, no_diagnoses)
+
+  diagnoses <- counts[counts$indicator == "HIV diagnoses", ]
+  expect_equal(diagnoses$counties_stratified_only, 2)
+  expect_equal(diagnoses$counties_in_both, 0)
+  expect_equal(diagnoses$total_published, 0)
+  expect_equal(diagnoses$two_or_more_suppressed, 0)
+  # And the other way round.
+  other_way <- count_suppressed_strata(
+    fake$stratified[fake$stratified$indicator != "HIV diagnoses", ],
+    fake$unstratified
+  )
+  diagnoses <- other_way[other_way$indicator == "HIV diagnoses", ]
+  expect_equal(diagnoses$counties_unstratified_only, 2)
+  expect_equal(diagnoses$counties_in_both, 0)
+  expect_equal(diagnoses$strata, 0)
+  # The other indicator's counts are unchanged.
+  expect_equal(
+    counts[counts$indicator == "HIV prevalence", ],
+    count_suppressed_strata(fake$stratified, fake$unstratified)[2, ],
+    ignore_attr = "row.names"
+  )
+})
+
+test_that("count_suppressed_strata() treats a count marked suppressed as not published", {
+  # A count beside "Data suppressed" is neither a published count nor a
+  # suppressed cell with no count: it is counted with the other cells.
+  fake <- fake_count_responses()
+  total <- fake$unstratified$fips == "01001" &
+    fake$unstratified$indicator == "HIV prevalence"
+  fake$unstratified$data_status[total] <- "Data suppressed"
+  cell <- fake$stratified$fips == "01003" &
+    fake$stratified$age == "13-24" &
+    fake$stratified$indicator == "HIV prevalence"
+  fake$stratified$data_status[cell] <- "Data suppressed"
+
+  counts <- count_suppressed_strata(fake$stratified, fake$unstratified)
+  prevalence <- counts[counts$indicator == "HIV prevalence", ]
+
+  expect_equal(prevalence$total_other, 2)
+  expect_equal(prevalence$total_published, 7)
+  expect_equal(prevalence$other_cells, 2)
+  # 01003 has no suppressed cell with no count, and not every cell published.
+  expect_equal(prevalence$none_suppressed, 4)
+  expect_equal(prevalence$one_suppressed, 1)
+  expect_equal(prevalence$all_published, 1)
+})
+
+test_that("count_suppressed_strata() stops rather than count a county twice", {
+  fake <- fake_count_responses()
+  twice <- rbind(fake$unstratified, fake$unstratified[1:2, ])
+  cell_twice <- rbind(fake$stratified, fake$stratified[1:3, ])
+
+  expect_snapshot(error = TRUE, {
+    count_suppressed_strata(fake$stratified, twice)
+    count_suppressed_strata(cell_twice, fake$unstratified)
+  })
+})
+
+test_that("count_suppressed_strata() stops unless given one stratified and one unstratified response", {
+  fake <- fake_count_responses()
+  by_sex_too <- fake$stratified
+  by_sex_too$sex <- factor("Male")
+
+  expect_snapshot(error = TRUE, {
+    count_suppressed_strata(fake$unstratified, fake$unstratified)
+    count_suppressed_strata(fake$stratified, fake$stratified)
+    count_suppressed_strata(by_sex_too, fake$unstratified)
+    count_suppressed_strata(
+      fake$stratified[c("fips", "cases")],
+      fake$unstratified
+    )
+    count_suppressed_strata(
+      fake$stratified,
+      fake$unstratified[c("fips", "age")]
+    )
+  })
+})

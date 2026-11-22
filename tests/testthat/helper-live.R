@@ -359,6 +359,234 @@ expect_no_rate_on_suppressed <- function(
   invisible(sum(suppressed))
 }
 
+# Counts of counties by how many of their stratum cells CDC suppressed, from
+# two get_atlas() county responses for the same year: `stratified` (by one of
+# race, sex and age) and `unstratified`. The premise of fitting stratified
+# estimates to a county's published total (#164) is that a county with a
+# published total never has exactly one suppressed stratum cell.
+#
+# COUNTS ONLY. One row per indicator and year, every other column a whole
+# number of counties (or `strata`, the number of strata). Nothing here
+# returns, prints, stores or attaches which counties are in any group, and a
+# county's total minus its published strata is never computed: the published
+# strata are summed and that sum is only compared with the published total
+# (equal, less, more). Makes no request.
+#
+# A stratum cell is one row of `stratified`: a county, indicator, year and
+# stratum value ("Unknown" included, where a disease has it). The strata of
+# an indicator and year are the values that appear in any county's rows.
+# - published: a count, and not marked "Data suppressed";
+# - suppressed: marked "Data suppressed" with no count, as impute_suppressed()
+#   identifies the rows it fills in;
+# - anything else ("Data not available" with no count, a count marked
+#   suppressed, an unknown status) is neither, and is counted in
+#   `other_cells`;
+# - a stratum with no row at all for a county is absent, not suppressed, and
+#   is counted in `incomplete_strata`.
+# The unstratified count is classified the same way (`total_published`,
+# `total_suppressed`, `total_other`).
+#
+# Counties are matched on fips, indicator and year. Those in one response
+# only are counted (`counties_stratified_only`, `counties_unstratified_only`)
+# and left out. The rest are `counties_in_both`, and every column from
+# `none_suppressed` on is about those of them with a published unstratified
+# count:
+# - `none_suppressed`, `one_suppressed`, `two_or_more_suppressed`: by the
+#   number of suppressed cells, whatever the other cells are. They add up to
+#   `total_published`.
+# - `incomplete_strata`: fewer rows than the indicator has strata.
+# - `other_cells`: at least one cell that is neither published nor
+#   suppressed.
+# - `all_published`: a row for every stratum, each published; and of those,
+#   `sum_equal`, `sum_less`, `sum_more`: the strata add up to the
+#   unstratified count, to less, or to more.
+# - `published_exceed`: the published cells alone add up to more than the
+#   unstratified count, however many cells are suppressed.
+#
+# Stops, giving numbers of rows only, if a county is in a response twice, so
+# no county can be counted twice.
+count_suppressed_strata <- function(stratified, unstratified) {
+  needed <- c(
+    "fips",
+    "indicator",
+    "year",
+    "data_status",
+    "cases",
+    unname(.atlas_strata_columns)
+  )
+  for (arg in c("stratified", "unstratified")) {
+    absent <- setdiff(needed, names(get(arg)))
+    if (length(absent) > 0) {
+      rlang::abort(paste0(
+        "`",
+        arg,
+        "` has no column ",
+        paste(absent, collapse = ", "),
+        "."
+      ))
+    }
+  }
+  by <- .atlas_stratify_by(stratified)
+  if (length(by) != 1) {
+    rlang::abort(paste0(
+      "`stratified` must be stratified by one of race, sex and age; it is ",
+      if (length(by) == 0) "not stratified" else paste("by", toString(by)),
+      "."
+    ))
+  }
+  if (length(.atlas_stratify_by(unstratified)) > 0) {
+    rlang::abort(paste0(
+      "`unstratified` must not be stratified; it is by ",
+      toString(.atlas_stratify_by(unstratified)),
+      "."
+    ))
+  }
+
+  # One row per cell, with nothing but what the counts need.
+  cells <- function(rows) {
+    status <- as.character(rows$data_status)
+    cases <- as.numeric(rows$cases)
+    data.frame(
+      group = .row_key(rows, c("indicator", "year")),
+      county = .row_key(rows, c("fips", "indicator", "year")),
+      cases = cases,
+      published = !is.na(cases) & !status %in% "Data suppressed",
+      suppressed = is.na(cases) & status %in% "Data suppressed"
+    )
+  }
+  total <- cells(unstratified)
+  strata <- cells(stratified)
+  strata$stratum <- as.character(stratified[[.atlas_strata_columns[[by]]]])
+  twice <- sum(duplicated(total$county))
+  if (twice > 0) {
+    rlang::abort(paste0(
+      "`unstratified` has ",
+      twice,
+      " repeated county rows (same fips, indicator and year), so a county ",
+      "would be counted twice."
+    ))
+  }
+  twice <- sum(duplicated(strata[c("county", "stratum")]))
+  if (twice > 0) {
+    rlang::abort(paste0(
+      "`stratified` has ",
+      twice,
+      " repeated stratum rows (same fips, indicator, year and stratum), so ",
+      "a county would be counted twice."
+    ))
+  }
+
+  groups <- sort(union(total$group, strata$group))
+  out <- lapply(groups, function(group) {
+    total <- total[total$group == group, , drop = FALSE]
+    strata <- strata[strata$group == group, , drop = FALSE]
+    n_strata <- length(unique(strata$stratum))
+    # Per county: its rows, its published and suppressed cells, and the sum
+    # of its published cells only, which is never subtracted from anything.
+    sums <- rowsum(
+      cbind(
+        rows = rep(1, nrow(strata)),
+        n_published = as.numeric(strata$published),
+        n_suppressed = as.numeric(strata$suppressed),
+        published_sum = ifelse(strata$published, strata$cases, 0)
+      ),
+      strata$county
+    )
+    county <- data.frame(county = rownames(sums), sums, row.names = NULL)
+    in_both <- merge(total, county, by = "county")
+    if (nrow(in_both) != length(intersect(total$county, county$county))) {
+      rlang::abort("Matching the two responses changed the number of rows.")
+    }
+    with_total <- in_both[in_both$published, , drop = FALSE]
+    complete <- with_total$rows == n_strata
+    all_published <- complete & with_total$n_published == n_strata
+    # Counts are whole numbers; the tolerance only allows for storage.
+    same <- abs(with_total$published_sum - with_total$cases) < 1e-8
+    less <- !same & with_total$published_sum < with_total$cases
+    more <- !same & with_total$published_sum > with_total$cases
+    key <- strsplit(group, "\r", fixed = TRUE)[[1]]
+    data.frame(
+      indicator = key[[1]],
+      year = key[[2]],
+      stratified_by = by,
+      strata = n_strata,
+      counties_stratified_only = sum(!county$county %in% total$county),
+      counties_unstratified_only = sum(!total$county %in% county$county),
+      counties_in_both = nrow(in_both),
+      total_suppressed = sum(in_both$suppressed),
+      total_other = sum(!in_both$suppressed & !in_both$published),
+      total_published = nrow(with_total),
+      none_suppressed = sum(with_total$n_suppressed == 0),
+      one_suppressed = sum(with_total$n_suppressed == 1),
+      two_or_more_suppressed = sum(with_total$n_suppressed >= 2),
+      incomplete_strata = sum(!complete),
+      other_cells = sum(
+        with_total$n_published + with_total$n_suppressed < with_total$rows
+      ),
+      all_published = sum(all_published),
+      sum_equal = sum(all_published & same),
+      sum_less = sum(all_published & less),
+      sum_more = sum(all_published & more),
+      published_exceed = sum(more)
+    )
+  })
+  out <- do.call(rbind, out)
+  counts <- setdiff(names(out), c("indicator", "year", "stratified_by"))
+  out[counts] <- lapply(out[counts], as.integer)
+  rownames(out) <- NULL
+  out
+}
+
+# One line per row of count_suppressed_strata()'s result, for message(): every
+# count, in words. `label` says which responses were compared.
+describe_suppressed_strata <- function(counts, label) {
+  n <- function(column) format(counts[[column]], big.mark = ",", trim = TRUE)
+  paste0(
+    label,
+    ", ",
+    counts$indicator,
+    " ",
+    counts$year,
+    " by ",
+    counts$stratified_by,
+    " (",
+    n("strata"),
+    " strata). Counties in both responses: ",
+    n("counties_in_both"),
+    " (left out: ",
+    n("counties_stratified_only"),
+    " only stratified, ",
+    n("counties_unstratified_only"),
+    " only unstratified); unstratified count published in ",
+    n("total_published"),
+    ", suppressed in ",
+    n("total_suppressed"),
+    ", neither in ",
+    n("total_other"),
+    ". Of those with it published, suppressed stratum cells: none ",
+    n("none_suppressed"),
+    ", exactly one ",
+    n("one_suppressed"),
+    ", two or more ",
+    n("two_or_more_suppressed"),
+    "; missing a stratum row ",
+    n("incomplete_strata"),
+    "; with a cell neither published nor suppressed ",
+    n("other_cells"),
+    ". Every stratum published: ",
+    n("all_published"),
+    " (strata sum equal to the unstratified count ",
+    n("sum_equal"),
+    ", less ",
+    n("sum_less"),
+    ", more ",
+    n("sum_more"),
+    "). Published strata alone exceed the unstratified count: ",
+    n("published_exceed"),
+    "."
+  )
+}
+
 # For each of `indicators`, the most recent year with rows for it among
 # `responses`, a list of get_atlas() results named by year. NA when no
 # response has rows for the indicator.
