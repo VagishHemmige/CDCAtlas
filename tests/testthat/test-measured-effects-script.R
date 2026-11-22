@@ -86,7 +86,31 @@ test_that("data-raw/measured-effects.R runs end to end on made-up data", {
     row.names = FALSE,
     na = ""
   )
-  expect_equal(readLines(files$csv), readLines(expected))
+  # The compact file is that summary, then the consistency rows: each
+  # stratified run against the unstratified run of its year (here, by sex,
+  # in 2022 and 2023).
+  written <- readLines(files$csv)
+  expect_equal(written[seq_along(readLines(expected))], readLines(expected))
+  consistency <- compact[compact$step == "consistency", ]
+  expect_equal(
+    nrow(compact) - nrow(consistency),
+    length(readLines(expected)) - 1
+  )
+  expect_setequal(consistency$stratify_by, "sex")
+  expect_setequal(consistency$year, c(2022, 2023))
+  expect_equal(sum(summary$step == "consistency"), nrow(consistency))
+  # County 01003 is suppressed in both made-up tables, so only 01001 has a
+  # published unstratified count, and its strata are published too.
+  one <- function(measure, category = NA) {
+    rows <- consistency$year == 2022 &
+      consistency$measure == measure &
+      (is.na(category) | consistency$category %in% category)
+    consistency$value[rows]
+  }
+  expect_equal(one("counties_unstratified_not_published"), 1)
+  expect_equal(one("counties_compared"), 1)
+  expect_equal(one("counties_by_suppressed_strata", "none"), 1)
+  expect_equal(one("ratio_stratified_to_published", "median"), 233 / 116)
   begin <- which(log == "----- BEGIN measured-effects.csv -----")
   end <- which(log == "----- END measured-effects.csv -----")
   expect_equal(log[(begin + 1):(end - 1)], readLines(files$csv))
@@ -191,6 +215,139 @@ test_that("'latest' steps back only on evidence that the year is released in par
     }
   )
   expect_snapshot(latest(), error = TRUE)
+})
+
+test_that("stratified counts are compared with each county's published total", {
+  script <- test_path("..", "..", "data-raw", "measured-effects.R")
+  skip_if_not(file.exists(script), "data-raw/ is not in the built package.")
+  withr::local_envvar(MEASURED_EFFECTS_SOURCE_ONLY = "true")
+  script_env <- new.env(parent = environment())
+  source(script, local = script_env)
+  data <- consistency_fixture()
+  said <- capture_messages(
+    rows <- script_env$measured_effects_consistency(
+      data$unstratified,
+      data$stratified
+    )
+  )
+  value <- function(measure, category = NA) {
+    keep <- rows$measure == measure &
+      (if (is.na(category)) TRUE else rows$category %in% category)
+    rows$value[keep]
+  }
+
+  expect_setequal(rows$step, "consistency")
+  expect_setequal(rows$stratify_by, "sex")
+  expect_setequal(rows$state_fips, "all")
+  expect_setequal(rows$year, 2022)
+  expect_in(rows$unit, c("counties", "cases", "proportion"))
+
+  # Which counties are compared.
+  expect_equal(value("counties_only_in_unstratified"), 1)
+  expect_equal(value("counties_only_in_stratified"), 1)
+  expect_equal(value("counties_unstratified_not_published"), 1)
+  expect_equal(value("counties_unstratified_published"), 7)
+  expect_equal(value("counties_compared"), 5)
+  expect_equal(
+    value("counties_not_comparable", "exactly one suppressed stratum"),
+    1
+  )
+  expect_equal(
+    value("counties_not_comparable", "a stratum has no count"),
+    1
+  )
+
+  # The premise: how many suppressed stratum cells a county has. Counts only.
+  cells <- "counties_by_suppressed_strata"
+  expect_equal(value(cells, "none"), 3)
+  expect_equal(value(cells, "exactly one"), 1)
+  expect_equal(value(cells, "two or more"), 3)
+  expect_match(
+    rows$note[rows$measure == cells & rows$category == "exactly one"],
+    "count only",
+    ignore.case = TRUE
+  )
+
+  # Published totals 100 + 50 + 10 + 0 + 5; strata 100 + 8 + 9 + 0 + 8.
+  expect_equal(value("published_unstratified_cases"), 165)
+  expect_equal(value("stratified_cases"), 125)
+  expect_equal(value("shortfall_signed"), 40)
+  expect_equal(value("shortfall_positive"), 43)
+  expect_equal(value("shortfall_negative"), -3)
+
+  # Ratios, where the published total is above 0: 0.16, 0.9, 1 and 1.6.
+  expect_equal(value("counties_with_ratio"), 4)
+  expect_equal(value("counties_published_zero"), 1)
+  ratio <- rows[rows$measure == "ratio_stratified_to_published", ]
+  expect_equal(
+    ratio$category,
+    c("min", "p05", "p25", "median", "p75", "p95", "max")
+  )
+  expect_equal(ratio$value, c(0.16, 0.271, 0.715, 0.95, 1.15, 1.51, 1.6))
+  expect_match(ratio$note, "type 7", fixed = TRUE)
+
+  # Thresholds are strict: a ratio of exactly 0.9 is not below 0.9.
+  below <- "counties_ratio_beyond"
+  expect_equal(value(below, "below 0.9"), 1)
+  expect_equal(value(below, "below 0.75"), 1)
+  expect_equal(value(below, "below 0.5"), 1)
+  expect_equal(value(below, "above 1.1"), 1)
+  expect_equal(value("share_of_counties_ratio_beyond", "below 0.9"), 1 / 4)
+  shares <- rows[rows$unit == "proportion", ]
+  expect_equal(sum(is.na(shares$denominator)), 0)
+
+  # Counties with at least one suppressed stratum: 01003 and 01019.
+  expect_equal(value("counties_compared_with_suppressed_stratum"), 2)
+  with <- "counties_ratio_beyond_with_suppressed_stratum"
+  expect_equal(value(with, "below 0.9"), 1)
+  expect_equal(value(with, "above 1.1"), 1)
+  expect_equal(
+    value("shortfall_share_in_counties_with_suppressed_stratum"),
+    (42 - 3) / 40
+  )
+
+  # No county is named anywhere, the exactly-one county least of all.
+  text <- c(unlist(lapply(rows, as.character)), said)
+  expect_no_match(text, "0100[0-9]|0101[0-9]")
+  expect_equal(sum(is.na(rows$value) & is.na(rows$note)), 0)
+  expect_lte(nrow(rows), 39)
+})
+
+test_that("the consistency check guards its join and its denominators", {
+  script <- test_path("..", "..", "data-raw", "measured-effects.R")
+  skip_if_not(file.exists(script), "data-raw/ is not in the built package.")
+  withr::local_envvar(MEASURED_EFFECTS_SOURCE_ONLY = "true")
+  script_env <- new.env(parent = environment())
+  source(script, local = script_env)
+  data <- consistency_fixture()
+
+  # A county listed twice would be counted twice.
+  twice <- rbind(data$unstratified, data$unstratified[1, ])
+  expect_error(
+    script_env$measured_effects_consistency(twice, data$stratified),
+    "more than once"
+  )
+  twice <- rbind(data$stratified, data$stratified[1, ])
+  expect_error(
+    script_env$measured_effects_consistency(data$unstratified, twice),
+    "more than once"
+  )
+
+  # Only the published-zero county: nothing to take a ratio or a share of.
+  only <- function(table) table[table$fips == "01017", ]
+  rows <- script_env$measured_effects_consistency(
+    only(data$unstratified),
+    only(data$stratified)
+  )
+  share <- rows[rows$measure == "share_of_counties_ratio_beyond", ]
+  expect_equal(share$value, rep(NA_real_, 4))
+  expect_match(share$note, "Denominator is 0", fixed = TRUE)
+  in_suppressed <- rows[
+    rows$measure == "shortfall_share_in_counties_with_suppressed_stratum",
+  ]
+  expect_equal(in_suppressed$value, NA_real_)
+  expect_equal(sum(rows$measure == "ratio_stratified_to_published"), 0)
+  expect_equal(sum(is.infinite(rows$value)), 0)
 })
 
 test_that("a run that stops early leaves nothing in its output folder", {
@@ -325,7 +482,12 @@ test_that("the compact summary for the default scope is at most 3,000 rows", {
   # age (6) and race (7); the made-up data have one state.
   expect_setequal(compact$year, c(2017, 2022, 2023))
   expect_setequal(compact$stratify_by, c("none", "sex", "age", "race"))
-  expect_lte(nrow(compact), 3 * summary_row_bound(15, 4, 1))
+  # Each of the three stratified runs of a year adds at most 39 rows that
+  # compare it with the year's unstratified run.
+  consistency <- compact$step == "consistency"
+  expect_lte(sum(!consistency), 3 * summary_row_bound(15, 4, 1))
+  expect_lte(sum(consistency), 3 * 3 * 39)
+  expect_setequal(compact$stratify_by[consistency], c("sex", "age", "race"))
   # On real data CDC's state list has 57 entries, so at most 57 states.
   expect_equal(nrow(lookup[["state"]]), 57)
   expect_lte(3 * summary_row_bound(15, 4, 57), 3000)
