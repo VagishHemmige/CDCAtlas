@@ -102,11 +102,13 @@ are for ages 13 and older. Each entry names its source:
 - *Live test run 45017608026* (22 November 2026 UTC). The run failed on a
   different check, about state strata; the county counts below are
   observations it printed to its log, not assertions that passed. The code
-  that produced them only counts rows; it does no subtraction. An earlier run,
-  44985849638, printed the same counts, but its code also computed
-  differences for each county internally. [observed 2026-11-22, county: HIV
-  diagnoses 2017, 2022, 2024 and 2025; HIV prevalence 2017, 2022 and 2024;
-  unstratified and by sex, age and race]
+  that produced them reports numbers of counties only. For the sum checks it
+  adds a county's published stratum counts and compares that sum directly
+  with the published county total, without computing a difference. An
+  earlier run, 44985849638, printed the same counts, but its code also
+  computed differences for each county internally. [observed 2026-11-22,
+  county: HIV diagnoses 2017, 2022, 2024 and 2025; HIV prevalence 2017, 2022
+  and 2024; unstratified and by sex, age and race]
 
 Entries:
 
