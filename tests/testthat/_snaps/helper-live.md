@@ -99,12 +99,12 @@
 # count_suppressed_strata() stops rather than count a county twice
 
     Code
-      count_suppressed_strata(fake$stratified, twice)
+      count_fake_strata(fake$stratified, twice)
     Condition
       Error in `count_suppressed_strata()`:
       ! `unstratified` has 2 repeated county rows (same fips, indicator and year), so a county would be counted twice.
     Code
-      count_suppressed_strata(cell_twice, fake$unstratified)
+      count_fake_strata(cell_twice, fake$unstratified)
     Condition
       Error in `count_suppressed_strata()`:
       ! `stratified` has 3 repeated stratum rows (same fips, indicator, year and stratum), so a county would be counted twice.
@@ -112,28 +112,123 @@
 # count_suppressed_strata() stops unless given one stratified and one unstratified response
 
     Code
-      count_suppressed_strata(fake$unstratified, fake$unstratified)
+      count_fake_strata(fake$unstratified, fake$unstratified)
     Condition
       Error in `count_suppressed_strata()`:
-      ! `stratified` must be stratified by one of race, sex and age; it is not stratified.
+      ! `stratified` must be stratified by age only, as asked for; it is not stratified.
     Code
-      count_suppressed_strata(fake$stratified, fake$stratified)
+      count_fake_strata(fake$stratified, fake$stratified)
     Condition
       Error in `count_suppressed_strata()`:
       ! `unstratified` must not be stratified; it is by age.
     Code
-      count_suppressed_strata(by_sex_too, fake$unstratified)
+      count_fake_strata(by_sex_too, fake$unstratified)
     Condition
       Error in `count_suppressed_strata()`:
-      ! `stratified` must be stratified by one of race, sex and age; it is by sex, age.
+      ! `stratified` must be stratified by age only, as asked for; it is by sex, age.
     Code
-      count_suppressed_strata(fake$stratified[c("fips", "cases")], fake$unstratified)
+      count_fake_strata(fake$stratified[c("fips", "cases")], fake$unstratified)
     Condition
       Error in `count_suppressed_strata()`:
       ! `stratified` has no column indicator, year, data_status, race_ethnicity, sex, age.
     Code
-      count_suppressed_strata(fake$stratified, fake$unstratified[c("fips", "age")])
+      count_fake_strata(fake$stratified, fake$unstratified[c("fips", "age")])
     Condition
       Error in `count_suppressed_strata()`:
       ! `unstratified` has no column indicator, year, data_status, cases, race_ethnicity, sex.
+
+# count_suppressed_strata() stops when the response is by another variable than asked for
+
+    Code
+      count_fake_strata(by_sex, fake$unstratified, "age", fake_ages)
+    Condition
+      Error in `count_suppressed_strata()`:
+      ! `stratified` must be stratified by age only, as asked for; it is by sex.
+    Code
+      count_fake_strata(by_sex, fake$unstratified, "age", c("Male", "Female"))
+    Condition
+      Error in `count_suppressed_strata()`:
+      ! `stratified` must be stratified by age only, as asked for; it is by sex.
+    Code
+      count_fake_strata(fake$stratified, fake$unstratified, "sex", fake_ages)
+    Condition
+      Error in `count_suppressed_strata()`:
+      ! `stratified` must be stratified by sex only, as asked for; it is by age.
+    Code
+      count_fake_strata(fake$stratified, fake$unstratified, "ages", fake_ages)
+    Condition
+      Error in `count_suppressed_strata()`:
+      ! `stratify_by` must be one of "race", "sex", or "age", not "ages".
+      i Did you mean "age"?
+
+# count_suppressed_strata() stops when the strata are not the ones asked for
+
+    Code
+      count_fake_strata(none_45, fake$unstratified)
+    Condition
+      Error in `count_suppressed_strata()`:
+      ! The age strata of HIV prevalence 2022 are not the ones asked for.
+      x Asked for and absent from every county: 45+.
+      x Returned and not asked for: none.
+    Code
+      count_fake_strata(none_45_diagnoses, fake$unstratified)
+    Condition
+      Error in `count_suppressed_strata()`:
+      ! The age strata of HIV diagnoses 2022 are not the ones asked for.
+      x Asked for and absent from every county: 45+.
+      x Returned and not asked for: none.
+    Code
+      count_fake_strata(extra, fake$unstratified)
+    Condition
+      Error in `count_suppressed_strata()`:
+      ! The age strata of HIV prevalence 2022 are not the ones asked for.
+      x Asked for and absent from every county: none.
+      x Returned and not asked for: Unknown.
+    Code
+      count_fake_strata(fake$stratified, fake$unstratified, strata = character())
+    Condition
+      Error in `count_suppressed_strata()`:
+      ! `strata` must be the stratum labels asked for.
+
+# describe_suppressed_counties() reports every count, one line per indicator
+
+    Code
+      writeLines(describe_suppressed_counties(count_suppressed_counties(fake$county,
+      fake$state), "made-up"))
+    Output
+      made-up, HIV diagnoses 2022, unstratified. State strata with county rows: 2 (state total published in 2, not published in 0, no state row for 0; only the first are counted). Of the 2 counted, suppressed county rows: none 1, exactly one 0, two or more 1.
+      made-up, HIV prevalence 2022, unstratified. State strata with county rows: 6 (state total published in 4, not published in 1, no state row for 1; only the first are counted). Of the 4 counted, suppressed county rows: none 1, exactly one 2, two or more 1.
+    Code
+      writeLines(describe_suppressed_counties(count_suppressed_counties(fake$
+        county_by_age), "made-up"))
+    Output
+      made-up, HIV prevalence 2022 by age. State strata with county rows: 4 (state totals not used: every state stratum is counted). Of the 4 counted, suppressed county rows: none 1, exactly one 2, two or more 1.
+
+# count_suppressed_counties() stops rather than count a row twice
+
+    Code
+      count_suppressed_counties(rbind(fake$county, fake$county[1:2, ]))
+    Condition
+      Error in `count_suppressed_counties()`:
+      ! `county` has 2 repeated rows (same fips, indicator, year and stratum), so a county would be counted twice.
+    Code
+      count_suppressed_counties(fake$county, rbind(fake$state, fake$state[1, ]))
+    Condition
+      Error in `count_suppressed_counties()`:
+      ! `state` has 1 repeated rows (same fips, indicator, year and stratum), so a state would be counted twice.
+    Code
+      count_suppressed_counties(fake$state)
+    Condition
+      Error in `count_suppressed_counties()`:
+      ! `county` must be county rows, with 5-digit `fips`.
+    Code
+      count_suppressed_counties(fake$county, fake$county)
+    Condition
+      Error in `count_suppressed_counties()`:
+      ! `state` must be state rows, with 2-digit `fips`.
+    Code
+      count_suppressed_counties(fake$county[c("fips", "cases")])
+    Condition
+      Error in `count_suppressed_counties()`:
+      ! `county` has no column data_status, indicator, year, race_ethnicity, sex, age.
 
