@@ -47,10 +47,11 @@
 #'     counties only).
 #'
 #'   With either choice, a warning (class `"cdcatlas_state_unplaced_cases"`)
-#'   names any state with more than 25% of its cases in no county row; see
-#'   [no_county_cases()]. With `"report"`, county and area estimates for such
-#'   a state are too low by about that share. With `"spread"`, those cases
-#'   are placed by assumption, not by data on where they are.
+#'   names any state with more than 25% of its published state total in no
+#'   county row of `x`; see [no_county_cases()]. With `"report"`, county and
+#'   area estimates for such a state are too low by about that share. With
+#'   `"spread"`, any of those cases that reach areas are placed by
+#'   assumption, not by data on where they are.
 #' @param spread_by How `no_county = "spread"` shares a state's remainder
 #'   among its counties:
 #'   * `"population"` (default): by each county's ACS population in the
@@ -407,7 +408,6 @@ extrapolate_from_county <- function(
     report,
     not_allocated,
     no_county,
-    spread_by,
     empty_strata,
     to
   )
@@ -1217,7 +1217,6 @@ extrapolate_from_county <- function(
   report,
   not_allocated,
   no_county,
-  spread_by,
   empty_strata,
   to
 ) {
@@ -1246,9 +1245,9 @@ extrapolate_from_county <- function(
     if (length(odd) > 0) rlang::set_names(odd, rep("!", length(odd))),
     " " = "See {.code attr(x, \"no_county_cases\")} for each state."
   ))
-  # Spreading doesn't solve it: the cases reach the areas, but where they are
-  # put is an assumption (#164). `to` and `spread_by` are pasted in here
-  # because the bullets are formatted where neither is defined.
+  # Spreading doesn't solve it: where the cases are put is an assumption, and
+  # some may reach no area, which .announce_spread() counts (#164). `to` is
+  # pasted in here because the bullets are formatted where it isn't defined.
   consequence <- if (no_county == "report") {
     paste0(
       "County and ",
@@ -1257,13 +1256,8 @@ extrapolate_from_county <- function(
        they are too low by about that share overall."
     )
   } else {
-    paste0(
-      "{.code no_county = \"spread\"} shares those cases across {?this
-       state's/each state's} counties by ",
-      spread_by,
-      ". That places them by assumption: the county data don't say where
-       they are."
-    )
+    "With {.code no_county = \"spread\"}, any of those cases that reach areas
+     are placed by assumption: the county data don't say where they are."
   }
   .warn_state_unplaced_cases(
     report,

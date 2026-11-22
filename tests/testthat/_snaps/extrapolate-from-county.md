@@ -23,10 +23,11 @@
         See `attr(x, "no_county_cases")` for each state.
     Condition
       Warning:
-      2 states have more than 25% of their cases in no county row.
+      2 states have more than 25% of their published state total in no county row of `x`.
       * HIV diagnoses 2022: Alaska (97%) and Alabama (66%)
       * HIV prevalence 2022: Alaska (79%) and Alabama (52%)
-      ! `no_county = "spread"` shares those cases across each state's counties by population. That places them by assumption: the county data don't say where they are.
+      i Percentages are of the state totals CDC published, over the strata that have one.
+      ! With `no_county = "spread"`, any of those cases that reach areas are placed by assumption: the county data don't say where they are.
       i This happens when a state's county counts are largely suppressed, or when `x` lacks some of its counties. CDCAtlas doesn't check the cause.
       i See `attr(x, "no_county_cases")` for each state.
       Warning:
@@ -78,9 +79,10 @@
         See `attr(x, "no_county_cases")` for each state.
     Condition
       Warning:
-      1 state has more than 25% of its cases in no county row.
+      1 state has more than 25% of its published state total in no county row of `x`.
       * HIV diagnoses 2022: Alabama (94%)
       * HIV prevalence 2022: Alabama (68%)
+      i Percentages are of the state totals CDC published, over the strata that have one.
       ! County and tract estimates for this state leave those cases out, so they are too low by about that share overall.
       i This happens when a state's county counts are largely suppressed, or when `x` lacks some of its counties. CDCAtlas doesn't check the cause.
       i See `attr(x, "no_county_cases")` for each state.
@@ -96,10 +98,11 @@
         See `attr(x, "no_county_cases")` for each state.
     Condition
       Warning:
-      1 state has more than 25% of its cases in no county row.
+      1 state has more than 25% of its published state total in no county row of `x`.
       * HIV diagnoses 2022: Alabama (94%)
       * HIV prevalence 2022: Alabama (68%)
-      ! `no_county = "spread"` shares those cases across this state's counties by population. That places them by assumption: the county data don't say where they are.
+      i Percentages are of the state totals CDC published, over the strata that have one.
+      ! With `no_county = "spread"`, any of those cases that reach areas are placed by assumption: the county data don't say where they are.
       i This happens when a state's county counts are largely suppressed, or when `x` lacks some of its counties. CDCAtlas doesn't check the cause.
       i See `attr(x, "no_county_cases")` for each state.
 
@@ -263,9 +266,10 @@
         See `attr(x, "no_county_cases")` for each state.
     Condition
       Warning:
-      1 state has more than 25% of its cases in no county row.
+      1 state has more than 25% of its published state total in no county row of `x`.
       * HIV diagnoses 2022: Alabama (66%)
       * HIV prevalence 2022: Alabama (52%)
+      i Percentages are of the state totals CDC published, over the strata that have one.
       ! County and tract estimates for this state leave those cases out, so they are too low by about that share overall.
       i This happens when a state's county counts are largely suppressed, or when `x` lacks some of its counties. CDCAtlas doesn't check the cause.
       i See `attr(x, "no_county_cases")` for each state.
@@ -367,8 +371,9 @@
         See `attr(x, "no_county_cases")` for each state.
     Condition
       Warning:
-      1 state has more than 25% of its cases in no county row.
+      1 state has more than 25% of its published state total in no county row of `x`.
       * HIV diagnoses 2022: Alabama (26%)
+      i Percentages are of the state totals CDC published, over the strata that have one.
       ! County and tract estimates for this state leave those cases out, so they are too low by about that share overall.
       i This happens when a state's county counts are largely suppressed, or when `x` lacks some of its counties. CDCAtlas doesn't check the cause.
       i See `attr(x, "no_county_cases")` for each state.
@@ -383,9 +388,10 @@
         See `attr(x, "no_county_cases")` for each state.
     Condition
       Warning:
-      1 state has more than 25% of its cases in no county row.
+      1 state has more than 25% of its published state total in no county row of `x`.
       * HIV diagnoses 2022: Alabama (26%)
-      ! `no_county = "spread"` shares those cases across this state's counties by cases. That places them by assumption: the county data don't say where they are.
+      i Percentages are of the state totals CDC published, over the strata that have one.
+      ! With `no_county = "spread"`, any of those cases that reach areas are placed by assumption: the county data don't say where they are.
       i This happens when a state's county counts are largely suppressed, or when `x` lacks some of its counties. CDCAtlas doesn't check the cause.
       i See `attr(x, "no_county_cases")` for each state.
 

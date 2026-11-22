@@ -23,9 +23,11 @@
 #'
 #' @section States with many cases in no county row:
 #' `no_county_cases()` warns, once per call, when a state has more than 25% of
-#' its cases in no county row: the remainder divided by the state total, with
-#' both added up over the state's strata, separately for each indicator and
-#' year. The warning (class `"cdcatlas_state_unplaced_cases"`) names the
+#' its published state total in no county row of `x`: the remainder divided
+#' by the state total, with both added up over the state's strata that have a
+#' published state total, separately for each indicator and year. The
+#' percentage is of those published totals, not of every case in the state
+#' when a stratum's total is missing. The warning (class `"cdcatlas_state_unplaced_cases"`) names the
 #' states with their percentages, the five largest for each indicator and
 #' year. County counts for such a state, added up or shared across smaller
 #' areas, leave those cases out and are too low by about that share. This
@@ -282,8 +284,11 @@ no_county_cases <- function(x) {
   cli::cli_warn(
     c(
       "{n} state{?s} {?has/have} more than {threshold} of
-       {cli::qty(n)}{?its/their} cases in no county row.",
+       {cli::qty(n)}{?its/their} published state total in no county row of
+       {.arg x}.",
       rlang::set_names(lines, rep("*", length(lines))),
+      "i" = "Percentages are of the state totals CDC published, over the
+             strata that have one.",
       with_qty(consequence),
       "i" = "This happens when a state's county counts are largely
              suppressed, or when {.arg x} lacks some of its counties.

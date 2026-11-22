@@ -7,9 +7,10 @@
         County: "County 01003".
     Condition
       Warning:
-      1 state has more than 25% of its cases in no county row.
+      1 state has more than 25% of its published state total in no county row of `x`.
       * HIV diagnoses 2022: Alabama (98%)
       * HIV prevalence 2022: Alabama (85%)
+      i Percentages are of the state totals CDC published, over the strata that have one.
       ! Adding up this state's county counts, or estimating smaller areas from them, leaves those cases out, so the results are too low by about that share.
       i This happens when a state's county counts are largely suppressed, or when `x` lacks some of its counties. CDCAtlas doesn't check the cause.
 
@@ -60,8 +61,9 @@
       report <- no_county_cases(data$county)
     Condition
       Warning:
-      1 state has more than 25% of its cases in no county row.
+      1 state has more than 25% of its published state total in no county row of `x`.
       * HIV diagnoses 2022: Alabama (26%)
+      i Percentages are of the state totals CDC published, over the strata that have one.
       ! Adding up this state's county counts, or estimating smaller areas from them, leaves those cases out, so the results are too low by about that share.
       i This happens when a state's county counts are largely suppressed, or when `x` lacks some of its counties. CDCAtlas doesn't check the cause.
 
@@ -71,8 +73,9 @@
       report <- no_county_cases(data$county)
     Condition
       Warning:
-      2 states have more than 25% of their cases in no county row.
+      2 states have more than 25% of their published state total in no county row of `x`.
       * HIV diagnoses 2022: Alaska (87%) and Rhode Island (73%)
+      i Percentages are of the state totals CDC published, over the strata that have one.
       ! Adding up these states' county counts, or estimating smaller areas from them, leaves those cases out, so the results are too low by about that share.
       i This happens when a state's county counts are largely suppressed, or when `x` lacks some of its counties. CDCAtlas doesn't check the cause.
 
@@ -82,8 +85,9 @@
       report <- no_county_cases(data$county)
     Condition
       Warning:
-      7 states have more than 25% of their cases in no county row.
+      7 states have more than 25% of their published state total in no county row of `x`.
       * HIV diagnoses 2022: Alabama (90%), Alaska (80%), Arizona (70%), Arkansas (60%), California (50%), and 2 more
+      i Percentages are of the state totals CDC published, over the strata that have one.
       ! Adding up these states' county counts, or estimating smaller areas from them, leaves those cases out, so the results are too low by about that share.
       i This happens when a state's county counts are largely suppressed, or when `x` lacks some of its counties. CDCAtlas doesn't check the cause.
 
@@ -93,8 +97,9 @@
       report <- no_county_cases(data$county)
     Condition
       Warning:
-      1 state has more than 25% of its cases in no county row.
+      1 state has more than 25% of its published state total in no county row of `x`.
       * HIV diagnoses 2022: Alabama (50%)
+      i Percentages are of the state totals CDC published, over the strata that have one.
       ! Adding up this state's county counts, or estimating smaller areas from them, leaves those cases out, so the results are too low by about that share.
       i This happens when a state's county counts are largely suppressed, or when `x` lacks some of its counties. CDCAtlas doesn't check the cause.
 

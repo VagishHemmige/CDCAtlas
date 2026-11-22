@@ -461,11 +461,15 @@ test_that("spread cases that reach no area are reported as not spread (#114)", {
   # doesn't claim the cases were placed: half of them reached no tract (#164).
   report$state <- "Alabama"
   report$state_cases <- 40
-  caught <- catch_class(suppressWarnings(suppressMessages(
+  # Another warning here says a county stratum had no ACS population.
+  caught <- suppressWarnings(catch_class(suppressMessages(
     .announce_extrapolation(
       out,
       report,
-      not_allocated = data.frame(reason = character()),
+      not_allocated = data.frame(
+        reason = character(),
+        county_cases = numeric()
+      ),
       no_county = "spread",
       empty_strata = "none",
       to = "tract"
