@@ -363,7 +363,7 @@ bind_atlas <- function(...) {
 without_unplaced_warning <- function(expr) {
   withCallingHandlers(
     expr,
-    cdcatlas_state_mostly_unplaced = function(w) {
+    cdcatlas_state_unplaced_cases = function(w) {
       invokeRestart("muffleWarning")
     }
   )
@@ -371,7 +371,7 @@ without_unplaced_warning <- function(expr) {
 
 # The warnings of class `class` that `expr` gives, as conditions. Other
 # warnings are left to reach the test.
-catch_class <- function(expr, class = "cdcatlas_state_mostly_unplaced") {
+catch_class <- function(expr, class = "cdcatlas_state_unplaced_cases") {
   caught <- list()
   withCallingHandlers(
     expr,

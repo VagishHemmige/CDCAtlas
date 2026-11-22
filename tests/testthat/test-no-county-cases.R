@@ -205,7 +205,7 @@ test_that("a state with more than 25% of its cases in no county row gets a warni
 
   expect_warning(
     report <- no_county_cases(data$county),
-    class = "cdcatlas_state_mostly_unplaced"
+    class = "cdcatlas_state_unplaced_cases"
   )
   expect_snapshot(report <- no_county_cases(data$county))
   # The report itself is what it would be without the warning.

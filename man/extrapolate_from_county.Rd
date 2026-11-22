@@ -57,7 +57,7 @@ could not be spread. Not available for CDC's HIV estimates (EHE
 counties only).
 }
 
-With either choice, a warning (class \code{"cdcatlas_state_mostly_unplaced"})
+With either choice, a warning (class \code{"cdcatlas_state_unplaced_cases"})
 names any state with more than 25\% of its cases in no county row; see
 \code{\link[=no_county_cases]{no_county_cases()}}. With \code{"report"}, county and area estimates for such
 a state are too low by about that share. With \code{"spread"}, those cases

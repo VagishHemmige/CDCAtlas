@@ -46,7 +46,7 @@
 #'     could not be spread. Not available for CDC's HIV estimates (EHE
 #'     counties only).
 #'
-#'   With either choice, a warning (class `"cdcatlas_state_mostly_unplaced"`)
+#'   With either choice, a warning (class `"cdcatlas_state_unplaced_cases"`)
 #'   names any state with more than 25% of its cases in no county row; see
 #'   [no_county_cases()]. With `"report"`, county and area estimates for such
 #'   a state are too low by about that share. With `"spread"`, those cases
@@ -1265,7 +1265,7 @@ extrapolate_from_county <- function(
        they are."
     )
   }
-  .warn_state_mostly_unplaced(
+  .warn_state_unplaced_cases(
     report,
     c("!" = consequence),
     c("i" = "See {.code attr(x, \"no_county_cases\")} for each state.")

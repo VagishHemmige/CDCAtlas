@@ -67,7 +67,7 @@ of a group, its state total is not reported.
 \code{no_county_cases()} warns, once per call, when a state has more than 25\% of
 its cases in no county row: the remainder divided by the state total, with
 both added up over the state's strata, separately for each indicator and
-year. The warning (class \code{"cdcatlas_state_mostly_unplaced"}) names the
+year. The warning (class \code{"cdcatlas_state_unplaced_cases"}) names the
 states with their percentages, the five largest for each indicator and
 year. County counts for such a state, added up or shared across smaller
 areas, leave those cases out and are too low by about that share. This

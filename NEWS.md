@@ -1,10 +1,10 @@
 # CDCAtlas (development version)
 
 * `extrapolate_from_county()` warns once (class `"cdcatlas_duplicated_geoid"`) when an area is split between counties and so has more than one row with the same `geoid`: with ACS 2010 to 2019, one Connecticut tract and its block groups. Its help and the "Extrapolation to tracts" article show how to sum the rows before joining to boundaries (#152).
-* `extrapolate_from_county()` warns once (class `"cdcatlas_state_mostly_unplaced"`) when a state has more than 25% of its cases in no county row, naming the states and their percentages: county and area estimates there are too low by about that share, or with `no_county = "spread"` those cases are placed by assumption. No estimate changes (#164).
+* `extrapolate_from_county()` warns once (class `"cdcatlas_state_unplaced_cases"`) when a state has more than 25% of its cases in no county row, naming the states and their percentages: county and area estimates there are too low by about that share, or with `no_county = "spread"` those cases are placed by assumption. No estimate changes (#164).
 * `impute_suppressed()` says in a message how many suppressed rows `method = "state_rate"` filled in and how many of them had their value set by `cap` and by `floor`, as counts and percentages. No estimate changes (#164).
 * `impute_suppressed()` returns a new column, `cases_uncapped`: for rows filled in by `method = "state_rate"`, the estimate before `cap` and `floor` (state rate times county population), and `NA` otherwise. `cases_uncapped > cap` marks the rows whose value the cap set. `cases` is unchanged (#151).
-* `no_county_cases()` warns once (class `"cdcatlas_state_mostly_unplaced"`) when a state has more than 25% of its cases in no county row after imputation, naming the states and their percentages; this happens when a state's county counts are largely suppressed. The report is unchanged (#164).
+* `no_county_cases()` warns once (class `"cdcatlas_state_unplaced_cases"`) when a state has more than 25% of its cases in no county row after imputation, naming the states and their percentages; this happens when a state's county counts are largely suppressed. The report is unchanged (#164).
 
 # CDCAtlas 0.1.0
 

@@ -1445,7 +1445,7 @@ test_that("one extrapolation warns once about states with many cases in no count
   caught <- catch_warnings(suppressMessages(
     tracts <- extrapolate_from_county(data$county)
   ))
-  expect_equal(caught$classes, "cdcatlas_state_mostly_unplaced")
+  expect_equal(caught$classes, "cdcatlas_state_unplaced_cases")
   expect_snapshot(tracts <- extrapolate_from_county(data$county))
   # Nothing is added to the tracts: they hold the counties' 74 cases.
   expect_equal(sum(tracts$area_cases), 74)
@@ -1470,7 +1470,7 @@ test_that("extrapolation names every state with many cases in no county row (#16
   caught <- catch_warnings(suppressMessages(
     extrapolate_from_county(data$county, to = "block group")
   ))
-  expect_equal(caught$classes, "cdcatlas_state_mostly_unplaced")
+  expect_equal(caught$classes, "cdcatlas_state_unplaced_cases")
   expect_match(caught$messages, "Alaska \\(87%\\) and Rhode Island \\(73%\\)")
   expect_match(caught$messages, "block group estimates")
   expect_no_match(caught$messages, "Alabama")
@@ -1483,7 +1483,7 @@ test_that("no_county = 'spread' still warns, and says the cases are placed by as
   caught <- catch_warnings(suppressMessages(
     tracts <- extrapolate_from_county(data$county, no_county = "spread")
   ))
-  expect_equal(caught$classes, "cdcatlas_state_mostly_unplaced")
+  expect_equal(caught$classes, "cdcatlas_state_unplaced_cases")
   expect_snapshot(
     tracts <- extrapolate_from_county(
       data$county,

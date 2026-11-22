@@ -25,7 +25,7 @@
 #' `no_county_cases()` warns, once per call, when a state has more than 25% of
 #' its cases in no county row: the remainder divided by the state total, with
 #' both added up over the state's strata, separately for each indicator and
-#' year. The warning (class `"cdcatlas_state_mostly_unplaced"`) names the
+#' year. The warning (class `"cdcatlas_state_unplaced_cases"`) names the
 #' states with their percentages, the five largest for each indicator and
 #' year. County counts for such a state, added up or shared across smaller
 #' areas, leave those cases out and are too low by about that share. This
@@ -94,7 +94,7 @@ no_county_cases <- function(x) {
   }
   .inform_ehe_remainder(x)
   report <- .no_county_cases(x, .fetch_state_totals(x))
-  .warn_state_mostly_unplaced(
+  .warn_state_unplaced_cases(
     report,
     c(
       "!" = "Adding up {?this state's/these states'} county counts, or
@@ -231,7 +231,7 @@ no_county_cases <- function(x) {
 # share first. `consequence` and `see` are cli bullets saying what it means
 # for the caller's result and where to look; they can use cli pluralisation,
 # which follows the number of states, but no variables of the caller's.
-.warn_state_mostly_unplaced <- function(report, consequence, see = NULL) {
+.warn_state_unplaced_cases <- function(report, consequence, see = NULL) {
   unplaced <- .unplaced_states(report)
   if (nrow(unplaced) == 0) {
     return(invisible())
@@ -290,6 +290,6 @@ no_county_cases <- function(x) {
              CDCAtlas doesn't check the cause.",
       with_qty(see)
     ),
-    class = "cdcatlas_state_mostly_unplaced"
+    class = "cdcatlas_state_unplaced_cases"
   )
 }
