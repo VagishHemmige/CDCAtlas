@@ -77,10 +77,12 @@ it often does not, in either direction.
 | Cases over, added over the counties that run over | 313 | 5,528 | 2,479 |
 
 So stratified estimates under the default do not add up to the unstratified
-ones. By sex, many more counties fall short than run over. By age, more run
-over than fall short. By race, some do each. A net shortfall nationally does
-not mean every county is underestimated. Every county beyond the 90% or 110%
-line had two or more suppressed strata.
+ones. By sex, 27% of the counties compared fell short by more than 10% and
+4% ran over by more than 10%. By age, 15% fell short by more than 10% and
+31% ran over by more than 10%. By race, 10% and 15%. The table doesn't count
+smaller misses, in either direction. A net shortfall nationally does not mean
+every county is underestimated. Every county beyond the 90% or 110% line had
+two or more suppressed strata.
 
 The comparison uses counties whose unstratified count is published. It
 leaves out counties with a stratum row absent, a stratum with no count (20
@@ -104,8 +106,9 @@ with the default `no_county = "report"`:
 | Remainder, by age | 39,541 | 33,238 | 34,698 |
 | Remainder, by race | 44,429 | 33,659 | 32,382 |
 
-In a few states the remainder was a large share of the state's total in 2022,
-under the same defaults:
+In a few states the remainder, the shortfall of the county rows against the
+published state total, was a large share of that total in 2022, under the
+same defaults:
 
 | 2022 | States and share of the state's total |
 |---|---|
@@ -116,8 +119,10 @@ This is consistent with those states' county counts being largely suppressed.
 The cause has not been verified. The remainder measures how far the county
 rows fall short of the state's published total; it does not say where those
 cases are. County or tract estimates for such a state leave out about the
-share shown: most of the state's cases in Alaska, Rhode Island and Nebraska,
-and smaller shares elsewhere. `no_county_cases()` and
+share shown. Unstratified, that is most of the state's total in Alaska, Rhode
+Island and Nebraska, and smaller shares in Idaho, Vermont and Wyoming. By sex,
+it is most of the state totals by sex in New Hampshire, Maine, Idaho, Alaska
+and Rhode Island. `no_county_cases()` and
 `extrapolate_from_county()` now warn when more than 25% of a state's cases
 are in no county row, and name the states with their shares.
 
