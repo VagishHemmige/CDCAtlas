@@ -1045,6 +1045,18 @@ test_that("count_suppressed_counties() stops when a response is not for the year
   in_2021 <- function(x) transform(x, year = 2021)
   one_row_2021 <- fake$county
   one_row_2021$year[1] <- 2021
+  # One state row has lost its year; the rest are for the year asked for.
+  one_state_year_missing <- fake$state
+  one_state_year_missing$year[1] <- NA
+  # One row of a response by age carries the all-ages label: the response
+  # still looks stratified by age, but that row is a total.
+  one_state_row_total <- fake$state_by_age
+  one_state_row_total$age[1] <- "Ages 13 years and older"
+  one_county_row_total <- fake$county_by_age
+  one_county_row_total$age[1] <- "Ages 13 years and older"
+  # One row of an unstratified response carries an age group.
+  one_county_row_by_age <- fake$county
+  one_county_row_by_age$age[1] <- "13-24"
 
   expect_no_error(count_fake_counties(fake$county, fake$state))
   expect_no_error(
@@ -1060,6 +1072,10 @@ test_that("count_suppressed_counties() stops when a response is not for the year
     count_fake_counties(fake$county_by_age, fake$state, stratify_by = "age")
     count_fake_counties(fake$county, year = c(2021, 2022))
     count_fake_counties(fake$county, stratify_by = "ages")
+    count_fake_counties(fake$county, one_state_year_missing)
+    count_fake_counties(fake$county_by_age, one_state_row_total, 2022, "age")
+    count_fake_counties(one_county_row_total, fake$state_by_age, 2022, "age")
+    count_fake_counties(one_county_row_by_age, fake$state)
   })
 })
 

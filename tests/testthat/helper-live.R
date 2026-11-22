@@ -807,8 +807,11 @@ describe_suppressed_counties <- function(counts, label) {
 }
 
 # Stops unless `county`, and `state` when given, are for `year` only and
-# stratified by `stratify_by` only (NULL: not stratified). Used by
-# count_suppressed_counties(); the message names years and variables only.
+# stratified by `stratify_by` only (NULL: not stratified), checked on every
+# row: each row has a year, and each row's labels are subgroups for
+# `stratify_by` and totals for the other variables. Used by
+# count_suppressed_counties(); the messages give years, variables and numbers
+# of rows only.
 check_counted_request <- function(
   county,
   state,
@@ -828,6 +831,19 @@ check_counted_request <- function(
   }
   for (arg in c("county", if (!is.null(state)) "state")) {
     x <- get(arg)
+    if (anyNA(x$year)) {
+      rlang::abort(
+        paste0(
+          "`",
+          arg,
+          "` has ",
+          sum(is.na(x$year)),
+          " rows with no year, so they can't be matched to the year asked ",
+          "for."
+        ),
+        call = call
+      )
+    }
     years <- sort(unique(as.character(x$year)))
     if (!identical(years, as.character(year))) {
       rlang::abort(
@@ -862,6 +878,38 @@ check_counted_request <- function(
         ),
         call = call
       )
+    }
+    # Row by row, since a response is called stratified when any one row
+    # has a subgroup label: a total row among subgroup rows would match no
+    # stratum and drop out unseen.
+    for (s in names(.atlas_strata_columns)) {
+      labels <- as.character(x[[.atlas_strata_columns[[s]]]])
+      total <- labels %in% .atlas_totals[[s]]
+      odd <- if (identical(s, stratify_by)) total | is.na(labels) else !total
+      if (any(odd)) {
+        rlang::abort(
+          paste0(
+            "`",
+            arg,
+            "` has ",
+            sum(odd),
+            " rows ",
+            if (identical(s, stratify_by)) {
+              paste0("whose ", s, " is a total or missing")
+            } else {
+              paste0("whose ", s, " is not the total")
+            },
+            ", though it is ",
+            if (is.null(stratify_by)) {
+              "not stratified"
+            } else {
+              paste("stratified by", stratify_by)
+            },
+            "."
+          ),
+          call = call
+        )
+      }
     }
   }
   invisible()

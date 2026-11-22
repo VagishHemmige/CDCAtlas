@@ -335,9 +335,11 @@ for (pipeline_run in pipeline_runs) {
 # is absent, not suppressed; counties in only one response are left out;
 # both are counted and reported.
 #
-# Observed on 22 Nov 2026 UTC (live run 45017608026, which counted rows
-# only; the earlier run 44985849638 printed the same counts), HIV diagnoses
-# and HIV prevalence, by sex, age and race:
+# Observed on 22 Nov 2026 UTC (live run 45017608026, whose code reported
+# numbers of counties only: for the sum checks it added a county's published
+# stratum counts and compared the sum directly with the published county
+# total, without computing a difference; the earlier run 44985849638 printed
+# the same counts), HIV diagnoses and HIV prevalence, by sex, age and race:
 # - 2022, 2024 and 2025 (2025: diagnoses only; CDC had not released
 #   prevalence): no county with exactly one suppressed stratum cell.
 # - 2017, the spot-check year: exactly one in 1 county for diagnoses by age,

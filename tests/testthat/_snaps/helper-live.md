@@ -280,4 +280,24 @@
       Error in `count_suppressed_counties()`:
       ! `stratify_by` must be one of "race", "sex", or "age", not "ages".
       i Did you mean "age"?
+    Code
+      count_fake_counties(fake$county, one_state_year_missing)
+    Condition
+      Error in `count_suppressed_counties()`:
+      ! `state` has 1 rows with no year, so they can't be matched to the year asked for.
+    Code
+      count_fake_counties(fake$county_by_age, one_state_row_total, 2022, "age")
+    Condition
+      Error in `count_suppressed_counties()`:
+      ! `state` has 1 rows whose age is a total or missing, though it is stratified by age.
+    Code
+      count_fake_counties(one_county_row_total, fake$state_by_age, 2022, "age")
+    Condition
+      Error in `count_suppressed_counties()`:
+      ! `county` has 1 rows whose age is a total or missing, though it is stratified by age.
+    Code
+      count_fake_counties(one_county_row_by_age, fake$state)
+    Condition
+      Error in `count_suppressed_counties()`:
+      ! `county` must not be stratified, as asked for; it is by age.
 
