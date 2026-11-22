@@ -524,7 +524,7 @@ test_that("by_state adds each state's totals and remainder", {
   local_fake_sources(state = data$state, acs = data$acs)
   suppressMessages({
     imputed <- impute_suppressed(data$county)
-    areas <- extrapolate_from_county(imputed)
+    areas <- without_unplaced_warning(extrapolate_from_county(imputed))
   })
   national <- .pipeline_report(data$county, imputed, areas)
   report <- .pipeline_report(data$county, imputed, areas, by_state = TRUE)
@@ -834,7 +834,9 @@ test_that("the report refuses allocations it can't account for yet", {
   local_fake_sources(state = data$state, acs = data$acs)
   suppressMessages({
     imputed <- impute_suppressed(data$county)
-    spread <- extrapolate_from_county(imputed, no_county = "spread")
+    spread <- without_unplaced_warning(
+      extrapolate_from_county(imputed, no_county = "spread")
+    )
   })
   expect_gt(sum(spread$county_cases_spread), 0)
   expect_snapshot(

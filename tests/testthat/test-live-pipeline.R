@@ -127,9 +127,15 @@ is_known_left_out <- function(left_out, year) {
 # that one 2010 tract is split between two planning regions (#152). Chlamydia
 # by age also warns that suppressed rows couldn't be estimated (unknown age
 # and Connecticut's old counties; the rows themselves are checked above).
+# Every run is national, so it can warn that some states have more than 25%
+# of their cases in no county row (#164): in the first measured run (HIV
+# prevalence 2022, 21 Nov 2026) Alaska, Rhode Island, Nebraska and Idaho did
+# unstratified, and New Hampshire and Maine by sex. The pattern allows that
+# warning in every run; it doesn't require it, and which states it names is
+# not checked here.
 known_warnings <- c(
-  "2017" = "no matching ACS tracts|Planning Region, CT|Valdez-Cordova|Municipio, PR|split between counties",
-  "2022" = "Valdez-Cordova Census Area, AK|no matching ACS tracts|Municipio, PR"
+  "2017" = "no matching ACS tracts|Planning Region, CT|Valdez-Cordova|Municipio, PR|split between counties|cases in no county row",
+  "2022" = "Valdez-Cordova Census Area, AK|no matching ACS tracts|Municipio, PR|cases in no county row"
 )
 known_disease_warnings <- c(
   chlamydia = "suppressed rows? could not be estimated"

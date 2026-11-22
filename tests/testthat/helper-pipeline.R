@@ -316,3 +316,71 @@ state_with_unknown_race <- function() {
   unknown$cases <- 10
   rbind(state, unknown)
 }
+
+# One state whose two counties hold `placed` cases between them in every
+# indicator, year and stratum, with a published state total of `state_cases`
+# in each. Nothing is suppressed, so the remainder with no county is exactly
+# `state_cases - placed`. `...` goes to fake_county_atlas(). Returns the
+# county rows already through impute_suppressed(), the state rows, and
+# matching made-up Census data.
+placed_atlas <- function(
+  placed,
+  state_cases,
+  fips = "01",
+  name = "Alabama",
+  ...
+) {
+  county <- fake_county_atlas(...)
+  county$cases <- placed / 2
+  county$fips <- sub("^01", fips, as.character(county$fips))
+  county$geography <- factor(paste("County", county$fips))
+  county$cases_source <- "published"
+  county$cases_uncapped <- NA_real_
+  state <- fake_state_atlas(...)
+  state$cases <- state_cases
+  state$fips <- fips
+  state$geography <- name
+  acs <- fake_acs()
+  acs$GEOID <- sub("^01", fips, acs$GEOID)
+  list(county = county, state = state, acs = acs)
+}
+
+# Several placed_atlas() states as one data set.
+bind_atlas <- function(...) {
+  states <- list(...)
+  list(
+    county = do.call(rbind, lapply(states, `[[`, "county")),
+    state = do.call(rbind, lapply(states, `[[`, "state")),
+    acs = do.call(rbind, lapply(states, `[[`, "acs"))
+  )
+}
+
+# Runs `expr` without the warning about states with many cases in no county
+# row (#164); every other warning still reaches the test. The made-up states
+# are tiny, so one suppressed or unavailable county, or a remainder of a few
+# hundred cases, puts most of these tests over the 25% share. Tests that are
+# not about that warning use this; the tests of the warning itself don't.
+without_unplaced_warning <- function(expr) {
+  withCallingHandlers(
+    expr,
+    cdcatlas_state_mostly_unplaced = function(w) {
+      invokeRestart("muffleWarning")
+    }
+  )
+}
+
+# The warnings of class `class` that `expr` gives, as conditions. Other
+# warnings are left to reach the test.
+catch_class <- function(expr, class = "cdcatlas_state_mostly_unplaced") {
+  caught <- list()
+  withCallingHandlers(
+    expr,
+    warning = function(w) {
+      if (inherits(w, class)) {
+        caught[[length(caught) + 1]] <<- w
+        invokeRestart("muffleWarning")
+      }
+    }
+  )
+  caught
+}
