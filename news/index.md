@@ -11,10 +11,11 @@
   ([\#152](https://github.com/VagishHemmige/CDCAtlas/issues/152)).
 - [`extrapolate_from_county()`](https://vagishhemmige.github.io/CDCAtlas/reference/extrapolate_from_county.md)
   warns once (class `"cdcatlas_state_unplaced_cases"`) when a state has
-  more than 25% of its cases in no county row, naming the states and
-  their percentages: county and area estimates there are too low by
-  about that share, or with `no_county = "spread"` those cases are
-  placed by assumption. No estimate changes
+  more than 25% of its published state total in no county row of `x`,
+  naming the states and their percentages: county and area estimates
+  there are too low by about that share, or with `no_county = "spread"`
+  any of those cases that reach areas are placed by assumption. No
+  estimate changes
   ([\#164](https://github.com/VagishHemmige/CDCAtlas/issues/164)).
 - [`impute_suppressed()`](https://vagishhemmige.github.io/CDCAtlas/reference/impute_suppressed.md)
   says in a message how many suppressed rows `method = "state_rate"`
@@ -30,9 +31,10 @@
   ([\#151](https://github.com/VagishHemmige/CDCAtlas/issues/151)).
 - [`no_county_cases()`](https://vagishhemmige.github.io/CDCAtlas/reference/no_county_cases.md)
   warns once (class `"cdcatlas_state_unplaced_cases"`) when a state has
-  more than 25% of its cases in no county row after imputation, naming
-  the states and their percentages; this happens when a state’s county
-  counts are largely suppressed. The report is unchanged
+  more than 25% of its published state total in no county row of `x`
+  after imputation, naming the states and their percentages; this
+  happens when a state’s county counts are largely suppressed. The
+  report is unchanged
   ([\#164](https://github.com/VagishHemmige/CDCAtlas/issues/164)).
 
 ## CDCAtlas 0.1.0

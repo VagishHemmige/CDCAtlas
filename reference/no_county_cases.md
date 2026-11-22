@@ -93,25 +93,28 @@ row of a group, its state total is not reported.
 ## States with many cases in no county row
 
 `no_county_cases()` warns, once per call, when a state has more than 25%
-of its cases in no county row: the remainder divided by the state total,
-with both added up over the state's strata, separately for each
-indicator and year. The warning (class
-`"cdcatlas_state_unplaced_cases"`) names the states with their
-percentages, the five largest for each indicator and year. County counts
-for such a state, added up or shared across smaller areas, leave those
-cases out and are too low by about that share. This happens when a
-state's county counts are largely suppressed, or when `x` lacks some of
-the state's counties; the package does not check the cause. Nothing in
-the report changes.
+of its published state total in no county row of `x`: the remainder
+divided by the state total, with both added up over the state's strata
+that are in `x` and have a published state total, separately for each
+indicator and year. The percentage is of the state totals CDC published
+for the strata in `x`. It is not a share of every case in the state when
+`x` lacks a stratum (data filtered to one sex, say) or CDC published no
+total for one. The warning (class `"cdcatlas_state_unplaced_cases"`)
+names the states with their percentages, the five largest for each
+indicator and year. County counts for such a state, added up or shared
+across smaller areas, leave those cases out and are too low by about
+that share for those strata. This happens when a state's county counts
+are largely suppressed, or when `x` lacks some of the state's counties;
+the package does not check the cause. Nothing in the report changes.
 
 A state is assessed only where CDC published its total and `x` has been
 through
 [`impute_suppressed()`](https://vagishhemmige.github.io/CDCAtlas/reference/impute_suppressed.md).
-Strata with no published state total are left out of its share, and so
-are states with no cases. CDC's HIV estimates are not assessed, because
-their county data cover only EHE counties. A stratum where the imputed
-counts exceed the state total offsets one where they fall short. The 25%
-is fixed.
+Strata with no published state total, and strata with no row in `x`, are
+left out of its share, and so are states with no cases. CDC's HIV
+estimates are not assessed, because their county data cover only EHE
+counties. A stratum where the imputed counts exceed the state total
+offsets one where they fall short. The 25% is fixed.
 
 ## See also
 

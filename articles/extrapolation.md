@@ -124,13 +124,15 @@ hiv_tract <- get_atlas(
 #> • HIV prevalence 2022: 20,122
 #> ! 42 state strata with a negative remainder (counted as 0)
 #>   See `attr(x, "no_county_cases")` for each state.
-#> Warning: 7 states have more than 25% of their cases in no county row.
+#> Warning: 7 states have more than 25% of their published state total in no county row of
+#> `x`.
 #> • HIV diagnoses 2022: Vermont (86%), Montana (44%), Alaska (35%), and Wyoming
 #>   (34%)
 #> • HIV prevalence 2022: Alaska (87%), Rhode Island (73%), Nebraska (60%), and
 #>   Idaho (47%)
+#> ℹ Percentages are of the state totals CDC published for the strata in `x`.
 #> ! County and tract estimates for these states leave those cases out, so they
-#>   are too low by about that share overall.
+#>   are too low by about that share for those strata.
 #> ℹ This happens when a state's county counts are largely suppressed, or when `x`
 #>   lacks some of its counties. CDCAtlas doesn't check the cause.
 #> ℹ See `attr(x, "no_county_cases")` for each state.
@@ -328,13 +330,15 @@ hiv_tract_sex <- get_atlas(
 #> • HIV prevalence 2022: 42,234
 #> ! 57 state strata with a negative remainder (counted as 0)
 #>   See `attr(x, "no_county_cases")` for each state.
-#> Warning: 13 states have more than 25% of their cases in no county row.
+#> Warning: 13 states have more than 25% of their published state total in no county row of
+#> `x`.
 #> • HIV diagnoses 2022: Kansas (46%), Vermont (45%), Montana (44%), Wyoming
 #>   (34%), and Alaska (27%)
 #> • HIV prevalence 2022: New Hampshire (94%), Maine (93%), Idaho (81%), Alaska
 #>   (81%), Rhode Island (74%), and 5 more
+#> ℹ Percentages are of the state totals CDC published for the strata in `x`.
 #> ! County and tract estimates for these states leave those cases out, so they
-#>   are too low by about that share overall.
+#>   are too low by about that share for those strata.
 #> ℹ This happens when a state's county counts are largely suppressed, or when `x`
 #>   lacks some of its counties. CDCAtlas doesn't check the cause.
 #> ℹ See `attr(x, "no_county_cases")` for each state.
@@ -433,12 +437,14 @@ hiv_tract_age <- get_atlas(
 #> • HIV prevalence 2022: 35,823
 #> ! 260 state strata with a negative remainder (counted as 0)
 #>   See `attr(x, "no_county_cases")` for each state.
-#> Warning: 12 states have more than 25% of their cases in no county row.
+#> Warning: 12 states have more than 25% of their published state total in no county row of
+#> `x`.
 #> • HIV diagnoses 2022: Vermont (44%), Montana (41%), and Wyoming (31%)
 #> • HIV prevalence 2022: New Hampshire (84%), Maine (81%), Rhode Island (72%),
 #>   Alaska (65%), Idaho (61%), and 5 more
+#> ℹ Percentages are of the state totals CDC published for the strata in `x`.
 #> ! County and tract estimates for these states leave those cases out, so they
-#>   are too low by about that share overall.
+#>   are too low by about that share for those strata.
 #> ℹ This happens when a state's county counts are largely suppressed, or when `x`
 #>   lacks some of its counties. CDCAtlas doesn't check the cause.
 #> ℹ See `attr(x, "no_county_cases")` for each state.
@@ -534,13 +540,15 @@ hiv_tract_race <- get_atlas(
 #> • HIV prevalence 2022: 34,627
 #> ! 212 state strata with a negative remainder (counted as 0)
 #>   See `attr(x, "no_county_cases")` for each state.
-#> Warning: 13 states have more than 25% of their cases in no county row.
+#> Warning: 13 states have more than 25% of their published state total in no county row of
+#> `x`.
 #> • HIV diagnoses 2022: Vermont (44%), Montana (39%), Wyoming (34%), and Puerto
 #>   Rico (26%)
 #> • HIV prevalence 2022: New Hampshire (88%), Maine (87%), Idaho (74%), Rhode
 #>   Island (73%), Alaska (69%), and 5 more
+#> ℹ Percentages are of the state totals CDC published for the strata in `x`.
 #> ! County and tract estimates for these states leave those cases out, so they
-#>   are too low by about that share overall.
+#>   are too low by about that share for those strata.
 #> ℹ This happens when a state's county counts are largely suppressed, or when `x`
 #>   lacks some of its counties. CDCAtlas doesn't check the cause.
 #> ℹ See `attr(x, "no_county_cases")` for each state.

@@ -86,11 +86,12 @@ extrapolate_from_county(
 
   With either choice, a warning (class
   `"cdcatlas_state_unplaced_cases"`) names any state with more than 25%
-  of its cases in no county row; see
+  of its published state total in no county row of `x`; see
   [`no_county_cases()`](https://vagishhemmige.github.io/CDCAtlas/reference/no_county_cases.md).
   With `"report"`, county and area estimates for such a state are too
-  low by about that share. With `"spread"`, those cases are placed by
-  assumption, not by data on where they are.
+  low by about that share, for the strata in `x`. With `"spread"`, any
+  of those cases that reach areas are placed by assumption, not by data
+  on where they are.
 
 - spread_by:
 
