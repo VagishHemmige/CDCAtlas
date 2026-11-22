@@ -70,24 +70,26 @@ it often does not, in either direction.
 
 | 2022 | By sex | By age | By race |
 |---|---|---|---|
-| Counties compared, with a published count above 0 | 2,644 | 2,644 | 2,624 |
+| Counties with a published count above 0 (base for the percentages) | 2,644 | 2,644 | 2,624 |
 | Strata sum to under 90% of the county's count | 717 (27%) | 388 (15%) | 273 (10%) |
 | Strata sum to over 110% of the county's count | 112 (4%) | 815 (31%) | 386 (15%) |
-| Cases short, added over the counties that fall short | 22,763 | 21,241 | 17,590 |
-| Cases over, added over the counties that run over | 313 | 5,528 | 2,479 |
+| Cases short, added over all counties compared, misses of any size | 22,763 | 21,241 | 17,590 |
+| Cases over, added over all counties compared, misses of any size | 313 | 5,528 | 2,479 |
 
 So stratified estimates under the default do not add up to the unstratified
 ones. By sex, 27% of the counties compared fell short by more than 10% and
 4% ran over by more than 10%. By age, 15% fell short by more than 10% and
-31% ran over by more than 10%. By race, 10% and 15%. The table doesn't count
-smaller misses, in either direction. A net shortfall nationally does not mean
-every county is underestimated. Every county beyond the 90% or 110% line had
-two or more suppressed strata.
+31% ran over by more than 10%. By race, 10% and 15%. Only the two percentage
+rows use the 10% line; the case totals below them include misses of every
+size. A net shortfall nationally does not mean every county is
+underestimated. Every county beyond the 90% or 110% line had two or more
+suppressed strata.
 
 The comparison uses counties whose unstratified count is published. It
 leaves out counties with a stratum row absent, a stratum with no count (20
 counties by race), or exactly one suppressed stratum (none in 2022). The two
-percentage rows also leave out the 132 counties whose published count is 0.
+percentage rows also leave out the 132 counties whose published count is 0;
+the case totals include them.
 By race, a county can fall short with no suppressed stratum at all, because
 CDC puts cases of unknown race in no row.
 
