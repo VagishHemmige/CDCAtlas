@@ -88,6 +88,15 @@
 #'   * Otherwise `cases` equals `cases_uncapped`. An estimate exactly equal
 #'     to `cap` or `floor` was not changed by it.
 #'
+#'   With `"state_rate"`, a message says how many suppressed rows were filled
+#'   in and, of those, how many had their value set by the cap
+#'   (`cases_uncapped > cap`) and by the floor (`cases_uncapped < floor`), as
+#'   counts and percentages. Rows that could not be estimated are not counted.
+#'   A limit that can't set anything (`cap = Inf`, `floor = 0`) is not
+#'   mentioned, and there is no message when no row was estimated or with
+#'   `method = "zero"`. A high percentage for the cap means most estimates
+#'   are the cap itself rather than the state rate.
+#'
 #'   `data_status` is unchanged, so suppressed rows can still be identified.
 #'   `cap`, `floor`, `population` and `unestimated` apply only to
 #'   `"state_rate"`. [no_county_cases()] and [extrapolate_from_county()] use
@@ -272,8 +281,45 @@ impute_suppressed <- function(
       "i" = "They are marked {.code cases_source = \"not estimated\"}."
     ))
   }
+  .inform_limits(x$cases_uncapped, cap, floor)
 
   x
+}
+
+# Message saying how many rows "state_rate" filled in and how many of them
+# `cap` and `floor` decided, from the estimates before either was applied
+# (`cases_uncapped`, NA for rows not estimated). An estimate exactly equal to
+# a limit was not changed by it, so it is not counted. A limit that can't
+# decide anything (no cap, or a floor of 0) is not mentioned, and nothing is
+# said when no row was estimated (#164).
+.inform_limits <- function(uncapped, cap, floor) {
+  uncapped <- uncapped[!is.na(uncapped)]
+  n <- length(uncapped)
+  if (n == 0) {
+    return(invisible())
+  }
+  capped <- sum(uncapped > cap)
+  floored <- sum(uncapped < floor)
+  capped_share <- .percent(capped / n)
+  floored_share <- .percent(floored / n)
+  has_cap <- is.finite(cap)
+  has_floor <- floor > 0
+  cap <- format(cap, big.mark = ",", scientific = FALSE)
+  floor <- format(floor, big.mark = ",", scientific = FALSE)
+  cli::cli_inform(c(
+    "i" = "{n} suppressed row{?s} {?was/were} filled in from state rates.",
+    "*" = if (has_cap) {
+      "The cap of {cap} set the value of {capped} row{?s} ({capped_share}):
+       the estimate was higher."
+    },
+    "*" = if (has_floor) {
+      "The floor of {floor} set the value of {floored} row{?s}
+       ({floored_share}): the estimate was lower."
+    },
+    " " = if (has_cap || has_floor) {
+      "{.field cases_uncapped} holds the estimates before the cap and floor."
+    }
+  ))
 }
 
 # Warn when dropping "Data not available" rows removes every row of a state

@@ -45,6 +45,12 @@
 #'     allocated county in that stratum; the message says how many cases
 #'     could not be spread. Not available for CDC's HIV estimates (EHE
 #'     counties only).
+#'
+#'   With either choice, a warning (class `"cdcatlas_state_mostly_unplaced"`)
+#'   names any state with more than 25% of its cases in no county row; see
+#'   [no_county_cases()]. With `"report"`, county and area estimates for such
+#'   a state are too low by about that share. With `"spread"`, those cases
+#'   are placed by assumption, not by data on where they are.
 #' @param spread_by How `no_county = "spread"` shares a state's remainder
 #'   among its counties:
 #'   * `"population"` (default): by each county's ACS population in the
@@ -401,6 +407,7 @@ extrapolate_from_county <- function(
     report,
     not_allocated,
     no_county,
+    spread_by,
     empty_strata,
     to
   )
@@ -1210,6 +1217,7 @@ extrapolate_from_county <- function(
   report,
   not_allocated,
   no_county,
+  spread_by,
   empty_strata,
   to
 ) {
@@ -1238,6 +1246,30 @@ extrapolate_from_county <- function(
     if (length(odd) > 0) rlang::set_names(odd, rep("!", length(odd))),
     " " = "See {.code attr(x, \"no_county_cases\")} for each state."
   ))
+  # Spreading doesn't solve it: the cases reach the areas, but where they are
+  # put is an assumption (#164). `to` and `spread_by` are pasted in here
+  # because the bullets are formatted where neither is defined.
+  consequence <- if (no_county == "report") {
+    paste0(
+      "County and ",
+      to,
+      " estimates for {?this state/these states} leave those cases out, so
+       they are too low by about that share overall."
+    )
+  } else {
+    paste0(
+      "{.code no_county = \"spread\"} shares those cases across {?this
+       state's/each state's} counties by ",
+      spread_by,
+      ". That places them by assumption: the county data don't say where
+       they are."
+    )
+  }
+  .warn_state_mostly_unplaced(
+    report,
+    c("!" = consequence),
+    c("i" = "See {.code attr(x, \"no_county_cases\")} for each state.")
+  )
 
   no_stratum <- not_allocated[
     not_allocated$reason == "no Census population for this stratum",
