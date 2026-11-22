@@ -131,7 +131,11 @@ remainders are not spread, nor are remainders in a state with no
 allocated county in that stratum; the message says how many cases
 could not be spread. Not available for CDC's HIV estimates (EHE
 counties only).</p></li>
-</ul></dd>
+</ul><p>With either choice, a warning (class <code>"cdcatlas_state_unplaced_cases"</code>)
+names any state with more than 25% of its cases in no county row; see
+<code><a href="no_county_cases.html">no_county_cases()</a></code>. With <code>"report"</code>, county and area estimates for such
+a state are too low by about that share. With <code>"spread"</code>, those cases
+are placed by assumption, not by data on where they are.</p></dd>
 
 
 <dt id="arg-spread-by">spread_by<a class="anchor" aria-label="anchor" href="#arg-spread-by"></a></dt>

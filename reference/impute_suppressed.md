@@ -159,6 +159,15 @@ published counts, rows filled in by `"zero"`, and rows marked
 - Otherwise `cases` equals `cases_uncapped`. An estimate exactly equal
   to `cap` or `floor` was not changed by it.
 
+With `"state_rate"`, a message says how many suppressed rows were filled
+in and, of those, how many had their value set by the cap
+(`cases_uncapped > cap`) and by the floor (`cases_uncapped < floor`), as
+counts and percentages. Rows that could not be estimated are not
+counted. A limit that can't set anything (`cap = Inf`, `floor = 0`) is
+not mentioned, and there is no message when no row was estimated or with
+`method = "zero"`. A high percentage for the cap means most estimates
+are the cap itself rather than the state rate.
+
 `data_status` is unchanged, so suppressed rows can still be identified.
 `cap`, `floor`, `population` and `unestimated` apply only to
 `"state_rate"`.

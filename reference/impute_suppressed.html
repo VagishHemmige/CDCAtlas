@@ -191,7 +191,15 @@ published counts, rows filled in by <code>"zero"</code>, and rows marked
 <li><p><code>cases_uncapped &lt; floor</code>: the floor set <code>cases</code>.</p></li>
 <li><p>Otherwise <code>cases</code> equals <code>cases_uncapped</code>. An estimate exactly equal
 to <code>cap</code> or <code>floor</code> was not changed by it.</p></li>
-</ul><p><code>data_status</code> is unchanged, so suppressed rows can still be identified.
+</ul><p>With <code>"state_rate"</code>, a message says how many suppressed rows were filled
+in and, of those, how many had their value set by the cap
+(<code>cases_uncapped &gt; cap</code>) and by the floor (<code>cases_uncapped &lt; floor</code>), as
+counts and percentages. Rows that could not be estimated are not counted.
+A limit that can't set anything (<code>cap = Inf</code>, <code>floor = 0</code>) is not
+mentioned, and there is no message when no row was estimated or with
+<code>method = "zero"</code>. A high percentage for the cap means most estimates
+are the cap itself rather than the state rate.</p>
+<p><code>data_status</code> is unchanged, so suppressed rows can still be identified.
 <code>cap</code>, <code>floor</code>, <code>population</code> and <code>unestimated</code> apply only to
 <code>"state_rate"</code>. <code><a href="no_county_cases.html">no_county_cases()</a></code> and <code><a href="extrapolate_from_county.html">extrapolate_from_county()</a></code> use
 <code>cases</code> and ignore <code>cases_uncapped</code>.</p>

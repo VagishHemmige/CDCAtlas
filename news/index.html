@@ -43,7 +43,13 @@
 <ul><li>
 <code><a href="../reference/extrapolate_from_county.html">extrapolate_from_county()</a></code> warns once (class <code>"cdcatlas_duplicated_geoid"</code>) when an area is split between counties and so has more than one row with the same <code>geoid</code>: with ACS 2010 to 2019, one Connecticut tract and its block groups. Its help and the “Extrapolation to tracts” article show how to sum the rows before joining to boundaries (<a href="https://github.com/VagishHemmige/CDCAtlas/issues/152" class="external-link">#152</a>).</li>
 <li>
+<code><a href="../reference/extrapolate_from_county.html">extrapolate_from_county()</a></code> warns once (class <code>"cdcatlas_state_unplaced_cases"</code>) when a state has more than 25% of its cases in no county row, naming the states and their percentages: county and area estimates there are too low by about that share, or with <code>no_county = "spread"</code> those cases are placed by assumption. No estimate changes (<a href="https://github.com/VagishHemmige/CDCAtlas/issues/164" class="external-link">#164</a>).</li>
+<li>
+<code><a href="../reference/impute_suppressed.html">impute_suppressed()</a></code> says in a message how many suppressed rows <code>method = "state_rate"</code> filled in and how many of them had their value set by <code>cap</code> and by <code>floor</code>, as counts and percentages. No estimate changes (<a href="https://github.com/VagishHemmige/CDCAtlas/issues/164" class="external-link">#164</a>).</li>
+<li>
 <code><a href="../reference/impute_suppressed.html">impute_suppressed()</a></code> returns a new column, <code>cases_uncapped</code>: for rows filled in by <code>method = "state_rate"</code>, the estimate before <code>cap</code> and <code>floor</code> (state rate times county population), and <code>NA</code> otherwise. <code>cases_uncapped &gt; cap</code> marks the rows whose value the cap set. <code>cases</code> is unchanged (<a href="https://github.com/VagishHemmige/CDCAtlas/issues/151" class="external-link">#151</a>).</li>
+<li>
+<code><a href="../reference/no_county_cases.html">no_county_cases()</a></code> warns once (class <code>"cdcatlas_state_unplaced_cases"</code>) when a state has more than 25% of its cases in no county row after imputation, naming the states and their percentages; this happens when a state’s county counts are largely suppressed. The report is unchanged (<a href="https://github.com/VagishHemmige/CDCAtlas/issues/164" class="external-link">#164</a>).</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="cdcatlas-010">CDCAtlas 0.1.0<a class="anchor" aria-label="anchor" href="#cdcatlas-010"></a></h2>

@@ -112,13 +112,28 @@ hiv_tract <- get_atlas(
 #> Warning: 1 suppressed row could not be estimated and is set to `NA`.
 #> ℹ No state rate or no county population for "Valdez-Cordova Census Area, AK".
 #> ℹ They are marked `cases_source = "not estimated"`.
+#> ℹ 1616 suppressed rows were filled in from state rates.
+#> • The cap of 4 set the value of 744 rows (46%): the estimate was higher.
+#>   cases_uncapped holds the estimates before the cap and floor.
 #> Getting data from the 2018-2022 5-year ACS
+#> 
 #> Fetching tract data by state and combining the result.
+#> 
 #> ℹ Cases in state totals with no county are not allocated to tracts:
 #> • HIV diagnoses 2022: 63
 #> • HIV prevalence 2022: 20,122
 #> ! 42 state strata with a negative remainder (counted as 0)
 #>   See `attr(x, "no_county_cases")` for each state.
+#> Warning: 7 states have more than 25% of their cases in no county row.
+#> • HIV diagnoses 2022: Vermont (86%), Montana (44%), Alaska (35%), and Wyoming
+#>   (34%)
+#> • HIV prevalence 2022: Alaska (87%), Rhode Island (73%), Nebraska (60%), and
+#>   Idaho (47%)
+#> ! County and tract estimates for these states leave those cases out, so they
+#>   are too low by about that share overall.
+#> ℹ This happens when a state's county counts are largely suppressed, or when `x`
+#>   lacks some of its counties. CDCAtlas doesn't check the cause.
+#> ℹ See `attr(x, "no_county_cases")` for each state.
 #> ℹ 1 row with no count that `impute_suppressed()` couldn't estimate was left out
 #>   of the tract estimates and counted in the remainder with no county.
 #>   County: "Valdez-Cordova Census Area, AK".
@@ -301,13 +316,28 @@ hiv_tract_sex <- get_atlas(
 #> Warning: 1 suppressed row could not be estimated and is set to `NA`.
 #> ℹ No state rate or no county population for "Valdez-Cordova Census Area, AK".
 #> ℹ They are marked `cases_source = "not estimated"`.
+#> ℹ 6522 suppressed rows were filled in from state rates.
+#> • The cap of 4 set the value of 2762 rows (42%): the estimate was higher.
+#>   cases_uncapped holds the estimates before the cap and floor.
 #> Getting data from the 2018-2022 5-year ACS
+#> 
 #> Fetching tract data by state and combining the result.
+#> 
 #> ℹ Cases in state totals with no county are not allocated to tracts:
 #> • HIV diagnoses 2022: 1,554
 #> • HIV prevalence 2022: 42,234
 #> ! 57 state strata with a negative remainder (counted as 0)
 #>   See `attr(x, "no_county_cases")` for each state.
+#> Warning: 13 states have more than 25% of their cases in no county row.
+#> • HIV diagnoses 2022: Kansas (46%), Vermont (45%), Montana (44%), Wyoming
+#>   (34%), and Alaska (27%)
+#> • HIV prevalence 2022: New Hampshire (94%), Maine (93%), Idaho (81%), Alaska
+#>   (81%), Rhode Island (74%), and 5 more
+#> ! County and tract estimates for these states leave those cases out, so they
+#>   are too low by about that share overall.
+#> ℹ This happens when a state's county counts are largely suppressed, or when `x`
+#>   lacks some of its counties. CDCAtlas doesn't check the cause.
+#> ℹ See `attr(x, "no_county_cases")` for each state.
 #> ℹ 1 row with no count that `impute_suppressed()` couldn't estimate was left out
 #>   of the tract estimates and counted in the remainder with no county.
 #>   County: "Valdez-Cordova Census Area, AK".
@@ -391,13 +421,27 @@ hiv_tract_age <- get_atlas(
 #> Warning: 1 suppressed row could not be estimated and is set to `NA`.
 #> ℹ No state rate or no county population for "Valdez-Cordova Census Area, AK".
 #> ℹ They are marked `cases_source = "not estimated"`.
+#> ℹ 20452 suppressed rows were filled in from state rates.
+#> • The cap of 4 set the value of 5214 rows (25%): the estimate was higher.
+#>   cases_uncapped holds the estimates before the cap and floor.
 #> Getting data from the 2018-2022 5-year ACS
+#> 
 #> Fetching tract data by state and combining the result.
+#> 
 #> ℹ Cases in state totals with no county are not allocated to tracts:
 #> • HIV diagnoses 2022: 347
 #> • HIV prevalence 2022: 35,823
 #> ! 260 state strata with a negative remainder (counted as 0)
 #>   See `attr(x, "no_county_cases")` for each state.
+#> Warning: 12 states have more than 25% of their cases in no county row.
+#> • HIV diagnoses 2022: Vermont (44%), Montana (41%), and Wyoming (31%)
+#> • HIV prevalence 2022: New Hampshire (84%), Maine (81%), Rhode Island (72%),
+#>   Alaska (65%), Idaho (61%), and 5 more
+#> ! County and tract estimates for these states leave those cases out, so they
+#>   are too low by about that share overall.
+#> ℹ This happens when a state's county counts are largely suppressed, or when `x`
+#>   lacks some of its counties. CDCAtlas doesn't check the cause.
+#> ℹ See `attr(x, "no_county_cases")` for each state.
 #> ℹ 1 row with no count that `impute_suppressed()` couldn't estimate was left out
 #>   of the tract estimates and counted in the remainder with no county.
 #>   County: "Valdez-Cordova Census Area, AK".
@@ -478,13 +522,28 @@ hiv_tract_race <- get_atlas(
 #>   Municipio, PR", "Coamo Municipio, PR", "Corozal Municipio, PR", …, "Cabo Rojo
 #>   Municipio, PR", and "Arecibo Municipio, PR".
 #> ℹ They are marked `cases_source = "not estimated"`.
+#> ℹ 28196 suppressed rows were filled in from state rates.
+#> • The cap of 4 set the value of 2339 rows (8%): the estimate was higher.
+#>   cases_uncapped holds the estimates before the cap and floor.
 #> Getting data from the 2018-2022 5-year ACS
+#> 
 #> Fetching tract data by state and combining the result.
+#> 
 #> ℹ Cases in state totals with no county are not allocated to tracts:
 #> • HIV diagnoses 2022: 495
 #> • HIV prevalence 2022: 34,627
 #> ! 212 state strata with a negative remainder (counted as 0)
 #>   See `attr(x, "no_county_cases")` for each state.
+#> Warning: 13 states have more than 25% of their cases in no county row.
+#> • HIV diagnoses 2022: Vermont (44%), Montana (39%), Wyoming (34%), and Puerto
+#>   Rico (26%)
+#> • HIV prevalence 2022: New Hampshire (88%), Maine (87%), Idaho (74%), Rhode
+#>   Island (73%), Alaska (69%), and 5 more
+#> ! County and tract estimates for these states leave those cases out, so they
+#>   are too low by about that share overall.
+#> ℹ This happens when a state's county counts are largely suppressed, or when `x`
+#>   lacks some of its counties. CDCAtlas doesn't check the cause.
+#> ℹ See `attr(x, "no_county_cases")` for each state.
 #> ℹ 314 rows with no count that `impute_suppressed()` couldn't estimate were left
 #>   out of the tract estimates and counted in the remainder with no county.
 #>   Counties: "Valdez-Cordova Census Area, AK", "Aguada Municipio, PR",

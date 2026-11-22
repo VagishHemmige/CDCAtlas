@@ -9,6 +9,18 @@
   help and the “Extrapolation to tracts” article show how to sum the
   rows before joining to boundaries
   ([\#152](https://github.com/VagishHemmige/CDCAtlas/issues/152)).
+- [`extrapolate_from_county()`](https://vagishhemmige.github.io/CDCAtlas/reference/extrapolate_from_county.md)
+  warns once (class `"cdcatlas_state_unplaced_cases"`) when a state has
+  more than 25% of its cases in no county row, naming the states and
+  their percentages: county and area estimates there are too low by
+  about that share, or with `no_county = "spread"` those cases are
+  placed by assumption. No estimate changes
+  ([\#164](https://github.com/VagishHemmige/CDCAtlas/issues/164)).
+- [`impute_suppressed()`](https://vagishhemmige.github.io/CDCAtlas/reference/impute_suppressed.md)
+  says in a message how many suppressed rows `method = "state_rate"`
+  filled in and how many of them had their value set by `cap` and by
+  `floor`, as counts and percentages. No estimate changes
+  ([\#164](https://github.com/VagishHemmige/CDCAtlas/issues/164)).
 - [`impute_suppressed()`](https://vagishhemmige.github.io/CDCAtlas/reference/impute_suppressed.md)
   returns a new column, `cases_uncapped`: for rows filled in by
   `method = "state_rate"`, the estimate before `cap` and `floor` (state
@@ -16,6 +28,12 @@
   `cases_uncapped > cap` marks the rows whose value the cap set. `cases`
   is unchanged
   ([\#151](https://github.com/VagishHemmige/CDCAtlas/issues/151)).
+- [`no_county_cases()`](https://vagishhemmige.github.io/CDCAtlas/reference/no_county_cases.md)
+  warns once (class `"cdcatlas_state_unplaced_cases"`) when a state has
+  more than 25% of its cases in no county row after imputation, naming
+  the states and their percentages; this happens when a state’s county
+  counts are largely suppressed. The report is unchanged
+  ([\#164](https://github.com/VagishHemmige/CDCAtlas/issues/164)).
 
 ## CDCAtlas 0.1.0
 
