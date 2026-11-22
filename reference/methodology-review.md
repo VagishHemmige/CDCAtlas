@@ -18,6 +18,28 @@ questions. Entries describe methods, not CDCAtlas code.
   a state rate applied to the county population and capped at the range, and
   models that treat the value as censored. *Not yet sourced:* methods papers
   that use or compare these for surveillance counts.
+- **Measured: a state rate capped at 4 loses cases once data are
+  stratified.** HIV prevalence, county, ages 13 and older, 2022; each
+  suppressed cell estimated as its state's rate times the county population,
+  capped at 4. From the runs described under "County suppression in HIV
+  prevalence, 2017, 2022 and 2024" in
+  [atlasplus-notes.md](atlasplus-notes.md); no independent check.
+  [observed 2026-11-21 and 2026-11-22]
+
+  | 2022 | Unstratified | By sex | By age | By race |
+  |---|---|---|---|---|
+  | Estimates above 4 before capping | 77% | 71% | 50% | 15% |
+  | Cases removed by the cap | 3,807 | 56,020 | 58,857 | 30,927 |
+  | Counties below 90% of their own count | | 717 | 388 | 273 |
+  | Counties above 110% of their own count | | 112 | 815 | 386 |
+  | Cases short of county counts | | 22,763 | 21,241 | 17,590 |
+  | Cases over county counts | | 313 | 5,528 | 2,479 |
+
+  The last four rows sum each county's stratum values, published and
+  estimated, and compare them with the county's own published unstratified
+  count. The shortfalls imply that suppressed stratum cells in counties with a
+  published count are often larger than 4. By age the estimates run over as
+  well as under.
 
 ## Cases with no county
 
@@ -31,6 +53,25 @@ questions. Entries describe methods, not CDCAtlas code.
 - If the gap is cases with no county, spreading them across a state's counties
   assumes they resemble cases with a county. Which counties and in what proportion (population or cases)
   are assumptions, not documented by CDC. *Not yet sourced.*
+- **Measured: the gap after capped estimates.** State total, minus the sum of
+  published county counts, minus estimates for suppressed counties (state rate
+  times county population, capped at 4), as a signed sum over states. HIV
+  prevalence, ages 13 and older; same runs and caveats as the measured entry
+  under "Small counts and suppression". [observed 2026-11-21]
+
+  | Stratification | 2017 | 2022 | 2024 |
+  |---|---|---|---|
+  | None | 33,025 | 20,028 | 17,530 |
+  | Sex | 51,988 | 41,696 | 40,514 |
+  | Age group | 39,541 | 33,238 | 34,698 |
+  | Race/ethnicity | 44,429 | 33,659 | 32,382 |
+
+  In 2022 the gap was a large share of some states' totals. Unstratified:
+  Alaska 87%, Rhode Island 73%, Nebraska 60%, Idaho 47%, Vermont 19%, Wyoming
+  14%. By sex: New Hampshire 94%, Maine 93%, Idaho 81%, Alaska 81%, Rhode
+  Island 74%. That is consistent with those states' county counts being
+  suppressed wholesale, in which case the gap is mostly cases in suppressed
+  counties, not cases with no county. *Cause not verified.*
 
 ## Geography vintages
 

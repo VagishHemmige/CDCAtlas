@@ -84,3 +84,64 @@ Recorded from live runs on the dates given; not re-run for this file.
   - *What would settle it:* CDC documentation of how cases with an unknown
     county are counted, or a comparison against a CDC source that reports them.
   - Hidden county counts cannot be recovered from the gap.
+
+## County suppression in HIV prevalence, 2017, 2022 and 2024
+
+Figures from GitHub Actions runs 44916253376 (21 November 2026) and
+44974811287 (22 November 2026 UTC) of this repository's measured-effects
+script, read from the run logs. They have had no independent check.
+[observed 2026-11-21 and 2026-11-22, HIV prevalence (people living with
+diagnosed HIV), state and county, ages 13 and older, 2017, 2022 and 2024,
+unstratified and by sex, by age group and by race/ethnicity]
+
+- **Latest year with county rows:** 2025 for HIV diagnoses, 2024 for HIV
+  prevalence. The 2025 county response has diagnoses rows and no prevalence
+  rows.
+- **Suppressed county rows carry no rate and no rate bounds.** Checked in each
+  county response of the live test suite: HIV 2017 and 2022, unstratified and
+  by sex, age and race; chlamydia 2022 by age; HIV 2024 and 2025.
+- **State totals and counties with a count, unstratified.** "Counties
+  without" is every county row without a count, suppressed or "Data not
+  available"; for 2022 see also "County suppression, HIV prevalence 2022" under
+  [Responses](#responses).
+
+  | Year | Sum of state totals | Counties with a published count | Counties without |
+  |---|---|---|---|
+  | 2017 | 1,002,796 | 2,724 | 507 |
+  | 2022 | 1,102,798 | 2,776 | 455 |
+  | 2024 | 1,157,995 | 2,813 | 418 |
+
+  By race, the state rows for 2022 sum to 613 fewer. CDC shows no unknown-race
+  row for HIV ("CDC, AtlasPlus Technical Notes", 1.9, in
+  [web-sources.md](web-sources.md)).
+- **Share of county rows suppressed** rises with stratification and falls
+  slightly over the years:
+
+  | Stratification | 2017 | 2022 | 2024 |
+  |---|---|---|---|
+  | None | 15% | 14% | 13% |
+  | Sex | 44% | 43% | 42% |
+  | Age group | 50% | 49% | 48% |
+  | Race/ethnicity | 60% | 58% | 57% |
+
+- **Suppressed stratum cells within a county whose unstratified count is
+  published.** Counties by the number of their stratum cells that are
+  suppressed:
+
+  | Year | Stratification | None | Exactly one | Two or more |
+  |---|---|---|---|---|
+  | 2017 | Sex | 1,790 | 0 | 934 |
+  | 2017 | Age group | 751 | 0 | 1,973 |
+  | 2017 | Race/ethnicity | 234 | 5 | 2,485 |
+  | 2022 | Sex | 1,826 | 0 | 950 |
+  | 2022 | Age group | 793 | 0 | 1,983 |
+  | 2022 | Race/ethnicity | 244 | 0 | 2,532 |
+  | 2024 | Sex | 1,868 | 0 | 945 |
+  | 2024 | Age group | 806 | 0 | 2,007 |
+  | 2024 | Race/ethnicity | 244 | 0 | 2,569 |
+
+  A county with a published count almost never has exactly one suppressed
+  stratum cell, as complementary suppression intends ("CDC, AtlasPlus
+  Technical Notes", 1.8.4). The five by race in 2017 are not determined by
+  subtraction either, because race rows omit cases of unknown race. Counts
+  only were recorded, not the counties.
