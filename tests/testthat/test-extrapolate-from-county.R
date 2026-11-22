@@ -19,7 +19,11 @@ run_extrapolation <- function(
   if (!"cases_source" %in% names(county)) {
     county <- impute_suppressed(county)
   }
-  suppressMessages(extrapolate_from_county(county, ...))
+  # Not the subject of the tests that use this runner; see
+  # without_unplaced_warning().
+  without_unplaced_warning(
+    suppressMessages(extrapolate_from_county(county, ...))
+  )
 }
 
 # Adding up ---------------------------------------------------------------------
@@ -856,7 +860,9 @@ test_that("rows with no count that weren't suppressed are left out with their ow
   local_fake_sources()
   county <- suppressWarnings(impute_suppressed(county))
 
-  tracts <- suppressMessages(extrapolate_from_county(county))
+  tracts <- without_unplaced_warning(
+    suppressMessages(extrapolate_from_county(county))
+  )
   left_out <- attr(tracts, "not_allocated")
   expect_equal(left_out$county_fips, c("01003", "01003"))
   expect_equal(unique(left_out$reason), "no count, not marked suppressed")
@@ -1416,16 +1422,75 @@ test_that("tracts are the same with or without cases_uncapped, and don't carry i
   # Data imputed by a version without the column.
   older <- county[setdiff(names(county), "cases_uncapped")]
 
-  tracts <- suppressMessages(
+  tracts <- without_unplaced_warning(suppressMessages(
     extrapolate_from_county(county, unestimated = "leave out")
-  )
-  tracts_older <- suppressMessages(
+  ))
+  tracts_older <- without_unplaced_warning(suppressMessages(
     extrapolate_from_county(older, unestimated = "leave out")
-  )
+  ))
   expect_identical(tracts, tracts_older)
   expect_false("cases_uncapped" %in% names(tracts))
   expect_equal(nrow(attr(tracts, "not_allocated")), 1)
   expect_false("cases_uncapped" %in% names(attr(tracts, "not_allocated")))
   # The capped count is the one shared out: 4, not 11.6.
   expect_equal(unique(tracts$county_cases[tracts$county_fips == "01003"]), 4)
+})
+
+# States with many cases in no county row (#164) --------------------------------
+
+test_that("one extrapolation warns once about states with many cases in no county row (#164)", {
+  data <- placed_atlas(74, 100, indicators = "HIV diagnoses")
+  local_fake_sources(state = data$state, acs = data$acs)
+
+  caught <- catch_warnings(suppressMessages(
+    tracts <- extrapolate_from_county(data$county)
+  ))
+  expect_equal(caught$classes, "cdcatlas_state_unplaced_cases")
+  expect_snapshot(tracts <- extrapolate_from_county(data$county))
+  # Nothing is added to the tracts: they hold the counties' 74 cases.
+  expect_equal(sum(tracts$area_cases), 74)
+  expect_equal(attr(tracts, "no_county_cases")$no_county_cases, 26)
+})
+
+test_that("extrapolation at exactly 25% in no county row gives no warning (#164)", {
+  data <- placed_atlas(75, 100, indicators = "HIV diagnoses")
+  local_fake_sources(state = data$state, acs = data$acs)
+
+  expect_no_warning(suppressMessages(extrapolate_from_county(data$county)))
+})
+
+test_that("extrapolation names every state with many cases in no county row (#164)", {
+  data <- bind_atlas(
+    placed_atlas(13, 100, "02", "Alaska", indicators = "HIV diagnoses"),
+    placed_atlas(27, 100, "44", "Rhode Island", indicators = "HIV diagnoses"),
+    placed_atlas(90, 100, "01", "Alabama", indicators = "HIV diagnoses")
+  )
+  local_fake_sources(state = data$state, acs = data$acs)
+
+  caught <- catch_warnings(suppressMessages(
+    extrapolate_from_county(data$county, to = "block group")
+  ))
+  expect_equal(caught$classes, "cdcatlas_state_unplaced_cases")
+  expect_match(caught$messages, "Alaska \\(87%\\) and Rhode Island \\(73%\\)")
+  expect_match(caught$messages, "block group estimates")
+  expect_no_match(caught$messages, "Alabama")
+})
+
+test_that("no_county = 'spread' still warns, and says the cases are placed by assumption (#164)", {
+  data <- placed_atlas(74, 100, indicators = "HIV diagnoses")
+  local_fake_sources(state = data$state, acs = data$acs)
+
+  caught <- catch_warnings(suppressMessages(
+    tracts <- extrapolate_from_county(data$county, no_county = "spread")
+  ))
+  expect_equal(caught$classes, "cdcatlas_state_unplaced_cases")
+  expect_snapshot(
+    tracts <- extrapolate_from_county(
+      data$county,
+      no_county = "spread",
+      spread_by = "cases"
+    )
+  )
+  # Spreading is unchanged: the tracts hold the whole state total.
+  expect_equal(sum(tracts$area_cases), 100)
 })

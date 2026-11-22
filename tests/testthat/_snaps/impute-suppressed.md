@@ -251,3 +251,29 @@
       i No state rate or no county population for "County 01003".
       i They are marked `cases_source = "not estimated"`.
 
+# the message says how many estimates the cap decided (#164)
+
+    Code
+      out <- impute_suppressed(county)
+    Message
+      i 2 suppressed rows were filled in from state rates.
+      * The cap of 4 set the value of 1 row (50%): the estimate was higher.
+        cases_uncapped holds the estimates before the cap and floor.
+
+# the message says how many estimates a raised floor decided (#164)
+
+    Code
+      out <- impute_suppressed(county, floor = 2)
+    Message
+      i 2 suppressed rows were filled in from state rates.
+      * The cap of 4 set the value of 1 row (50%): the estimate was higher.
+      * The floor of 2 set the value of 1 row (50%): the estimate was lower.
+        cases_uncapped holds the estimates before the cap and floor.
+
+# limits that can't decide anything aren't mentioned (#164)
+
+    Code
+      out <- impute_suppressed(county, cap = Inf)
+    Message
+      i 2 suppressed rows were filled in from state rates.
+

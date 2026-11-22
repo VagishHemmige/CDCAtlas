@@ -6,7 +6,7 @@ test_that("the remainder is the state total minus published and imputed counts",
     fake_county_atlas(suppressed = "01003"),
     cap = Inf
   )
-  report <- no_county_cases(county)
+  report <- without_unplaced_warning(no_county_cases(county))
 
   expect_equal(report$state, c("Alabama", "Alabama"))
   expect_equal(report$state_cases, c(32, 232) + 500)
@@ -62,7 +62,9 @@ test_that("a suppressed state total gives NA", {
 test_that("each state's remainder uses its own total", {
   two <- two_state_atlas()
   local_fake_sources(state = two$state)
-  report <- no_county_cases(impute_suppressed(two$county, method = "zero"))
+  report <- without_unplaced_warning(
+    no_county_cases(impute_suppressed(two$county, method = "zero"))
+  )
 
   expect_equal(report$state, rep(c("Alabama", "Alaska"), each = 2))
   expect_equal(report$no_county_cases, c(21, 121, 321, 421))
@@ -104,10 +106,12 @@ test_that("kept 'Data not available' rows count towards the remainder", {
   county$data_status[county$fips == "01003"] <- "Data not available"
   local_fake_sources()
 
-  kept <- no_county_cases(impute_suppressed(county, not_available = "keep"))
-  dropped <- no_county_cases(suppressMessages(
+  kept <- without_unplaced_warning(
+    no_county_cases(impute_suppressed(county, not_available = "keep"))
+  )
+  dropped <- without_unplaced_warning(no_county_cases(suppressMessages(
     impute_suppressed(county, not_available = "drop")
-  ))
+  )))
 
   expect_equal(kept, dropped)
   expect_equal(kept$no_county_cases, c(21, 121))
@@ -152,7 +156,9 @@ test_that("a state whose only rows are unavailable keeps its remainder (#110)", 
   data <- two_states_one_unavailable()
   local_fake_sources(state = data$state)
 
-  report <- no_county_cases(impute_suppressed(data$county))
+  report <- without_unplaced_warning(
+    no_county_cases(impute_suppressed(data$county))
+  )
   alaska <- report[report$state_fips == "02", ]
   expect_equal(alaska$no_county_cases, c(100, 200))
   expect_equal(alaska$published_cases, c(0, 0))
@@ -175,7 +181,180 @@ test_that("the report is the same with or without cases_uncapped (#151)", {
   # Data imputed by a version without the column.
   older <- county[setdiff(names(county), "cases_uncapped")]
 
-  expect_identical(no_county_cases(county), no_county_cases(older))
+  report <- without_unplaced_warning(no_county_cases(county))
+  expect_identical(report, without_unplaced_warning(no_county_cases(older)))
   # The capped counts are the ones counted: 1.6 and 4, not 1.6 and 11.6.
-  expect_equal(no_county_cases(county)$imputed_cases, c(1.6, 4))
+  expect_equal(report$imputed_cases, c(1.6, 4))
+})
+
+# States with many cases in no county row (#164) --------------------------------
+# placed_atlas() gives one state whose counties hold `placed` of `state_cases`
+# cases, so the share with no county is known exactly.
+
+test_that("a state with exactly 25% of its cases in no county row gets no warning (#164)", {
+  data <- placed_atlas(75, 100, indicators = "HIV diagnoses")
+  local_fake_sources(state = data$state)
+
+  expect_no_warning(report <- no_county_cases(data$county))
+  expect_equal(report$no_county_cases / report$state_cases, 0.25)
+})
+
+test_that("a state with more than 25% of its cases in no county row gets a warning (#164)", {
+  data <- placed_atlas(74, 100, indicators = "HIV diagnoses")
+  local_fake_sources(state = data$state)
+
+  expect_warning(
+    report <- no_county_cases(data$county),
+    class = "cdcatlas_state_unplaced_cases"
+  )
+  expect_snapshot(report <- no_county_cases(data$county))
+  # The report itself is what it would be without the warning.
+  expect_equal(report$no_county_cases, 26)
+  expect_equal(report$state_cases, 100)
+})
+
+test_that("several states with many cases in no county row share one warning (#164)", {
+  data <- bind_atlas(
+    placed_atlas(13, 100, "02", "Alaska", indicators = "HIV diagnoses"),
+    placed_atlas(27, 100, "44", "Rhode Island", indicators = "HIV diagnoses"),
+    placed_atlas(90, 100, "01", "Alabama", indicators = "HIV diagnoses")
+  )
+  local_fake_sources(state = data$state)
+
+  caught <- catch_class(report <- no_county_cases(data$county))
+  expect_length(caught, 1)
+  expect_match(conditionMessage(caught[[1]]), "Alaska \\(87%\\)")
+  expect_match(conditionMessage(caught[[1]]), "Rhode Island \\(73%\\)")
+  expect_no_match(conditionMessage(caught[[1]]), "Alabama")
+  expect_snapshot(report <- no_county_cases(data$county))
+})
+
+test_that("only the states with the largest shares are named, then how many more (#164)", {
+  fips <- c("01", "02", "04", "05", "06", "08", "09")
+  names <- lookup[["state"]]$name[match(fips, lookup[["state"]]$fips)]
+  states <- Map(
+    function(fips, name, placed) {
+      placed_atlas(placed, 100, fips, name, indicators = "HIV diagnoses")
+    },
+    fips,
+    names,
+    c(10, 20, 30, 40, 50, 60, 70)
+  )
+  data <- do.call(bind_atlas, unname(states))
+  local_fake_sources(state = data$state)
+
+  expect_snapshot(report <- no_county_cases(data$county))
+})
+
+test_that("a state with no published total, or no cases, is not assessed (#164)", {
+  suppressed <- placed_atlas(10, NA, indicators = "HIV diagnoses")
+  local_fake_sources(state = suppressed$state)
+  expect_no_warning(report <- no_county_cases(suppressed$county))
+  expect_equal(report$no_county_cases, NA_real_)
+
+  none <- placed_atlas(0, 0, indicators = "HIV diagnoses")
+  local_fake_sources(state = none$state)
+  expect_no_warning(report <- no_county_cases(none$county))
+  expect_equal(report$no_county_cases, 0)
+})
+
+test_that("a negative remainder gives no warning (#164)", {
+  data <- placed_atlas(120, 100, indicators = "HIV diagnoses")
+  local_fake_sources(state = data$state)
+
+  expect_no_warning(report <- no_county_cases(data$county))
+  expect_equal(report$no_county_cases, -20)
+})
+
+test_that("a state's strata are assessed together (#164)", {
+  # Female: 90 of 100 cases in no county row. Male: none of 900. Together 90
+  # of 1,000, or 9%: no warning, though one stratum is far above 25%.
+  low <- placed_atlas(0, 0, stratify_by = "sex", indicators = "HIV diagnoses")
+  low$county$cases <- ifelse(low$county$sex == "Male", 450, 5)
+  low$state$cases <- ifelse(low$state$sex == "Male", 900, 100)
+  local_fake_sources(state = low$state)
+  expect_no_warning(report <- no_county_cases(low$county))
+  expect_equal(report$no_county_cases[order(report$sex)], c(90, 0))
+
+  # Female: 90 of 100. Male: 10 of 100. Together 100 of 200, or 50%: one
+  # share for the state, though Male alone is under 25%.
+  high <- low
+  high$county$cases <- ifelse(high$county$sex == "Male", 45, 5)
+  high$state$cases <- 100
+  local_fake_sources(state = high$state)
+  caught <- catch_class(no_county_cases(high$county))
+  expect_length(caught, 1)
+  expect_match(conditionMessage(caught[[1]]), "Alabama \\(50%\\)")
+})
+
+test_that("strata with no published state total are left out of a state's share (#164)", {
+  # Male has no published state total. Female: 40 of 100 in no county row.
+  data <- placed_atlas(
+    60,
+    100,
+    stratify_by = "sex",
+    indicators = "HIV diagnoses"
+  )
+  data$state$cases[data$state$sex == "Male"] <- NA
+  local_fake_sources(state = data$state)
+
+  caught <- catch_class(report <- no_county_cases(data$county))
+  expect_length(caught, 1)
+  expect_match(conditionMessage(caught[[1]]), "Alabama \\(40%\\)")
+  expect_equal(report$no_county_cases[order(report$sex)], c(40, NA))
+})
+
+test_that("each year and indicator is assessed on its own (#164)", {
+  # Diagnoses 2021: 10 of 100 in no county row. Diagnoses 2022: 50 of 100.
+  # Prevalence, both years: 10 of 100. Over everything together 80 of 400,
+  # 20%, is under the threshold; diagnoses 2022 alone is over it.
+  data <- placed_atlas(90, 100, years = 2021:2022)
+  odd <- data$county$indicator == "HIV diagnoses" & data$county$year == 2022
+  data$county$cases[odd] <- 25
+  local_fake_sources(state = data$state)
+
+  caught <- catch_class(report <- no_county_cases(data$county))
+  expect_length(caught, 1)
+  message <- conditionMessage(caught[[1]])
+  expect_match(message, "HIV diagnoses 2022: Alabama \\(50%\\)")
+  expect_no_match(message, "2021")
+  expect_no_match(message, "prevalence")
+  expect_snapshot(report <- no_county_cases(data$county))
+})
+
+test_that("only five indicator and year lines are listed, then how many more (#164)", {
+  data <- placed_atlas(50, 100, years = 2016:2022, indicators = "HIV diagnoses")
+  local_fake_sources(state = data$state)
+
+  caught <- catch_class(report <- no_county_cases(data$county))
+  expect_length(caught, 1)
+  message <- conditionMessage(caught[[1]])
+  expect_match(message, "^1 state has more than 25% of its cases")
+  expect_match(message, "HIV diagnoses 2020: Alabama \\(50%\\)")
+  expect_no_match(message, "HIV diagnoses 2021")
+  expect_match(message, "and 2 more combinations of indicator and year")
+})
+
+test_that("county data that hasn't been imputed gets no warning about unplaced cases (#164)", {
+  # Without imputed counts there is no remainder to assess, only the gap
+  # left by published counts.
+  data <- placed_atlas(10, 100, indicators = "HIV diagnoses")
+  county <- data$county[setdiff(
+    names(data$county),
+    c("cases_source", "cases_uncapped")
+  )]
+  local_fake_sources(state = data$state)
+
+  expect_no_warning(report <- no_county_cases(county))
+  expect_equal(report$unpublished_cases, 90)
+})
+
+test_that("HIV estimates, whose counties are EHE only, are not assessed (#164)", {
+  # Their remainder includes counties CDC doesn't estimate, so a large share
+  # says nothing about suppression; the EHE message covers them.
+  data <- placed_atlas(10, 100, indicators = "Estimated HIV incidence")
+  local_fake_sources(state = data$state)
+
+  expect_no_warning(suppressMessages(report <- no_county_cases(data$county)))
+  expect_equal(report$no_county_cases, 90)
 })

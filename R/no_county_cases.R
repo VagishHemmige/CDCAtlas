@@ -21,6 +21,25 @@
 #' `no_county = "spread"` shares it across the state's counties instead. See
 #' the "About CDC AtlasPlus data" article.
 #'
+#' @section States with many cases in no county row:
+#' `no_county_cases()` warns, once per call, when a state has more than 25% of
+#' its cases in no county row: the remainder divided by the state total, with
+#' both added up over the state's strata, separately for each indicator and
+#' year. The warning (class `"cdcatlas_state_unplaced_cases"`) names the
+#' states with their percentages, the five largest for each indicator and
+#' year. County counts for such a state, added up or shared across smaller
+#' areas, leave those cases out and are too low by about that share. This
+#' happens when a state's county counts are largely suppressed, or when `x`
+#' lacks some of the state's counties; the package does not check the cause.
+#' Nothing in the report changes.
+#'
+#' A state is assessed only where CDC published its total and `x` has been
+#' through [impute_suppressed()]. Strata with no published state total are
+#' left out of its share, and so are states with no cases. CDC's HIV
+#' estimates are not assessed, because their county data cover only EHE
+#' counties. A stratum where the imputed counts exceed the state total
+#' offsets one where they fall short. The 25% is fixed.
+#'
 #' @param x County data from `get_atlas(geography = "county")`, usually after
 #'   [impute_suppressed()].
 #'
@@ -74,7 +93,16 @@ no_county_cases <- function(x) {
     .announce_not_estimated(x, "counted in the remainder with no county")
   }
   .inform_ehe_remainder(x)
-  .no_county_cases(x, .fetch_state_totals(x))
+  report <- .no_county_cases(x, .fetch_state_totals(x))
+  .warn_state_unplaced_cases(
+    report,
+    c(
+      "!" = "Adding up {?this state's/these states'} county counts, or
+             estimating smaller areas from them, leaves those cases out, so
+             the results are too low by about that share."
+    )
+  )
+  report
 }
 
 # The report itself, given the state rows. Separate so extrapolate_from_county()
@@ -144,4 +172,124 @@ no_county_cases <- function(x) {
            couldn't estimate {?was/were} {what_happens}.",
     " " = "{cli::qty(length(counties))}Count{?y/ies}: {.val {counties}}."
   ))
+}
+
+# States with many cases in no county row (#164) --------------------------------
+
+# A state is reported when more than this share of its cases is in no county
+# row after imputation. Decided by the maintainer on 21 Nov 2026 (#164); a
+# fixed value, not an argument.
+.unplaced_share_threshold <- 0.25
+
+# The most states named for one indicator and year, and the most indicator
+# and year lines, before the warning says how many more there are.
+.unplaced_states_listed <- 5
+.unplaced_lines_listed <- 5
+
+# The states, by indicator and year, with more than the threshold share of
+# their cases in no county row: the remainder (state total minus published and
+# imputed county counts) over the state total, both summed over the state's
+# strata.
+# - Only strata with a published state total and a remainder are counted, so
+#   a state with no published total, and county data not yet imputed, are not
+#   assessed.
+# - The remainder is summed with its sign, so a stratum where the imputed
+#   counts overshoot offsets one that falls short.
+# - CDC's HIV estimates are left out: their county data cover only EHE
+#   counties, so a large remainder is expected and has its own message.
+.unplaced_states <- function(report) {
+  assessed <- report[
+    !is.na(report$state_cases) &
+      !is.na(report$no_county_cases) &
+      !report$indicator %in% .ehe_only_indicators(report),
+  ]
+  shares <- assessed |>
+    dplyr::summarize(
+      state = dplyr::first(.data$state),
+      no_county_cases = sum(.data$no_county_cases),
+      state_cases = sum(.data$state_cases),
+      .by = c("state_fips", "indicator", "year")
+    )
+  shares$state <- dplyr::coalesce(shares$state, shares$state_fips)
+  shares <- shares[shares$state_cases > 0, ]
+  shares$share <- shares$no_county_cases / shares$state_cases
+  shares[shares$share > .unplaced_share_threshold, ]
+}
+
+# A whole percentage for a message. A share that is not 0 or 1 is never shown
+# as 0% or 100%.
+.percent <- function(share) {
+  percent <- round(100 * share)
+  dplyr::case_when(
+    percent == 0 & share > 0 ~ "under 1%",
+    percent == 100 & share < 1 ~ "over 99%",
+    .default = paste0(percent, "%")
+  )
+}
+
+# One warning per call naming the states from .unplaced_states(), largest
+# share first. `consequence` and `see` are cli bullets saying what it means
+# for the caller's result and where to look; they can use cli pluralisation,
+# which follows the number of states, but no variables of the caller's.
+.warn_state_unplaced_cases <- function(report, consequence, see = NULL) {
+  unplaced <- .unplaced_states(report)
+  if (nrow(unplaced) == 0) {
+    return(invisible())
+  }
+  unplaced <- unplaced[
+    order(unplaced$indicator, unplaced$year, -unplaced$share),
+  ]
+  groups <- unique(unplaced[c("indicator", "year")])
+  lines <- vapply(
+    seq_len(min(nrow(groups), .unplaced_lines_listed)),
+    function(i) {
+      rows <- unplaced[
+        unplaced$indicator == groups$indicator[i] &
+          unplaced$year == groups$year[i],
+      ]
+      states <- sprintf("%s (%s)", rows$state, .percent(rows$share))
+      more <- length(states) - .unplaced_states_listed
+      if (more > 0) {
+        states <- c(
+          states[seq_len(.unplaced_states_listed)],
+          paste(more, "more")
+        )
+      }
+      paste0(
+        groups$indicator[i],
+        " ",
+        groups$year[i],
+        ": ",
+        cli::ansi_collapse(states)
+      )
+    },
+    character(1)
+  )
+  # State and indicator names are text, not cli markup.
+  lines <- gsub("([{}])", "\\1\\1", lines)
+  more_lines <- nrow(groups) - length(lines)
+  if (more_lines > 0) {
+    lines <- c(
+      lines,
+      "and {more_lines} more combination{?s} of indicator and year"
+    )
+  }
+  n <- dplyr::n_distinct(unplaced$state_fips)
+  threshold <- .percent(.unplaced_share_threshold)
+  with_qty <- function(bullets) {
+    rlang::set_names(paste0("{cli::qty(n)}", bullets), names(bullets))
+  }
+  cli::cli_warn(
+    c(
+      "{n} state{?s} {?has/have} more than {threshold} of
+       {cli::qty(n)}{?its/their} cases in no county row.",
+      rlang::set_names(lines, rep("*", length(lines))),
+      with_qty(consequence),
+      "i" = "This happens when a state's county counts are largely
+             suppressed, or when {.arg x} lacks some of its counties.
+             CDCAtlas doesn't check the cause.",
+      with_qty(see)
+    ),
+    class = "cdcatlas_state_unplaced_cases"
+  )
 }

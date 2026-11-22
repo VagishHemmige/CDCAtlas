@@ -800,3 +800,120 @@ test_that("not_available = 'keep' keeps the rows with no count", {
   expect_equal(unique(out$cases_source[out$fips == "01003"]), "not available")
   expect_equal(out$cases[out$fips == "01003"], c(NA_real_, NA_real_))
 })
+
+# How often the cap and floor decided (#164) -------------------------------------
+
+test_that("the message says how many estimates the cap decided (#164)", {
+  local_fake_sources()
+  county <- fake_county_atlas(suppressed = "01003")
+
+  # Estimates before the cap: 1.6 and 11.6, so the cap of 4 decides one of
+  # the two.
+  expect_snapshot(out <- impute_suppressed(county))
+  expect_equal(out$cases_uncapped[out$fips == "01003"], c(1.6, 11.6))
+})
+
+test_that("an estimate exactly equal to the cap isn't counted as decided by it (#164)", {
+  # Estimates are exactly 4 and 29 (see the cases_uncapped test above).
+  state <- fake_state_atlas()
+  state$population <- 64
+  local_fake_sources(state = state)
+  county <- fake_county_atlas(suppressed = "01003")
+  county$population <- 8
+
+  expect_message(
+    impute_suppressed(county, cap = 4),
+    "cap of 4 set the value of 1 row (50%)",
+    fixed = TRUE
+  )
+  # Both estimates are above a cap of 3.
+  expect_message(
+    impute_suppressed(county, cap = 3),
+    "cap of 3 set the value of 2 rows (100%)",
+    fixed = TRUE
+  )
+})
+
+test_that("the message says how many estimates a raised floor decided (#164)", {
+  local_fake_sources()
+  county <- fake_county_atlas(suppressed = "01003")
+
+  # Estimates 1.6 and 11.6: a floor of 2 decides the first, the cap of 4 the
+  # second.
+  expect_snapshot(out <- impute_suppressed(county, floor = 2))
+})
+
+test_that("an estimate exactly equal to the floor isn't counted as decided by it (#164)", {
+  # Estimates are exactly 4 and 29, as above.
+  state <- fake_state_atlas()
+  state$population <- 64
+  local_fake_sources(state = state)
+  county <- fake_county_atlas(suppressed = "01003")
+  county$population <- 8
+
+  expect_message(
+    impute_suppressed(county, floor = 4, cap = 1e6),
+    "floor of 4 set the value of 0 rows (0%)",
+    fixed = TRUE
+  )
+  expect_message(
+    impute_suppressed(county, floor = 5, cap = 1e6),
+    "floor of 5 set the value of 1 row (50%)",
+    fixed = TRUE
+  )
+  # A large cap is written out in full.
+  expect_message(
+    impute_suppressed(county, floor = 4, cap = 1e6),
+    "cap of 1,000,000 set the value of 0 rows (0%)",
+    fixed = TRUE
+  )
+})
+
+test_that("limits that can't decide anything aren't mentioned (#164)", {
+  local_fake_sources()
+  county <- fake_county_atlas(suppressed = "01003")
+
+  # No cap, and a floor of 0, which no estimate can be below.
+  expect_snapshot(out <- impute_suppressed(county, cap = Inf))
+})
+
+test_that("method = 'zero' and data with nothing suppressed give no message (#164)", {
+  local_fake_sources()
+
+  expect_no_message(
+    impute_suppressed(fake_county_atlas(suppressed = "01003"), method = "zero")
+  )
+  expect_no_message(impute_suppressed(fake_county_atlas()))
+})
+
+test_that("there is no message when no suppressed row could be estimated (#164)", {
+  county <- fake_county_atlas(suppressed = "01003")
+  county$population <- NA
+  local_fake_sources()
+
+  expect_no_message(
+    out <- suppressWarnings(impute_suppressed(county)),
+    class = "rlang_message"
+  )
+  expect_equal(unique(out$cases_source[out$fips == "01003"]), "not estimated")
+})
+
+test_that("the message counts only rows that were estimated (#164)", {
+  # Diagnoses can't be estimated (no state total); prevalence is estimated at
+  # 11.6 and capped. The percentage is of the one estimated row.
+  state <- fake_state_atlas()
+  state$cases[state$indicator == "HIV diagnoses"] <- NA
+  local_fake_sources(state = state)
+  county <- fake_county_atlas(suppressed = "01003")
+
+  expect_message(
+    suppressWarnings(impute_suppressed(county)),
+    "cap of 4 set the value of 1 row (100%)",
+    fixed = TRUE
+  )
+  expect_message(
+    suppressWarnings(impute_suppressed(county)),
+    "1 suppressed row was filled in",
+    fixed = TRUE
+  )
+})

@@ -23,6 +23,13 @@
         See `attr(x, "no_county_cases")` for each state.
     Condition
       Warning:
+      2 states have more than 25% of their cases in no county row.
+      * HIV diagnoses 2022: Alaska (97%) and Alabama (66%)
+      * HIV prevalence 2022: Alaska (79%) and Alabama (52%)
+      ! `no_county = "spread"` shares those cases across each state's counties by population. That places them by assumption: the county data don't say where they are.
+      i This happens when a state's county counts are largely suppressed, or when `x` lacks some of its counties. CDCAtlas doesn't check the cause.
+      i See `attr(x, "no_county_cases")` for each state.
+      Warning:
       4 county rows were not allocated: no matching ACS tracts.
       i Counties: "County 02001" and "County 02003".
       i See `attr(x, "not_allocated")`.
@@ -69,6 +76,14 @@
       * HIV diagnoses 2022: 500
       * HIV prevalence 2022: 500
         See `attr(x, "no_county_cases")` for each state.
+    Condition
+      Warning:
+      1 state has more than 25% of its cases in no county row.
+      * HIV diagnoses 2022: Alabama (94%)
+      * HIV prevalence 2022: Alabama (68%)
+      ! County and tract estimates for this state leave those cases out, so they are too low by about that share overall.
+      i This happens when a state's county counts are largely suppressed, or when `x` lacks some of its counties. CDCAtlas doesn't check the cause.
+      i See `attr(x, "no_county_cases")` for each state.
 
 ---
 
@@ -79,6 +94,14 @@
       * HIV diagnoses 2022: 500
       * HIV prevalence 2022: 500
         See `attr(x, "no_county_cases")` for each state.
+    Condition
+      Warning:
+      1 state has more than 25% of its cases in no county row.
+      * HIV diagnoses 2022: Alabama (94%)
+      * HIV prevalence 2022: Alabama (68%)
+      ! `no_county = "spread"` shares those cases across this state's counties by population. That places them by assumption: the county data don't say where they are.
+      i This happens when a state's county counts are largely suppressed, or when `x` lacks some of its counties. CDCAtlas doesn't check the cause.
+      i See `attr(x, "no_county_cases")` for each state.
 
 # a missing age band leaves its county out, with a warning
 
@@ -238,6 +261,15 @@
       * HIV diagnoses 2022: 21
       * HIV prevalence 2022: 121
         See `attr(x, "no_county_cases")` for each state.
+    Condition
+      Warning:
+      1 state has more than 25% of its cases in no county row.
+      * HIV diagnoses 2022: Alabama (66%)
+      * HIV prevalence 2022: Alabama (52%)
+      ! County and tract estimates for this state leave those cases out, so they are too low by about that share overall.
+      i This happens when a state's county counts are largely suppressed, or when `x` lacks some of its counties. CDCAtlas doesn't check the cause.
+      i See `attr(x, "no_county_cases")` for each state.
+    Message
       i 2 rows with no count that `impute_suppressed()` couldn't estimate were left out of the tract estimates and counted in the remainder with no county.
         County: "County 01003".
 
@@ -324,4 +356,36 @@
     Condition
       Error in `extrapolate_from_county()`:
       ! `unknown_age` must be one of "report" or "redistribute", not "spread".
+
+# one extrapolation warns once about states with many cases in no county row (#164)
+
+    Code
+      tracts <- extrapolate_from_county(data$county)
+    Message
+      i Cases in state totals with no county are not allocated to tracts:
+      * HIV diagnoses 2022: 26
+        See `attr(x, "no_county_cases")` for each state.
+    Condition
+      Warning:
+      1 state has more than 25% of its cases in no county row.
+      * HIV diagnoses 2022: Alabama (26%)
+      ! County and tract estimates for this state leave those cases out, so they are too low by about that share overall.
+      i This happens when a state's county counts are largely suppressed, or when `x` lacks some of its counties. CDCAtlas doesn't check the cause.
+      i See `attr(x, "no_county_cases")` for each state.
+
+# no_county = 'spread' still warns, and says the cases are placed by assumption (#164)
+
+    Code
+      tracts <- extrapolate_from_county(data$county, no_county = "spread", spread_by = "cases")
+    Message
+      i Cases in state totals with no county, to be spread across each state's counties:
+      * HIV diagnoses 2022: 26
+        See `attr(x, "no_county_cases")` for each state.
+    Condition
+      Warning:
+      1 state has more than 25% of its cases in no county row.
+      * HIV diagnoses 2022: Alabama (26%)
+      ! `no_county = "spread"` shares those cases across this state's counties by cases. That places them by assumption: the county data don't say where they are.
+      i This happens when a state's county counts are largely suppressed, or when `x` lacks some of its counties. CDCAtlas doesn't check the cause.
+      i See `attr(x, "no_county_cases")` for each state.
 
