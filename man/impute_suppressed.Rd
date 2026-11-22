@@ -102,6 +102,15 @@ published counts, rows filled in by \code{"zero"}, and rows marked
 to \code{cap} or \code{floor} was not changed by it.
 }
 
+With \code{"state_rate"}, a message says how many suppressed rows were filled
+in and, of those, how many had their value set by the cap
+(\code{cases_uncapped > cap}) and by the floor (\code{cases_uncapped < floor}), as
+counts and percentages. Rows that could not be estimated are not counted.
+A limit that can't set anything (\code{cap = Inf}, \code{floor = 0}) is not
+mentioned, and there is no message when no row was estimated or with
+\code{method = "zero"}. A high percentage for the cap means most estimates
+are the cap itself rather than the state rate.
+
 \code{data_status} is unchanged, so suppressed rows can still be identified.
 \code{cap}, \code{floor}, \code{population} and \code{unestimated} apply only to
 \code{"state_rate"}. \code{\link[=no_county_cases]{no_county_cases()}} and \code{\link[=extrapolate_from_county]{extrapolate_from_county()}} use
