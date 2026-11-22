@@ -456,6 +456,27 @@ test_that("spread cases that reach no area are reported as not spread (#114)", {
   expect_equal(out$area_cases, c(NA_real_, 20))
   expect_message(.announce_spread(out, report, "tract"), "could not be spread")
   expect_snapshot(.announce_spread(out, report, "tract"))
+
+  # The warning about the state's remainder (20 of a state total of 40)
+  # doesn't claim the cases were placed: half of them reached no tract (#164).
+  report$state <- "Alabama"
+  report$state_cases <- 40
+  caught <- catch_class(suppressWarnings(suppressMessages(
+    .announce_extrapolation(
+      out,
+      report,
+      not_allocated = data.frame(reason = character()),
+      no_county = "spread",
+      empty_strata = "none",
+      to = "tract"
+    )
+  )))
+  expect_length(caught, 1)
+  expect_match(
+    conditionMessage(caught[[1]]),
+    "any of those cases that reach areas are placed by assumption",
+    fixed = TRUE
+  )
 })
 
 test_that("age strata use 13+ total population whatever `ages` says", {
@@ -1010,6 +1031,24 @@ test_that("spread_by = 'cases' falls back to population with no county cases", {
 
   expect_equal(tracts$area_cases, by_population$area_cases)
   expect_equal(sum(tracts$area_cases), sum(state$cases))
+
+  # The warning about the state's remainder doesn't say the cases were
+  # shared "by cases", which is not what happened here (#164).
+  caught <- catch_class(suppressMessages(
+    extrapolate_from_county(
+      impute_suppressed(county),
+      no_county = "spread",
+      spread_by = "cases"
+    )
+  ))
+  expect_length(caught, 1)
+  expect_no_match(conditionMessage(caught[[1]]), "by cases")
+  expect_no_match(conditionMessage(caught[[1]]), "by population")
+  expect_match(
+    conditionMessage(caught[[1]]),
+    "any of those cases that reach areas are placed by assumption",
+    fixed = TRUE
+  )
 })
 
 # Unknown race ------------------------------------------------------------------------

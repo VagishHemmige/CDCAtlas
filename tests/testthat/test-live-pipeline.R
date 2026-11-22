@@ -134,8 +134,8 @@ is_known_left_out <- function(left_out, year) {
 # warning in every run; it doesn't require it, and which states it names is
 # not checked here.
 known_warnings <- c(
-  "2017" = "no matching ACS tracts|Planning Region, CT|Valdez-Cordova|Municipio, PR|split between counties|cases in no county row",
-  "2022" = "Valdez-Cordova Census Area, AK|no matching ACS tracts|Municipio, PR|cases in no county row"
+  "2017" = "no matching ACS tracts|Planning Region, CT|Valdez-Cordova|Municipio, PR|split between counties|in no county row of",
+  "2022" = "Valdez-Cordova Census Area, AK|no matching ACS tracts|Municipio, PR|in no county row of"
 )
 known_disease_warnings <- c(
   chlamydia = "suppressed rows? could not be estimated"
@@ -369,6 +369,23 @@ for (strat in list(NULL, "sex", "age", "race")) {
     )
   })
 }
+
+# The check of known warnings above only shows that the warning about states
+# with many cases in no county row is allowed, not that it is given (#164).
+# In the first measured run (HIV prevalence 2022, 21 Nov 2026) Alaska had 87%
+# of its state total in no county row, so the national unstratified 2022 run
+# must give the warning and name Alaska. Uses the run the tests above share:
+# no new request. live_once() keeps each warning's message but not its class,
+# so the warning is found by its text.
+test_that("the 2022 run warns about states with many cases in no county row, naming Alaska (#164)", {
+  warnings <- live_pipeline(2022)$warnings
+  unplaced <- warnings[grepl(
+    "published state total in no county row",
+    warnings
+  )]
+  expect_length(unplaced, 1)
+  expect_match(unplaced, "Alaska \\(", all = FALSE)
+})
 
 test_that("2017 allocates Connecticut's planning regions, Chugach and Copper River (#30)", {
   run <- live_pipeline(2017)

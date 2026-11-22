@@ -300,7 +300,20 @@ test_that("strata with no published state total are left out of a state's share 
 
   caught <- catch_class(report <- no_county_cases(data$county))
   expect_length(caught, 1)
-  expect_match(conditionMessage(caught[[1]]), "Alabama \\(40%\\)")
+  message <- conditionMessage(caught[[1]])
+  expect_match(message, "Alabama \\(40%\\)")
+  # 40% is of the Female total only; the state's share over both sexes is
+  # unknown, so the warning says what the percentage is of.
+  expect_match(
+    message,
+    "1 state has more than 25% of its published state total in no county row of `x`.",
+    fixed = TRUE
+  )
+  expect_match(
+    message,
+    "Percentages are of the state totals CDC published, over the strata that have one.",
+    fixed = TRUE
+  )
   expect_equal(report$no_county_cases[order(report$sex)], c(40, NA))
 })
 
@@ -329,7 +342,10 @@ test_that("only five indicator and year lines are listed, then how many more (#1
   caught <- catch_class(report <- no_county_cases(data$county))
   expect_length(caught, 1)
   message <- conditionMessage(caught[[1]])
-  expect_match(message, "^1 state has more than 25% of its cases")
+  expect_match(
+    message,
+    "^1 state has more than 25% of its published state total"
+  )
   expect_match(message, "HIV diagnoses 2020: Alabama \\(50%\\)")
   expect_no_match(message, "HIV diagnoses 2021")
   expect_match(message, "and 2 more combinations of indicator and year")
