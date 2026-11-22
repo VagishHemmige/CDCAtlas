@@ -99,9 +99,14 @@ are for ages 13 and older. Each entry names its source:
   (22 November 2026 UTC). [observed 2026-11-21 and 2026-11-22, county: HIV
   2017 and 2022, unstratified and by sex, age and race; chlamydia 2022 by age;
   HIV 2024 and 2025; both HIV indicators where returned]
-- *Live test run 44985849638* (22 November 2026 UTC), counts only. [observed
-  2026-11-22, HIV diagnoses and HIV prevalence, county, 2017, 2022, 2024 and
-  2025, unstratified and by sex, age and race]
+- *Live test run 45017608026* (22 November 2026 UTC). The run failed on a
+  different check, about state strata; the county counts below are
+  observations it printed to its log, not assertions that passed. The code
+  that produced them only counts rows; it does no subtraction. An earlier run,
+  44985849638, printed the same counts, but its code also computed
+  differences for each county internally. [observed 2026-11-22, county: HIV
+  diagnoses 2017, 2022, 2024 and 2025; HIV prevalence 2017, 2022 and 2024;
+  unstratified and by sex, age and race]
 
 Entries:
 
@@ -150,7 +155,7 @@ Entries:
   | 2024 | Age group | 806 | 0 | 2,007 |
   | 2024 | Race/ethnicity | 244 | 0 | 2,569 |
 
-  Live test run 44985849638 counted the "exactly one" column again for both
+  Live test run 45017608026 counted the "exactly one" column again for both
   HIV indicators. It was 0 for diagnoses and for prevalence, by sex, age and
   race, in each year returned from 2022 on (diagnoses 2022, 2024 and 2025;
   prevalence 2022 and 2024). In 2017 it was 1 for diagnoses by age, 2 for
@@ -160,13 +165,16 @@ Entries:
   Notes", 1.8.4). Only counts were recorded, not the counties, and whether
   any of the 2017 cells could be recovered was not assessed.
 - **Published strata against the county's unstratified count** (live test run
-  44985849638). Among counties where every stratum cell is published:
+  45017608026; diagnoses 2017, 2022, 2024 and 2025, prevalence 2017, 2022 and
+  2024). Among counties where every stratum cell is published:
   - By sex and by age, the strata sum exactly to the unstratified count, for
-    both indicators in every year.
+    both indicators in each of those years.
   - By race, diagnoses also sum exactly. Prevalence sums to less in 47 of 233
     counties (2017), 51 of 244 (2022) and 54 of 244 (2024), and never to
     more. That is consistent with CDC showing no unknown-race row (Technical
     Notes, 1.9).
 
-  In every county, the published strata alone never exceed the unstratified
-  count.
+  Among counties in both responses with a published unstratified count, no
+  county's published strata alone exceeded that count, in any of the
+  indicator, year and stratification combinations above. Counties without a
+  published unstratified count were not compared.
