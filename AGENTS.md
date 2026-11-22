@@ -112,6 +112,27 @@ Assess its purpose and data flow against the user's permissions before using
 live data. Do not use residuals or auxiliary tables to recover CDC-suppressed
 values; synthetic checks remain available for evaluating method mechanics.
 
+Fitting modeled stratified estimates to public totals is estimation, not
+recovery, because CDC's complementary suppression is designed so that exact
+counts cannot be recovered (maintainer's decision, 21 November 2026;
+[#164](https://github.com/VagishHemmige/CDCAtlas/issues/164)). A residual (a
+published total minus the published cells within it) may constrain modeled
+estimates of two or more suppressed cells: it fixes only their sum, and the
+split comes from a stated model. Label the outputs as modeled, distinct from
+observed values. Still not allowed:
+
+- Deriving the value of a single suppressed cell from a residual: exactly one
+  suppressed cell within a published total, or any case where the public
+  figures determine a cell exactly, such as a zero residual.
+- Publishing per-area residuals, bounds or intervals for individual suppressed
+  cells.
+- Combining further tables to narrow a cell.
+- Using CDC's suppression rule itself to place a complementary cell.
+
+Check the premise with a gated live test that reports counts only (how often a
+published total has exactly one suppressed cell within it), never the areas or
+the implied values.
+
 Use small, obviously synthetic unit fixtures. Inspect startup files, helpers,
 test configuration and package load-time behavior before execution; do not
 load secrets or copy private startup settings. Use isolated temporary/cache
