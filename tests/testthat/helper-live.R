@@ -406,3 +406,22 @@ live_pipeline <- function(
   )
   c(run, list(warnings = cli::ansi_strip(warnings)))
 }
+
+# Whether a warning about states with many cases in no county row (#164)
+# names `state` in its entry for `entry`, such as "HIV prevalence 2022". The
+# warning has one entry per indicator and year, each a line starting with a
+# bullet, so a state named only under another indicator doesn't count. A
+# line that starts with a space continues the entry above it. No percentage
+# is matched.
+unplaced_warning_names <- function(warning, entry, state) {
+  lines <- strsplit(warning, "\n", fixed = TRUE)[[1]]
+  continues <- grepl("^\\s", lines)
+  entries <- vapply(
+    split(lines, cumsum(!continues)),
+    function(x) paste(trimws(x), collapse = " "),
+    character(1)
+  )
+  entries <- sub("^[^[:alnum:]]+", "", entries)
+  this <- entries[startsWith(entries, paste0(entry, ":"))]
+  length(this) == 1 && grepl(paste0(state, " ("), this, fixed = TRUE)
+}

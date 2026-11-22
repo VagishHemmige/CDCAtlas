@@ -311,10 +311,45 @@ test_that("strata with no published state total are left out of a state's share 
   )
   expect_match(
     message,
-    "Percentages are of the state totals CDC published, over the strata that have one.",
+    "Percentages are of the state totals CDC published for the strata in `x`.",
     fixed = TRUE
   )
   expect_equal(report$no_county_cases[order(report$sex)], c(40, NA))
+})
+
+test_that("a state's share uses only the strata in `x` (#164)", {
+  # CDC publishes both totals: Female 100, of which the counties hold 60, and
+  # Male 100, all of it in the counties. Over both strata 40 of 200, or 20%,
+  # is in no county row: no warning.
+  data <- placed_atlas(
+    60,
+    100,
+    stratify_by = "sex",
+    indicators = "HIV diagnoses"
+  )
+  data$county$cases[data$county$sex == "Male"] <- 50
+  local_fake_sources(state = data$state)
+  expect_no_warning(no_county_cases(data$county))
+
+  # With only the Female rows in `x`, the Male total is not in the report, so
+  # the share is 40 of the Female 100. The warning says which totals the
+  # percentage is of, and limits its consequence to those strata.
+  female <- data$county[data$county$sex == "Female", ]
+  caught <- catch_class(report <- no_county_cases(female))
+  expect_equal(report$state_cases, 100)
+  expect_length(caught, 1)
+  message <- conditionMessage(caught[[1]])
+  expect_match(message, "Alabama \\(40%\\)")
+  expect_match(
+    message,
+    "Percentages are of the state totals CDC published for the strata in `x`.",
+    fixed = TRUE
+  )
+  expect_match(
+    message,
+    "too low by about that share for those strata.",
+    fixed = TRUE
+  )
 })
 
 test_that("each year and indicator is assessed on its own (#164)", {

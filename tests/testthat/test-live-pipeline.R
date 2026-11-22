@@ -374,9 +374,12 @@ for (strat in list(NULL, "sex", "age", "race")) {
 # with many cases in no county row is allowed, not that it is given (#164).
 # In the first measured run (HIV prevalence 2022, 21 Nov 2026) Alaska had 87%
 # of its state total in no county row, so the national unstratified 2022 run
-# must give the warning and name Alaska. Uses the run the tests above share:
-# no new request. live_once() keeps each warning's message but not its class,
-# so the warning is found by its text.
+# must give the warning and name Alaska under HIV prevalence 2022. The
+# warning also has an entry for diagnoses, so Alaska is looked for in the
+# prevalence entry only (see unplaced_warning_names()); its percentage is
+# not checked. Uses the run the tests above share: no new request.
+# live_once() keeps each warning's message but not its class, so the warning
+# is found by its text.
 test_that("the 2022 run warns about states with many cases in no county row, naming Alaska (#164)", {
   warnings <- live_pipeline(2022)$warnings
   unplaced <- warnings[grepl(
@@ -384,7 +387,9 @@ test_that("the 2022 run warns about states with many cases in no county row, nam
     warnings
   )]
   expect_length(unplaced, 1)
-  expect_match(unplaced, "Alaska \\(", all = FALSE)
+  expect_true(
+    unplaced_warning_names(unplaced, "HIV prevalence 2022", "Alaska")
+  )
 })
 
 test_that("2017 allocates Connecticut's planning regions, Chugach and Copper River (#30)", {
