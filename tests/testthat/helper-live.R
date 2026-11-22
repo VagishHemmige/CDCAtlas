@@ -980,23 +980,38 @@ expect_no_single_suppressed_county <- function(
       ))
       next
     }
-    if (asserted) {
-      expect(
-        row$one_suppressed == 0,
-        paste0(
-          what,
-          row$one_suppressed,
-          " of ",
-          row$counted,
-          " state strata have exactly one suppressed county row; none ",
-          "expected (none observed unstratified, 2017 to 2025)."
-        )
+    # One expectation per indicator, so expect_success() and
+    # expect_failure() can check it (testthat 3.3 requires exactly one).
+    adds_up <- row$none_suppressed +
+      row$one_suppressed +
+      row$two_or_more_suppressed ==
+      row$counted
+    none_single <- !asserted || row$one_suppressed == 0
+    expect(
+      adds_up && none_single,
+      paste0(
+        what,
+        if (!adds_up) {
+          paste0(
+            "state strata by suppressed county rows add up to ",
+            row$none_suppressed +
+              row$one_suppressed +
+              row$two_or_more_suppressed,
+            ", not ",
+            row$counted,
+            ". "
+          )
+        },
+        if (!none_single) {
+          paste0(
+            row$one_suppressed,
+            " of ",
+            row$counted,
+            " state strata have exactly one suppressed county row; none ",
+            "expected (none observed unstratified, 2017 to 2025)."
+          )
+        }
       )
-    }
-    expect_equal(
-      row$none_suppressed + row$one_suppressed + row$two_or_more_suppressed,
-      row$counted,
-      label = paste0(what, "state strata by suppressed county rows")
     )
   }
   invisible(counts)
