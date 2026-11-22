@@ -654,6 +654,12 @@ describe_suppressed_strata <- function(counts, label) {
 # no state or county named, returned or stored. NO SUBTRACTION, and no counts
 # are added up either: only rows are counted. Makes no request.
 #
+# What was asked for is checked against what came back, as in
+# count_suppressed_strata(): `county`, and `state` when given, must be for
+# `year` only and stratified by `stratify_by` only (NULL: not stratified).
+# Otherwise a response for another year or by another variable could pass
+# for the one asked for. Both stop.
+#
 # A county row is suppressed when it is marked "Data suppressed" with no
 # count. A county belongs to the state its FIPS code starts with.
 # - `state_strata`: the state strata that have county rows.
@@ -665,7 +671,12 @@ describe_suppressed_strata <- function(counts, label) {
 #   `two_or_more_suppressed`: by the number of suppressed county rows.
 #
 # Stops, giving numbers of rows only, if a county or state row is repeated.
-count_suppressed_counties <- function(county, state = NULL) {
+count_suppressed_counties <- function(
+  county,
+  state = NULL,
+  year,
+  stratify_by = NULL
+) {
   keys <- c("indicator", "year", unname(.atlas_strata_columns))
   needed <- c("fips", "data_status", "cases", keys)
   for (arg in c("county", if (!is.null(state)) "state")) {
@@ -717,6 +728,7 @@ count_suppressed_counties <- function(county, state = NULL) {
     state_published <- !is.na(as.numeric(state$cases)) &
       !as.character(state$data_status) %in% "Data suppressed"
   }
+  check_counted_request(county, state, year, stratify_by)
 
   out <- lapply(sort(unique(rows$group)), function(group) {
     rows <- rows[rows$group == group, , drop = FALSE]
@@ -792,6 +804,134 @@ describe_suppressed_counties <- function(counts, label) {
     n("two_or_more_suppressed"),
     "."
   )
+}
+
+# Stops unless `county`, and `state` when given, are for `year` only and
+# stratified by `stratify_by` only (NULL: not stratified). Used by
+# count_suppressed_counties(); the message names years and variables only.
+check_counted_request <- function(
+  county,
+  state,
+  year,
+  stratify_by,
+  call = rlang::caller_env()
+) {
+  if (!is.numeric(year) || length(year) != 1 || is.na(year)) {
+    rlang::abort("`year` must be one year.", call = call)
+  }
+  if (!is.null(stratify_by)) {
+    stratify_by <- rlang::arg_match0(
+      stratify_by,
+      names(.atlas_strata_columns),
+      error_call = call
+    )
+  }
+  for (arg in c("county", if (!is.null(state)) "state")) {
+    x <- get(arg)
+    years <- sort(unique(as.character(x$year)))
+    if (!identical(years, as.character(year))) {
+      rlang::abort(
+        paste0(
+          "`",
+          arg,
+          "` must be for ",
+          year,
+          " only, as asked for; it has ",
+          if (length(years) == 0) "no rows" else toString(years),
+          "."
+        ),
+        call = call
+      )
+    }
+    by <- .atlas_stratify_by(x)
+    asked <- if (is.null(stratify_by)) character() else stratify_by
+    if (!identical(by, asked)) {
+      rlang::abort(
+        paste0(
+          "`",
+          arg,
+          "` must ",
+          if (is.null(stratify_by)) {
+            "not be stratified"
+          } else {
+            paste0("be stratified by ", stratify_by, " only")
+          },
+          ", as asked for; it is ",
+          if (length(by) == 0) "not stratified" else paste("by", toString(by)),
+          "."
+        ),
+        call = call
+      )
+    }
+  }
+  invisible()
+}
+
+# Expects, for each of `indicators` in one year's county response `county`
+# (asked for by `stratify_by`, NULL: not stratified), no state stratum with
+# exactly one suppressed county row, and reports every count. A count only,
+# as in count_suppressed_counties(): no state is named, and no state total has
+# its county counts subtracted. Like count_suppressed_strata(), a monitor of
+# CDC's responses (#164), not a judgment that any row could be worked out.
+#
+# Asserted only where it was observed to hold: unstratified, among state
+# strata whose state total is published, which needs the matching state
+# response `state`. Live run 45017608026 (22 Nov 2026 UTC) found none
+# unstratified, for both HIV indicators in every year counted, 2017 to 2025.
+# Stratified, it found 1 to 12 in every year and stratification counted but
+# one (HIV diagnoses 2025 by sex, 0), so those counts are reported only. Without `state` (2017 and 2022, for which no state response
+# is kept), every state stratum with county rows is counted, including any
+# whose state total CDC did not publish, so the counts are reported only.
+# Either way the counts must cover some state stratum.
+expect_no_single_suppressed_county <- function(
+  county,
+  state,
+  indicators,
+  year,
+  stratify_by = NULL
+) {
+  counts <- count_suppressed_counties(county, state, year, stratify_by)
+  for (line in describe_suppressed_counties(counts, "Suppressed county rows")) {
+    message(line)
+  }
+  label <- paste0(
+    year,
+    ", ",
+    if (is.null(stratify_by)) "unstratified" else paste("by", stratify_by)
+  )
+  asserted <- is.null(stratify_by) && !is.null(state)
+  for (indicator in indicators) {
+    what <- paste0(indicator, " ", label, ": ")
+    row <- counts[counts$indicator == indicator, ]
+    if (nrow(row) != 1 || row$counted == 0) {
+      fail(paste0(
+        what,
+        "no state stratum with county rows",
+        if (!is.null(state)) " and a published state total",
+        ", so nothing was counted."
+      ))
+      next
+    }
+    if (asserted) {
+      expect(
+        row$one_suppressed == 0,
+        paste0(
+          what,
+          row$one_suppressed,
+          " of ",
+          row$counted,
+          " state strata have exactly one suppressed county row; none ",
+          "expected (none observed unstratified, 2017 to 2025)."
+        )
+      )
+    }
+    expect_equal(
+      row$none_suppressed + row$one_suppressed + row$two_or_more_suppressed,
+      row$counted,
+      label = paste0(what, "state strata by suppressed county rows")
+    )
+  }
+  invisible(counts)
 }
 
 # For each of `indicators`, the most recent year with rows for it among

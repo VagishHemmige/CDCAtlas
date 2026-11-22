@@ -898,11 +898,21 @@ fake_state_strata <- function() {
   )
 }
 
+# The fixtures above are for 2022; unstratified unless `stratify_by` is given.
+count_fake_counties <- function(
+  county,
+  state = NULL,
+  year = 2022,
+  stratify_by = NULL
+) {
+  count_suppressed_counties(county, state, year, stratify_by)
+}
+
 test_that("count_suppressed_counties() counts state strata by their suppressed county rows", {
   fake <- fake_state_strata()
 
   expect_equal(
-    count_suppressed_counties(fake$county, fake$state),
+    count_fake_counties(fake$county, fake$state),
     data.frame(
       indicator = c("HIV diagnoses", "HIV prevalence"),
       year = "2022",
@@ -919,7 +929,11 @@ test_that("count_suppressed_counties() counts state strata by their suppressed c
     )
   )
   expect_equal(
-    count_suppressed_counties(fake$county_by_age, fake$state_by_age),
+    count_fake_counties(
+      fake$county_by_age,
+      fake$state_by_age,
+      stratify_by = "age"
+    ),
     data.frame(
       indicator = "HIV prevalence",
       year = "2022",
@@ -940,7 +954,7 @@ test_that("count_suppressed_counties() counts every state stratum when given no 
   fake <- fake_state_strata()
 
   expect_equal(
-    count_suppressed_counties(fake$county),
+    count_fake_counties(fake$county),
     data.frame(
       indicator = c("HIV diagnoses", "HIV prevalence"),
       year = "2022",
@@ -955,7 +969,7 @@ test_that("count_suppressed_counties() counts every state stratum when given no 
       two_or_more_suppressed = c(1L, 1L)
     )
   )
-  by_age <- count_suppressed_counties(fake$county_by_age)
+  by_age <- count_fake_counties(fake$county_by_age, stratify_by = "age")
   expect_equal(by_age$counted, 4)
   expect_equal(by_age$none_suppressed, 1)
   expect_equal(by_age$one_suppressed, 2)
@@ -970,7 +984,7 @@ test_that("count_suppressed_counties() names no state or county, in what it retu
   }
 
   expect_no_message(
-    counts <- count_suppressed_counties(fake$county, fake$state)
+    counts <- count_fake_counties(fake$county, fake$state)
   )
   # Counts only: one row per indicator and year, whole numbers, and no
   # column that could hold a place.
@@ -1002,11 +1016,11 @@ test_that("describe_suppressed_counties() reports every count, one line per indi
 
   expect_snapshot({
     writeLines(describe_suppressed_counties(
-      count_suppressed_counties(fake$county, fake$state),
+      count_fake_counties(fake$county, fake$state),
       "made-up"
     ))
     writeLines(describe_suppressed_counties(
-      count_suppressed_counties(fake$county_by_age),
+      count_fake_counties(fake$county_by_age, stratify_by = "age"),
       "made-up"
     ))
   })
@@ -1016,10 +1030,180 @@ test_that("count_suppressed_counties() stops rather than count a row twice", {
   fake <- fake_state_strata()
 
   expect_snapshot(error = TRUE, {
-    count_suppressed_counties(rbind(fake$county, fake$county[1:2, ]))
-    count_suppressed_counties(fake$county, rbind(fake$state, fake$state[1, ]))
-    count_suppressed_counties(fake$state)
-    count_suppressed_counties(fake$county, fake$county)
-    count_suppressed_counties(fake$county[c("fips", "cases")])
+    count_fake_counties(rbind(fake$county, fake$county[1:2, ]))
+    count_fake_counties(fake$county, rbind(fake$state, fake$state[1, ]))
+    count_fake_counties(fake$state)
+    count_fake_counties(fake$county, fake$county)
+    count_fake_counties(fake$county[c("fips", "cases")])
   })
+})
+
+test_that("count_suppressed_counties() stops when a response is not for the year or stratification asked for", {
+  # A response for another year, or by another variable, must not pass for
+  # the one asked for, even when its counts would meet every expectation.
+  fake <- fake_state_strata()
+  in_2021 <- function(x) transform(x, year = 2021)
+  one_row_2021 <- fake$county
+  one_row_2021$year[1] <- 2021
+
+  expect_no_error(count_fake_counties(fake$county, fake$state))
+  expect_no_error(
+    count_fake_counties(fake$county_by_age, fake$state_by_age, 2022, "age")
+  )
+  expect_snapshot(error = TRUE, {
+    count_fake_counties(in_2021(fake$county), fake$state)
+    count_fake_counties(fake$county, in_2021(fake$state))
+    count_fake_counties(one_row_2021)
+    count_fake_counties(fake$county, year = 2021)
+    count_fake_counties(fake$county_by_age)
+    count_fake_counties(fake$county, stratify_by = "age")
+    count_fake_counties(fake$county_by_age, fake$state, stratify_by = "age")
+    count_fake_counties(fake$county, year = c(2021, 2022))
+    count_fake_counties(fake$county, stratify_by = "ages")
+  })
+})
+
+# The live expectation built on those counts -------------------------------------
+
+test_that("expect_no_single_suppressed_county() fails on one suppressed county row in an unstratified state stratum with a published total", {
+  fake <- fake_state_strata()
+
+  # States 02 and 06: exactly one suppressed county row, state total published.
+  expect_failure(
+    suppressMessages(expect_no_single_suppressed_county(
+      fake$county,
+      fake$state,
+      "HIV prevalence",
+      2022
+    )),
+    "HIV prevalence 2022, unstratified: 2 of 4 state strata have exactly one suppressed county row",
+    fixed = TRUE
+  )
+  # HIV diagnoses has none.
+  expect_success(suppressMessages(expect_no_single_suppressed_county(
+    fake$county,
+    fake$state,
+    "HIV diagnoses",
+    2022
+  )))
+})
+
+test_that("expect_no_single_suppressed_county() leaves out a state stratum whose state total is not published", {
+  # State 05: one county row, suppressed, and the state total suppressed too.
+  # State 08: one suppressed county row and no state row. State 04: none.
+  # Only state 04 is counted, so nothing fails.
+  fake <- fake_state_strata()
+  county <- fake$county[
+    substr(fake$county$fips, 1, 2) %in% c("04", "05", "08"),
+  ]
+
+  expect_success(suppressMessages(expect_no_single_suppressed_county(
+    county,
+    fake$state,
+    "HIV prevalence",
+    2022
+  )))
+  expect_message(
+    expect_no_single_suppressed_county(
+      county,
+      fake$state,
+      "HIV prevalence",
+      2022
+    ),
+    "state total published in 1, not published in 1, no state row for 1",
+    fixed = TRUE
+  )
+})
+
+test_that("expect_no_single_suppressed_county() only reports stratified counts and counts without state totals", {
+  fake <- fake_state_strata()
+
+  # By age: two state strata with exactly one suppressed county row, reported.
+  expect_success(suppressMessages(expect_no_single_suppressed_county(
+    fake$county_by_age,
+    fake$state_by_age,
+    "HIV prevalence",
+    2022,
+    "age"
+  )))
+  expect_message(
+    expect_no_single_suppressed_county(
+      fake$county_by_age,
+      fake$state_by_age,
+      "HIV prevalence",
+      2022,
+      "age"
+    ),
+    "exactly one 2",
+    fixed = TRUE
+  )
+  # No state totals: four, reported.
+  expect_success(suppressMessages(expect_no_single_suppressed_county(
+    fake$county,
+    NULL,
+    "HIV prevalence",
+    2022
+  )))
+  # Prevalence rows only, so the line checked is the only one said.
+  prevalence <- fake$county[fake$county$indicator == "HIV prevalence", ]
+  expect_message(
+    expect_no_single_suppressed_county(
+      prevalence,
+      NULL,
+      "HIV prevalence",
+      2022
+    ),
+    "exactly one 4",
+    fixed = TRUE
+  )
+})
+
+test_that("expect_no_single_suppressed_county() fails when nothing is counted", {
+  fake <- fake_state_strata()
+  # State 05 only: its state total is suppressed, so no state stratum counts.
+  county <- fake$county[fake$county$fips == "05001", ]
+
+  expect_failure(
+    suppressMessages(expect_no_single_suppressed_county(
+      county,
+      fake$state,
+      "HIV prevalence",
+      2022
+    )),
+    "no state stratum with county rows and a published state total",
+    fixed = TRUE
+  )
+  expect_failure(
+    suppressMessages(expect_no_single_suppressed_county(
+      county,
+      fake$state,
+      "HIV diagnoses",
+      2022
+    )),
+    "HIV diagnoses 2022, unstratified: no state stratum",
+    fixed = TRUE
+  )
+})
+
+test_that("expect_no_single_suppressed_county() stops on a response for another year, whatever its counts", {
+  # States 01 and 04 have no state stratum with exactly one suppressed county
+  # row, so only the year can make this fail.
+  fake <- fake_state_strata()
+  county <- fake$county[substr(fake$county$fips, 1, 2) %in% c("01", "04"), ]
+
+  expect_success(suppressMessages(expect_no_single_suppressed_county(
+    county,
+    fake$state,
+    "HIV prevalence",
+    2022
+  )))
+  expect_error(
+    suppressMessages(expect_no_single_suppressed_county(
+      transform(county, year = 2021),
+      transform(fake$state, year = 2021),
+      "HIV prevalence",
+      2022
+    )),
+    "must be for 2022 only"
+  )
 })

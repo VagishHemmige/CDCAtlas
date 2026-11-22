@@ -193,42 +193,91 @@
 # describe_suppressed_counties() reports every count, one line per indicator
 
     Code
-      writeLines(describe_suppressed_counties(count_suppressed_counties(fake$county,
-      fake$state), "made-up"))
+      writeLines(describe_suppressed_counties(count_fake_counties(fake$county, fake$
+        state), "made-up"))
     Output
       made-up, HIV diagnoses 2022, unstratified. State strata with county rows: 2 (state total published in 2, not published in 0, no state row for 0; only the first are counted). Of the 2 counted, suppressed county rows: none 1, exactly one 0, two or more 1.
       made-up, HIV prevalence 2022, unstratified. State strata with county rows: 6 (state total published in 4, not published in 1, no state row for 1; only the first are counted). Of the 4 counted, suppressed county rows: none 1, exactly one 2, two or more 1.
     Code
-      writeLines(describe_suppressed_counties(count_suppressed_counties(fake$
-        county_by_age), "made-up"))
+      writeLines(describe_suppressed_counties(count_fake_counties(fake$county_by_age,
+      stratify_by = "age"), "made-up"))
     Output
       made-up, HIV prevalence 2022 by age. State strata with county rows: 4 (state totals not used: every state stratum is counted). Of the 4 counted, suppressed county rows: none 1, exactly one 2, two or more 1.
 
 # count_suppressed_counties() stops rather than count a row twice
 
     Code
-      count_suppressed_counties(rbind(fake$county, fake$county[1:2, ]))
+      count_fake_counties(rbind(fake$county, fake$county[1:2, ]))
     Condition
       Error in `count_suppressed_counties()`:
       ! `county` has 2 repeated rows (same fips, indicator, year and stratum), so a county would be counted twice.
     Code
-      count_suppressed_counties(fake$county, rbind(fake$state, fake$state[1, ]))
+      count_fake_counties(fake$county, rbind(fake$state, fake$state[1, ]))
     Condition
       Error in `count_suppressed_counties()`:
       ! `state` has 1 repeated rows (same fips, indicator, year and stratum), so a state would be counted twice.
     Code
-      count_suppressed_counties(fake$state)
+      count_fake_counties(fake$state)
     Condition
       Error in `count_suppressed_counties()`:
       ! `county` must be county rows, with 5-digit `fips`.
     Code
-      count_suppressed_counties(fake$county, fake$county)
+      count_fake_counties(fake$county, fake$county)
     Condition
       Error in `count_suppressed_counties()`:
       ! `state` must be state rows, with 2-digit `fips`.
     Code
-      count_suppressed_counties(fake$county[c("fips", "cases")])
+      count_fake_counties(fake$county[c("fips", "cases")])
     Condition
       Error in `count_suppressed_counties()`:
       ! `county` has no column data_status, indicator, year, race_ethnicity, sex, age.
+
+# count_suppressed_counties() stops when a response is not for the year or stratification asked for
+
+    Code
+      count_fake_counties(in_2021(fake$county), fake$state)
+    Condition
+      Error in `count_suppressed_counties()`:
+      ! `county` must be for 2022 only, as asked for; it has 2021.
+    Code
+      count_fake_counties(fake$county, in_2021(fake$state))
+    Condition
+      Error in `count_suppressed_counties()`:
+      ! `state` must be for 2022 only, as asked for; it has 2021.
+    Code
+      count_fake_counties(one_row_2021)
+    Condition
+      Error in `count_suppressed_counties()`:
+      ! `county` must be for 2022 only, as asked for; it has 2021, 2022.
+    Code
+      count_fake_counties(fake$county, year = 2021)
+    Condition
+      Error in `count_suppressed_counties()`:
+      ! `county` must be for 2021 only, as asked for; it has 2022.
+    Code
+      count_fake_counties(fake$county_by_age)
+    Condition
+      Error in `count_suppressed_counties()`:
+      ! `county` must not be stratified, as asked for; it is by age.
+    Code
+      count_fake_counties(fake$county, stratify_by = "age")
+    Condition
+      Error in `count_suppressed_counties()`:
+      ! `county` must be stratified by age only, as asked for; it is not stratified.
+    Code
+      count_fake_counties(fake$county_by_age, fake$state, stratify_by = "age")
+    Condition
+      Error in `count_suppressed_counties()`:
+      ! `state` must be stratified by age only, as asked for; it is not stratified.
+    Code
+      count_fake_counties(fake$county, year = c(2021, 2022))
+    Condition
+      Error in `count_suppressed_counties()`:
+      ! `year` must be one year.
+    Code
+      count_fake_counties(fake$county, stratify_by = "ages")
+    Condition
+      Error in `count_suppressed_counties()`:
+      ! `stratify_by` must be one of "race", "sex", or "age", not "ages".
+      i Did you mean "age"?
 

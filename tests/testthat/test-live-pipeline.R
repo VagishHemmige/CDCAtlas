@@ -335,8 +335,9 @@ for (pipeline_run in pipeline_runs) {
 # is absent, not suppressed; counties in only one response are left out;
 # both are counted and reported.
 #
-# Observed on 22 Nov 2026 UTC (live run 44985849638), HIV diagnoses and HIV
-# prevalence, by sex, age and race:
+# Observed on 22 Nov 2026 UTC (live run 45017608026, which counted rows
+# only; the earlier run 44985849638 printed the same counts), HIV diagnoses
+# and HIV prevalence, by sex, age and race:
 # - 2022, 2024 and 2025 (2025: diagnoses only; CDC had not released
 #   prevalence): no county with exactly one suppressed stratum cell.
 # - 2017, the spot-check year: exactly one in 1 county for diagnoses by age,
@@ -517,58 +518,11 @@ expect_suppressed_strata_as_observed <- function(
   invisible(counts)
 }
 
-# 4. State strata with exactly one suppressed county row. A state stratum is
-# a state, indicator, year and stratum (unstratified: the state as a whole).
-# NOT YET OBSERVED: the maintainer expects none, and that is asserted so the
-# next live run reports it. If it is not none, the claim is corrected to
-# what CDC returns before this is merged. A count only, as above: no state
-# is named, and no state total has its county counts subtracted.
-#
-# `state` is the state response for the same request, used only to leave out
-# state strata whose state total is not published. Only the latest years
-# have it without a new request (their release check makes it). For 2017
-# and 2022 it is NULL, and every state stratum with county rows is counted.
-expect_no_single_suppressed_county <- function(
-  county,
-  state,
-  indicators,
-  label
-) {
-  counts <- count_suppressed_counties(county, state)
-  for (line in describe_suppressed_counties(counts, "Suppressed county rows")) {
-    message(line)
-  }
-  for (indicator in indicators) {
-    what <- paste0(indicator, " ", label, ": ")
-    row <- counts[counts$indicator == indicator, ]
-    if (nrow(row) != 1 || row$counted == 0) {
-      fail(paste0(
-        what,
-        "no state stratum with county rows",
-        if (!is.null(state)) " and a published state total",
-        ", so nothing was counted."
-      ))
-      next
-    }
-    expect_equal(
-      row$none_suppressed + row$one_suppressed + row$two_or_more_suppressed,
-      row$counted,
-      label = paste0(what, "state strata by suppressed county rows")
-    )
-    expect(
-      row$one_suppressed == 0,
-      paste0(
-        what,
-        row$one_suppressed,
-        " of ",
-        row$counted,
-        " state strata have exactly one suppressed county row; none ",
-        "expected (not yet observed)."
-      )
-    )
-  }
-  invisible(counts)
-}
+# 4. State strata with exactly one suppressed county row, a state stratum
+# being a state, indicator, year and stratum (unstratified: the state as a
+# whole). expect_no_single_suppressed_county() (helper-live.R) asserts none
+# only unstratified with published state totals, as observed, and reports
+# the rest; it says why there.
 
 for (year in c(2017, 2022)) {
   for (strat in list(NULL, "sex", "age", "race")) {
@@ -604,16 +558,18 @@ for (year in c(2017, 2022)) {
 
       test_that(
         paste(
-          "no state stratum has exactly one suppressed county row, HIV",
+          "suppressed county rows are counted for every state stratum, HIV",
           label
         ),
         {
-          # No state totals: they would need a new request for this year.
+          # No state totals: they would need a new request for this year, so
+          # every state stratum is counted and the counts are reported only.
           expect_no_single_suppressed_county(
             live_county(year, strat),
             NULL,
             indicators,
-            label
+            year,
+            strat
           )
         }
       )
@@ -754,7 +710,8 @@ for (strat in list(NULL, "sex", "age", "race")) {
             county,
             state,
             released,
-            paste0(year, ", ", label)
+            year,
+            strat
           )
           for (indicator in released) {
             counted[[indicator]] <- max(
