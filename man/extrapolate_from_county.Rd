@@ -58,10 +58,11 @@ counties only).
 }
 
 With either choice, a warning (class \code{"cdcatlas_state_unplaced_cases"})
-names any state with more than 25\% of its cases in no county row; see
-\code{\link[=no_county_cases]{no_county_cases()}}. With \code{"report"}, county and area estimates for such
-a state are too low by about that share. With \code{"spread"}, those cases
-are placed by assumption, not by data on where they are.}
+names any state with more than 25\% of its published state total in no
+county row of \code{x}; see \code{\link[=no_county_cases]{no_county_cases()}}. With \code{"report"}, county and
+area estimates for such a state are too low by about that share. With
+\code{"spread"}, any of those cases that reach areas are placed by
+assumption, not by data on where they are.}
 
 \item{spread_by}{How \code{no_county = "spread"} shares a state's remainder
 among its counties:
