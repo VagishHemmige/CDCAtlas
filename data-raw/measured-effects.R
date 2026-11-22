@@ -15,6 +15,12 @@
 # imputation: extrapolation is not rerun for them, to keep the run time down,
 # so the summary has no tract-level results for the alternatives.
 #
+# Because it runs the unstratified data and each stratification for the same
+# year, it also compares them (measured_effects_consistency(), #164): for
+# counties whose unstratified count CDC published, whether the county's
+# strata, published and imputed, add up to that count. Those rows are
+# national, name no county, and go into both tables with step "consistency".
+#
 # It writes three files to the output folder:
 #
 #   measured-effects.csv         the compact summary: the figures the articles
@@ -222,6 +228,7 @@ measured_effects <- function(options = measured_effects_options()) {
   }
 
   results <- list()
+  imputed <- list()
   runs <- list()
   for (year in years) {
     for (stratification in options$stratifications) {
@@ -248,6 +255,7 @@ measured_effects <- function(options = measured_effects_options()) {
       if (!failed) {
         acs_years <- result$acs_years
         results[[label]] <- result$report
+        imputed[[label]] <- result$imputed
       }
       runs[[label]] <- tibble::tibble(
         year = year,
@@ -267,6 +275,24 @@ measured_effects <- function(options = measured_effects_options()) {
 
   detail <- dplyr::bind_rows(results)
   compact <- if (nrow(detail) > 0) pkg$.pipeline_summary(detail)
+  # Each stratified run against the unstratified run of its year. The rows go
+  # at the end of both tables; .pipeline_summary() does not read them.
+  consistency <- dplyr::bind_rows(lapply(years, function(year) {
+    unstratified <- imputed[[paste(year, "none")]]
+    if (is.null(unstratified)) {
+      return(NULL)
+    }
+    stratified <- setdiff(options$stratifications, "none")
+    dplyr::bind_rows(lapply(stratified, function(stratification) {
+      other <- imputed[[paste(year, stratification)]]
+      if (!is.null(other)) measured_effects_consistency(unstratified, other)
+    }))
+  }))
+  if (nrow(consistency) > 0) {
+    compact <- dplyr::bind_rows(compact, consistency)
+    detail <- dplyr::bind_rows(detail, consistency[names(detail)])
+  }
+  rm(imputed)
   runs <- dplyr::bind_rows(runs)
   complete <- all(is.na(runs$error))
   finished <- Sys.time()
@@ -298,6 +324,14 @@ measured_effects <- function(options = measured_effects_options()) {
     ),
     rows = list(compact = NROW(compact), detail = nrow(detail)),
     quantile_type = pkg$.summary_quantile_type,
+    consistency = paste(
+      "Rows with step 'consistency' compare each stratified run with the",
+      "unstratified run of the same year: for counties whose unstratified",
+      "count CDC published, the sum of the county's strata (published and",
+      "imputed) against that count. They are national, name no county, and",
+      "are in both files. A county with exactly one suppressed stratum cell",
+      "is counted and otherwise left out."
+    ),
     complete = complete,
     run = list(started_utc = utc(started), finished_utc = utc(finished)),
     synthetic = synthetic,
@@ -607,6 +641,19 @@ measured_effects_run <- function(options, year, stratify_by) {
   default$scenario <- rep("default", nrow(default))
   acs_years <- sort(unique(areas$acs_year))
   rm(areas)
+  # What the consistency check reads, kept until every run of the year is in.
+  kept <- c(
+    "indicator",
+    "year",
+    "fips",
+    "race_ethnicity",
+    "sex",
+    "age",
+    "data_status",
+    "cases",
+    "cases_source"
+  )
+  slim <- as.data.frame(imputed)[kept]
 
   others <- lapply(options$alternatives, function(name) {
     alternative <- measured_effects_alternatives[[name]]
@@ -632,8 +679,309 @@ measured_effects_run <- function(options, year, stratify_by) {
   columns <- c("year", "indicator", "stratify_by", "scenario")
   list(
     report = report[c(columns, setdiff(names(report), columns))],
-    acs_years = acs_years
+    acs_years = acs_years,
+    imputed = slim
   )
+}
+
+# Do stratified counts add up to what each county publishes in total (#164)?
+#
+# `unstratified` and `stratified` are county data for the same indicator and
+# year after the default impute_suppressed(): one row per county, and one row
+# per county and stratum. For each county whose unstratified count CDC
+# published, T is that count and S the sum of its strata, published and
+# imputed together. Returns national rows only, in the shape of the compact
+# summary, with step "consistency". Nothing is reported for a single county
+# and no county is named.
+#
+# Counties are matched by `fips`, each at most once in `unstratified` and once
+# per stratum in `stratified`; counties in only one of the two are counted
+# and left out.
+#
+# A county is compared only when every one of its strata has a count. It is
+# left out, and counted, when a stratum has no count (not estimated, or no CDC
+# data), when it lacks a stratum row other counties have, or when exactly one
+# of its strata is a suppressed cell. That last case is only ever counted:
+# with one suppressed cell, the county's total minus its published strata
+# would be that cell, so no sum, ratio or share here includes such a county.
+#
+# Ratios S / T are over compared counties with T above 0. Thresholds are
+# strict. Quantiles are stats::quantile(type = 7).
+measured_effects_consistency <- function(unstratified, stratified) {
+  step <- "consistency"
+  stratum_columns <- c("race_ethnicity", "sex", "age")
+  by <- c(race_ethnicity = "race", sex = "sex", age = "age")[
+    stratum_columns[vapply(
+      stratum_columns,
+      \(column) length(unique(as.character(stratified[[column]]))) > 1,
+      logical(1)
+    )]
+  ]
+  if (length(by) != 1) {
+    cli::cli_abort(
+      "{.arg stratified} must be stratified by one of race, sex and age."
+    )
+  }
+  total <- data.frame(
+    fips = as.character(unstratified$fips),
+    cases = unstratified$cases,
+    published = unstratified$cases_source %in%
+      "published" &
+      !is.na(unstratified$cases)
+  )
+  strata <- data.frame(
+    fips = as.character(stratified$fips),
+    stratum = do.call(
+      paste,
+      c(lapply(stratified[stratum_columns], as.character), sep = "|")
+    ),
+    cases = stratified$cases,
+    suppressed = as.character(stratified$data_status) %in%
+      "Data suppressed" &
+      !stratified$cases_source %in% "published"
+  )
+  if (anyDuplicated(total$fips) > 0) {
+    cli::cli_abort(
+      "A county is in {.arg unstratified} more than once, so the comparison
+       would count it twice."
+    )
+  }
+  if (anyDuplicated(strata[c("fips", "stratum")]) > 0) {
+    cli::cli_abort(
+      "A county stratum is in {.arg stratified} more than once, so the
+       comparison would count it twice."
+    )
+  }
+
+  n_strata <- length(unique(strata$stratum))
+  county <- strata |>
+    dplyr::summarize(
+      rows = dplyr::n(),
+      no_count = sum(is.na(.data$cases)),
+      suppressed = sum(.data$suppressed),
+      stratified = sum(.data$cases),
+      .by = "fips"
+    )
+  in_both <- dplyr::inner_join(
+    total,
+    county,
+    by = "fips",
+    relationship = "one-to-one"
+  )
+  with_total <- in_both[in_both$published, , drop = FALSE]
+  why_not <- dplyr::case_when(
+    with_total$suppressed == 1 ~ "exactly one suppressed stratum",
+    with_total$no_count > 0 ~ "a stratum has no count",
+    with_total$rows < n_strata ~ "a stratum row is absent",
+    .default = NA_character_
+  )
+  compared <- with_total[is.na(why_not), , drop = FALSE]
+  shortfall <- compared$cases - compared$stratified
+  some_suppressed <- compared$suppressed > 0
+  has_ratio <- compared$cases > 0
+  ratio <- (compared$stratified / compared$cases)[has_ratio]
+  ratio_suppressed <- some_suppressed[has_ratio]
+
+  rows <- function(
+    measure,
+    value,
+    unit,
+    basis,
+    category = NA_character_,
+    numerator = NA_character_,
+    denominator = NA_character_,
+    note = NA_character_
+  ) {
+    n <- length(value)
+    each <- function(x) rep_len(as.character(x), n)
+    data.frame(
+      state_fips = each("all"),
+      state = each(NA),
+      step = each(step),
+      measure = each(measure),
+      category = each(category),
+      unit = each(unit),
+      basis = each(basis),
+      value = as.numeric(value),
+      numerator = each(numerator),
+      denominator = each(denominator),
+      extreme_state = each(NA),
+      note = each(note)
+    )
+  }
+  count <- function(measure, value, note = NA_character_, ...) {
+    rows(measure, value, "counties", "count", note = note, ...)
+  }
+  share <- function(measure, numerator, denominator, texts, ...) {
+    ok <- !is.na(denominator) & denominator != 0
+    rows(
+      measure,
+      ifelse(ok, numerator / ifelse(ok, denominator, 1), NA),
+      "proportion",
+      "derived",
+      numerator = texts[[1]],
+      denominator = texts[[2]],
+      note = ifelse(ok, NA_character_, "Denominator is 0."),
+      ...
+    )
+  }
+  cells <- c("none", "exactly one", "two or more")
+  cell_group <- cells[pmin(with_total$suppressed, 2) + 1]
+  thresholds <- c("below 0.9", "below 0.75", "below 0.5", "above 1.1")
+  beyond <- function(values) {
+    c(
+      sum(values < 0.9),
+      sum(values < 0.75),
+      sum(values < 0.5),
+      sum(values > 1.1)
+    )
+  }
+  strict <- "Strict: a ratio exactly at the threshold is not counted."
+  reasons <- sort(unique(why_not[!is.na(why_not)]))
+  quantiles <- c("min", "p05", "p25", "median", "p75", "p95", "max")
+
+  out <- dplyr::bind_rows(
+    count(
+      "counties_only_in_unstratified",
+      sum(!total$fips %in% county$fips),
+      "Counties with no row in the stratified data; left out."
+    ),
+    count(
+      "counties_only_in_stratified",
+      sum(!county$fips %in% total$fips),
+      "Counties with no row in the unstratified data; left out."
+    ),
+    count(
+      "counties_unstratified_not_published",
+      sum(!in_both$published),
+      "Counties in both whose unstratified count CDC did not publish (suppressed or no data); left out."
+    ),
+    count("counties_unstratified_published", nrow(with_total)),
+    count(
+      "counties_by_suppressed_strata",
+      vapply(cells, \(cell) sum(cell_group == cell), numeric(1)),
+      category = cells,
+      note = "Count only. Among counties with a published unstratified count: how many of the county's stratum cells CDC suppressed. Nothing else is computed or kept for a county with exactly one."
+    ),
+    count("counties_compared", nrow(compared)),
+    count(
+      "counties_not_comparable",
+      vapply(reasons, \(reason) sum(why_not %in% reason), numeric(1)),
+      category = reasons,
+      note = "Counties with a published unstratified count that are left out of every sum, ratio and share here."
+    ),
+    rows(
+      "published_unstratified_cases",
+      sum(compared$cases),
+      "cases",
+      "published",
+      note = "T: the published unstratified counts of the compared counties, summed."
+    ),
+    rows(
+      "stratified_cases",
+      sum(compared$stratified),
+      "cases",
+      "modelled",
+      note = "S: the strata of the compared counties, published and imputed together, summed."
+    ),
+    rows(
+      "shortfall_signed",
+      sum(shortfall),
+      "cases",
+      "derived",
+      note = "T - S."
+    ),
+    rows(
+      "shortfall_positive",
+      sum(pmax(shortfall, 0)),
+      "cases",
+      "derived",
+      note = "T - S, summed over counties where the strata fall short."
+    ),
+    rows(
+      "shortfall_negative",
+      sum(pmin(shortfall, 0)),
+      "cases",
+      "derived",
+      note = "T - S, summed over counties where the strata exceed the total."
+    ),
+    count("counties_with_ratio", sum(has_ratio)),
+    count(
+      "counties_published_zero",
+      sum(!has_ratio),
+      "Compared counties whose published unstratified count is 0; they have no ratio."
+    ),
+    if (length(ratio) > 0) {
+      rows(
+        "ratio_stratified_to_published",
+        stats::quantile(
+          ratio,
+          c(0, 0.05, 0.25, 0.5, 0.75, 0.95, 1),
+          names = FALSE,
+          type = 7
+        ),
+        "proportion",
+        "derived",
+        category = quantiles,
+        numerator = "S: a county's strata, published and imputed",
+        denominator = "T: the county's published unstratified count, above 0",
+        note = paste0("Quantile type 7, over ", length(ratio), " counties.")
+      )
+    },
+    count(
+      "counties_ratio_beyond",
+      beyond(ratio),
+      category = thresholds,
+      note = strict
+    ),
+    share(
+      "share_of_counties_ratio_beyond",
+      beyond(ratio),
+      rep(length(ratio), 4),
+      c("counties_ratio_beyond", "counties_with_ratio"),
+      category = thresholds
+    ),
+    count(
+      "counties_compared_with_suppressed_stratum",
+      sum(some_suppressed),
+      "Compared counties with two or more suppressed stratum cells (those with exactly one are not compared)."
+    ),
+    count(
+      "counties_ratio_beyond_with_suppressed_stratum",
+      beyond(ratio[ratio_suppressed]),
+      category = thresholds,
+      note = strict
+    ),
+    share(
+      "shortfall_share_in_counties_with_suppressed_stratum",
+      sum(shortfall[some_suppressed]),
+      sum(shortfall),
+      c(
+        "T - S, in compared counties with a suppressed stratum cell",
+        "shortfall_signed"
+      )
+    )
+  )
+  out$year <- rep(
+    unique(as.numeric(as.character(stratified$year)))[1],
+    nrow(out)
+  )
+  out$indicator <- rep(as.character(stratified$indicator)[1], nrow(out))
+  if (by == "race") {
+    # CDC's HIV race rows have no "Unknown", so a county's race strata can
+    # fall short of its total with nothing suppressed.
+    unknown_race <- out$measure ==
+      "shortfall_share_in_counties_with_suppressed_stratum" &
+      is.na(out$note)
+    out$note[
+      unknown_race
+    ] <- "CDC has no unknown-race row for HIV, so some shortfall can sit in counties with no suppressed stratum."
+  }
+  out$stratify_by <- rep(unname(by), nrow(out))
+  out$scenario <- rep("default", nrow(out))
+  out$group <- rep("sum of groups", nrow(out))
+  first <- c("year", "indicator", "stratify_by", "scenario", "group")
+  out[c(first, setdiff(names(out), first))]
 }
 
 # The newest year CDC has released for the indicator: from the latest year in
