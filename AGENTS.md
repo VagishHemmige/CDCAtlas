@@ -129,6 +129,9 @@ observed values. Still not allowed:
 - Combining further tables to narrow a cell.
 - Using CDC's suppression rule itself to place a complementary cell.
 
+A state total minus its published county counts spans many suppressed
+counties, so it is not a per-cell residual; reporting it by state is allowed.
+
 Check the premise with a gated live test that reports counts only (how often a
 published total has exactly one suppressed cell within it), never the areas or
 the implied values.
