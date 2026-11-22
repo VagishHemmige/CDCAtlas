@@ -85,7 +85,7 @@ Recorded from live runs on the dates given; not re-run for this file.
     county are counted, or a comparison against a CDC source that reports them.
   - Hidden county counts cannot be recovered from the gap.
 
-## County suppression in HIV prevalence, 2017, 2022 and 2024
+## County suppression in HIV diagnoses and prevalence, 2017 to 2025
 
 Read from the logs of GitHub Actions runs in this repository; none has had an
 independent check. Prevalence is people living with diagnosed HIV; HIV figures
