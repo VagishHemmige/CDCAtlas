@@ -571,7 +571,8 @@ for (year in c(2017, 2022)) {
             NULL,
             indicators,
             year,
-            strat
+            strat,
+            if (!is.null(strat)) requested_strata(strat, year)
           )
         }
       )
@@ -713,7 +714,8 @@ for (strat in list(NULL, "sex", "age", "race")) {
             state,
             released,
             year,
-            strat
+            strat,
+            if (!is.null(strat)) requested_strata(strat, year)
           )
           for (indicator in released) {
             counted[[indicator]] <- max(

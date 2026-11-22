@@ -289,15 +289,25 @@
       count_fake_counties(fake$county_by_age, one_state_row_total, 2022, "age")
     Condition
       Error in `count_suppressed_counties()`:
-      ! `state` has 1 rows whose age is a total or missing, though it is stratified by age.
+      ! `state` has 1 rows whose age is not one of the labels asked for (a total, missing or another label), though it is stratified by age.
     Code
       count_fake_counties(one_county_row_total, fake$state_by_age, 2022, "age")
     Condition
       Error in `count_suppressed_counties()`:
-      ! `county` has 1 rows whose age is a total or missing, though it is stratified by age.
+      ! `county` has 1 rows whose age is not one of the labels asked for (a total, missing or another label), though it is stratified by age.
     Code
       count_fake_counties(one_county_row_by_age, fake$state)
     Condition
       Error in `count_suppressed_counties()`:
       ! `county` must not be stratified, as asked for; it is by age.
+    Code
+      count_fake_counties(fake$county_by_age, one_state_row_unrequested, 2022, "age")
+    Condition
+      Error in `count_suppressed_counties()`:
+      ! `state` has 1 rows whose age is not one of the labels asked for (a total, missing or another label), though it is stratified by age.
+    Code
+      count_fake_counties(fake$county_by_age, NULL, 2022, "age", strata = NULL)
+    Condition
+      Error in `count_suppressed_counties()`:
+      ! `strata` must be the stratum labels the request asks for.
 

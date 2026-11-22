@@ -656,7 +656,9 @@ describe_suppressed_strata <- function(counts, label) {
 #
 # What was asked for is checked against what came back, as in
 # count_suppressed_strata(): `county`, and `state` when given, must be for
-# `year` only and stratified by `stratify_by` only (NULL: not stratified).
+# `year` only and stratified by `stratify_by` only (NULL: not stratified),
+# with every stratum label one of `strata`, the labels that request asks for
+# (needed when `stratify_by` is given).
 # Otherwise a response for another year or by another variable could pass
 # for the one asked for. Both stop.
 #
@@ -675,7 +677,8 @@ count_suppressed_counties <- function(
   county,
   state = NULL,
   year,
-  stratify_by = NULL
+  stratify_by = NULL,
+  strata = NULL
 ) {
   keys <- c("indicator", "year", unname(.atlas_strata_columns))
   needed <- c("fips", "data_status", "cases", keys)
@@ -728,7 +731,7 @@ count_suppressed_counties <- function(
     state_published <- !is.na(as.numeric(state$cases)) &
       !as.character(state$data_status) %in% "Data suppressed"
   }
-  check_counted_request(county, state, year, stratify_by)
+  check_counted_request(county, state, year, stratify_by, strata)
 
   out <- lapply(sort(unique(rows$group)), function(group) {
     rows <- rows[rows$group == group, , drop = FALSE]
@@ -808,8 +811,8 @@ describe_suppressed_counties <- function(counts, label) {
 
 # Stops unless `county`, and `state` when given, are for `year` only and
 # stratified by `stratify_by` only (NULL: not stratified), checked on every
-# row: each row has a year, and each row's labels are subgroups for
-# `stratify_by` and totals for the other variables. Used by
+# row: each row has a year, and each row's label is one of `strata` for
+# `stratify_by` and the total for the other variables. Used by
 # count_suppressed_counties(); the messages give years, variables and numbers
 # of rows only.
 check_counted_request <- function(
@@ -817,6 +820,7 @@ check_counted_request <- function(
   state,
   year,
   stratify_by,
+  strata,
   call = rlang::caller_env()
 ) {
   if (!is.numeric(year) || length(year) != 1 || is.na(year)) {
@@ -828,6 +832,12 @@ check_counted_request <- function(
       names(.atlas_strata_columns),
       error_call = call
     )
+    if (!is.character(strata) || length(strata) == 0 || anyNA(strata)) {
+      rlang::abort(
+        "`strata` must be the stratum labels the request asks for.",
+        call = call
+      )
+    }
   }
   for (arg in c("county", if (!is.null(state)) "state")) {
     x <- get(arg)
@@ -884,8 +894,11 @@ check_counted_request <- function(
     # stratum and drop out unseen.
     for (s in names(.atlas_strata_columns)) {
       labels <- as.character(x[[.atlas_strata_columns[[s]]]])
-      total <- labels %in% .atlas_totals[[s]]
-      odd <- if (identical(s, stratify_by)) total | is.na(labels) else !total
+      odd <- if (identical(s, stratify_by)) {
+        !labels %in% strata
+      } else {
+        !labels %in% .atlas_totals[[s]]
+      }
       if (any(odd)) {
         rlang::abort(
           paste0(
@@ -895,7 +908,12 @@ check_counted_request <- function(
             sum(odd),
             " rows ",
             if (identical(s, stratify_by)) {
-              paste0("whose ", s, " is a total or missing")
+              paste0(
+                "whose ",
+                s,
+                " is not one of the labels asked for (a total, missing or ",
+                "another label)"
+              )
             } else {
               paste0("whose ", s, " is not the total")
             },
@@ -916,8 +934,9 @@ check_counted_request <- function(
 }
 
 # Expects, for each of `indicators` in one year's county response `county`
-# (asked for by `stratify_by`, NULL: not stratified), no state stratum with
-# exactly one suppressed county row, and reports every count. A count only,
+# (asked for by `stratify_by`, NULL: not stratified, with stratum labels
+# `strata`), no state stratum with exactly one suppressed county row, and
+# reports every count. A count only,
 # as in count_suppressed_counties(): no state is named, and no state total has
 # its county counts subtracted. Like count_suppressed_strata(), a monitor of
 # CDC's responses (#164), not a judgment that any row could be worked out.
@@ -936,9 +955,10 @@ expect_no_single_suppressed_county <- function(
   state,
   indicators,
   year,
-  stratify_by = NULL
+  stratify_by = NULL,
+  strata = NULL
 ) {
-  counts <- count_suppressed_counties(county, state, year, stratify_by)
+  counts <- count_suppressed_counties(county, state, year, stratify_by, strata)
   for (line in describe_suppressed_counties(counts, "Suppressed county rows")) {
     message(line)
   }

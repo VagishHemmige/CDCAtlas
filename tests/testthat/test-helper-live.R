@@ -898,14 +898,17 @@ fake_state_strata <- function() {
   )
 }
 
-# The fixtures above are for 2022; unstratified unless `stratify_by` is given.
+# The fixtures above are for 2022; unstratified unless `stratify_by` is
+# given, and then by the two made-up age groups.
+fake_state_ages <- c("13-24", "25+")
 count_fake_counties <- function(
   county,
   state = NULL,
   year = 2022,
-  stratify_by = NULL
+  stratify_by = NULL,
+  strata = if (!is.null(stratify_by)) fake_state_ages
 ) {
-  count_suppressed_counties(county, state, year, stratify_by)
+  count_suppressed_counties(county, state, year, stratify_by, strata)
 }
 
 test_that("count_suppressed_counties() counts state strata by their suppressed county rows", {
@@ -1057,6 +1060,10 @@ test_that("count_suppressed_counties() stops when a response is not for the year
   # One row of an unstratified response carries an age group.
   one_county_row_by_age <- fake$county
   one_county_row_by_age$age[1] <- "13-24"
+  # One state row has an age group the request didn't ask for: without the
+  # check its county stratum would find no state row and drop out unseen.
+  one_state_row_unrequested <- fake$state_by_age
+  one_state_row_unrequested$age[1] <- "13-99"
 
   expect_no_error(count_fake_counties(fake$county, fake$state))
   expect_no_error(
@@ -1076,6 +1083,13 @@ test_that("count_suppressed_counties() stops when a response is not for the year
     count_fake_counties(fake$county_by_age, one_state_row_total, 2022, "age")
     count_fake_counties(one_county_row_total, fake$state_by_age, 2022, "age")
     count_fake_counties(one_county_row_by_age, fake$state)
+    count_fake_counties(
+      fake$county_by_age,
+      one_state_row_unrequested,
+      2022,
+      "age"
+    )
+    count_fake_counties(fake$county_by_age, NULL, 2022, "age", strata = NULL)
   })
 })
 
@@ -1140,7 +1154,8 @@ test_that("expect_no_single_suppressed_county() only reports stratified counts a
     fake$state_by_age,
     "HIV prevalence",
     2022,
-    "age"
+    "age",
+    fake_state_ages
   )))
   expect_message(
     expect_no_single_suppressed_county(
@@ -1148,7 +1163,8 @@ test_that("expect_no_single_suppressed_county() only reports stratified counts a
       fake$state_by_age,
       "HIV prevalence",
       2022,
-      "age"
+      "age",
+      fake_state_ages
     ),
     "exactly one 2",
     fixed = TRUE
