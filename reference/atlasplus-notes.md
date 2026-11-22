@@ -152,7 +152,8 @@ Entries:
 
   Live test run 44985849638 counted the "exactly one" column again for both
   HIV indicators. It was 0 for diagnoses and for prevalence, by sex, age and
-  race, in 2022, 2024 and 2025. In 2017 it was 1 for diagnoses by age, 2 for
+  race, in each year returned from 2022 on (diagnoses 2022, 2024 and 2025;
+  prevalence 2022 and 2024). In 2017 it was 1 for diagnoses by age, 2 for
   diagnoses by race and 5 for prevalence by race, and 0 otherwise; the 2017
   responses also have a few cells that are neither published nor suppressed.
   That is consistent with complementary suppression ("CDC, AtlasPlus Technical
