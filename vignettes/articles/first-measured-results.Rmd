@@ -1,0 +1,146 @@
+---
+title: "First measured results (provisional)"
+---
+
+> **Provisional.** These are first results from two automated runs of the
+> package's default pipeline (21 and 22 November 2026 UTC) and one live test
+> run (22 November 2026 UTC), on CDC AtlasPlus data as returned on those
+> dates. They cover HIV prevalence (people living with diagnosed HIV), ages 13
+> and older, for 2017, 2022 and 2024, with default settings. They have not
+> been independently checked. The defaults they describe may change. Fuller
+> articles with figures will replace this page.
+
+This page reports what the package's steps did to real data: how much CDC
+suppresses, what `impute_suppressed()` fills in, and what is left over. It has
+no code that downloads data. For what CDC's numbers mean, see
+[About CDC AtlasPlus data](about-atlasplus-data.html); for the tract
+estimates, see [Extrapolation to tracts](extrapolation.html).
+
+Every number produced by `impute_suppressed()` is a modeled estimate, not a
+count CDC withheld. Nothing here says how large any suppressed count is.
+
+## How much CDC suppresses at county level
+
+The more finely the data are divided, the more county rows are suppressed.
+
+| Share of county rows suppressed | 2017 | 2022 | 2024 |
+|---|---|---|---|
+| Not stratified | 15% | 14% | 13% |
+| By sex | 44% | 43% | 42% |
+| By age | 50% | 49% | 48% |
+| By race | 60% | 58% | 57% |
+
+## What the default imputation does
+
+By default, `impute_suppressed()` estimates a suppressed county row as the
+state's rate times the county's population, and caps the estimate at 4. In
+2022 the cap, not the state rate, set most of the estimates, except by race.
+
+| 2022 | Not stratified | By sex | By age | By race |
+|---|---|---|---|---|
+| Estimates above 4 before the cap | 77% | 71% | 50% | 15% |
+| Cases the cap takes off the estimated total | 3,807 | 56,020 | 58,857 | 30,927 |
+
+These are facts about the estimates. An estimate above 4 does not show that
+the hidden count is above 4. The column `cases_uncapped` lets you count the
+same thing for your own request.
+
+Changing the settings moved the 2022 national total of published and
+estimated county cases by this much:
+
+| Setting | Not stratified | By sex |
+|---|---|---|
+| `method = "zero"` | −0.15% | −0.90% |
+| `cap = Inf` | +0.35% | +5.28% |
+| `floor = 1` | under 0.01% | under 0.01% |
+| `population = "acs"` | under 0.01% | under 0.01% |
+
+## Stratified estimates against the county's own total
+
+A county's count is often published while some of its counts by sex, age or
+race are suppressed. Adding up such a county's strata, published and
+estimated, should give about the county's published count. Under the default
+it often does not.
+
+| 2022 | By sex | By age | By race |
+|---|---|---|---|
+| Counties whose strata sum to under 90% of their count | 717 | 388 | 273 |
+| Counties whose strata sum to over 110% of their count | 112 | 815 | 386 |
+| Cases short, added over counties | 22,763 | 21,241 | 17,590 |
+| Cases over, added over counties | 313 | 5,528 | 2,479 |
+
+So stratified estimates under the default do not add up to the unstratified
+ones. By sex they fall short. By age they fall short in some counties and run
+over in others.
+
+The comparison uses counties whose unstratified count is published; the 90%
+and 110% rows need that count to be above zero. Counties with exactly one
+suppressed stratum cell are left out. By race, a county can fall short with
+no suppressed stratum at all, because CDC puts cases of unknown race in no
+row.
+
+## Cases in state totals but in no county row
+
+`no_county_cases()` reports each state's total minus its published county
+counts minus the estimates for its suppressed counties. Added over states
+(shortfalls and excesses offset each other), after the default imputation:
+
+| | 2017 | 2022 | 2024 |
+|---|---|---|---|
+| Sum of state totals | 1,002,796 | 1,102,798 | 1,157,995 |
+| Remainder, not stratified | 33,025 | 20,028 | 17,530 |
+| Remainder, by sex | 51,988 | 41,696 | 40,514 |
+| Remainder, by age | 39,541 | 33,238 | 34,698 |
+| Remainder, by race | 44,429 | 33,659 | 32,382 |
+
+In a few states the remainder was a large share of the state's total in 2022:
+
+| 2022 | States and share of the state's total |
+|---|---|
+| Not stratified | Alaska 87%, Rhode Island 73%, Nebraska 60%, Idaho 47%, Vermont 19%, Wyoming 14% |
+| By sex | New Hampshire 94%, Maine 93%, Idaho 81%, Alaska 81%, Rhode Island 74% |
+
+This is consistent with those states' county counts being largely suppressed.
+The cause has not been verified. County or tract estimates for such a state
+leave most of its cases out. `no_county_cases()` and
+`extrapolate_from_county()` now warn when more than 25% of a state's cases
+are in no county row, and name the states with their shares.
+
+## What CDC's data look like inside a county
+
+These come from the live test run, which recorded counts only, for HIV
+diagnoses and HIV prevalence.
+
+Where every stratum of a county is published, the strata sum exactly to the
+county's count by sex and by age, in every year checked. By race, diagnoses
+also sum exactly, but prevalence sums to less in about a fifth of such
+counties and never to more. That is consistent with unknown race being in no
+row.
+
+| Prevalence by race, counties with every stratum published | 2017 | 2022 | 2024 |
+|---|---|---|---|
+| Counties | 233 | 244 | 244 |
+| Strata sum to less than the county's count | 47 | 51 | 54 |
+
+Counties with a published count and exactly one suppressed stratum cell are
+rare. There were none in 2022, 2024 or 2025, for either indicator, by sex,
+age or race. In 2017 there were a few: 1 for diagnoses by age, 2 for
+diagnoses by race and 5 for prevalence by race.
+
+## What this means for users now
+
+- **Unstratified estimates.** Nationally, county and tract estimates changed
+  little with the imputation settings. That does not hold in the states
+  listed above, where most cases are in no county row.
+- **Estimates by sex, age or race.** Under the default, about 3% to 4% of
+  national cases in 2022 were in no county row, against about 2% without
+  stratification, and far more in some states and counties.
+- **Report your settings.** Say which `method`, `cap`, `floor` and
+  `population` you used, and consider running the alternatives above as
+  sensitivity analyses.
+- **A better method is being designed.** It will fit stratified estimates to
+  each county's published total. Until then, treat stratified estimates for
+  counties with suppressed strata with caution.
+- **Race denominators need a closer look.** Census and CDC populations by
+  race can differ for the same county; this has not yet been measured
+  carefully enough to report.
