@@ -10,7 +10,8 @@
 # They bypass the on-disk cache, so they test what CDC returns today. The years
 # are the ones HOPE uses, plus 2024 onward for the check of CDC's rates on
 # suppressed rows (#157), which adds county downloads (and a state request
-# for each) but no Census requests.
+# for each) but no Census requests. The counts of suppressed stratum cells
+# (#164) reuse those downloads and add none.
 
 skip_if_not(
   identical(Sys.getenv("CDCATLAS_LIVE_TESTS"), "true"),
@@ -299,6 +300,191 @@ for (pipeline_run in pipeline_runs) {
   })
 }
 
+# Suppressed stratum cells in counties with a published total (#164). A
+# planned method fits stratified county estimates to the county's published
+# unstratified count. It relies on three things about CDC's data, checked
+# here for each HIV indicator from the county downloads this file already
+# makes: no request is added, and nothing is imputed.
+#
+# COUNTS ONLY. count_suppressed_strata() (helper-live.R) returns numbers of
+# counties and nothing else: no county is named, and no county's total minus
+# its published strata is computed. Every count is reported with message().
+#
+# Among counties in both responses whose unstratified count is published:
+# 1. The premise. CDC's complementary suppression leaves no county with
+#    exactly one suppressed stratum cell, which the total and the other
+#    cells would give away. Asserted: none by sex and by age; by race no
+#    more than was observed (below).
+# 2. Where every stratum is published, whether the strata add up to the
+#    unstratified count, to less or to more. Reported, not asserted: it had
+#    not been observed when this was written.
+# 3. How many counties' published strata alone exceed the unstratified
+#    count. Reported, not asserted, for the same reason.
+# So that none of this passes on an empty set, each indicator must have
+# counties with a published unstratified count, some of them with two or
+# more suppressed cells and some with every stratum published. A stratum
+# with no row for a county is absent, not suppressed; counties in only one
+# response are left out; both are counted and reported.
+#
+# Observed for HIV prevalence on 22 Nov 2026 (UTC): counties with a
+# published unstratified count by suppressed stratum cells, as none /
+# exactly one / two or more. CDC revises its data, so only "exactly one" is
+# pinned.
+#   2017: sex 1,790 / 0 / 934; age 751 / 0 / 1,973; race 234 / 5 / 2,485
+#   2022: sex 1,826 / 0 / 950; age 793 / 0 / 1,983; race 244 / 0 / 2,532
+#   2024: sex 1,868 / 0 / 945; age 806 / 0 / 2,007; race 244 / 0 / 2,569
+# Race has no unknown-race row, so the race strata need not add up to the
+# total and the five in 2017 are not exactly recoverable either.
+#
+# Not yet observed: HIV diagnoses in any year, and HIV prevalence in other
+# years. By sex and by age they are held to none. By race they are held to
+# at most 1% of the counties with a published unstratified count, a
+# provisional limit (the five observed are 0.2%) to be replaced by what the
+# first run reports.
+observed_one_suppressed_by_race <- c(
+  "HIV prevalence 2017" = 5,
+  "HIV prevalence 2022" = 0,
+  "HIV prevalence 2024" = 0
+)
+one_suppressed_allowed <- function(indicator, year, strat, total_published) {
+  if (strat != "race") {
+    return(0)
+  }
+  key <- paste(indicator, year)
+  if (key %in% names(observed_one_suppressed_by_race)) {
+    return(observed_one_suppressed_by_race[[key]])
+  }
+  floor(total_published / 100)
+}
+
+# Runs the three checks for each of `indicators` on one year's stratified and
+# unstratified county responses, reporting every count. A failure gives
+# counts only.
+expect_strata_suppressed_in_twos <- function(
+  stratified,
+  unstratified,
+  indicators,
+  year,
+  strat
+) {
+  counts <- count_suppressed_strata(stratified, unstratified)
+  for (line in describe_suppressed_strata(counts, "Suppressed stratum cells")) {
+    message(line)
+  }
+  for (indicator in indicators) {
+    what <- paste0(indicator, " ", year, " by ", strat, ": ")
+    row <- counts[counts$indicator == indicator & counts$year == year, ]
+    if (nrow(row) != 1 || row$total_published == 0) {
+      fail(paste0(
+        what,
+        "no county in both responses has a published unstratified count, ",
+        "so nothing was checked."
+      ))
+      next
+    }
+    of_indicator <- function(rows) {
+      as.character(rows$fips)[as.character(rows$indicator) == indicator]
+    }
+
+    # Matching the responses neither repeated nor lost a county.
+    expect_equal(
+      row$counties_in_both + row$counties_unstratified_only,
+      length(of_indicator(unstratified)),
+      label = paste0(what, "unstratified counties counted")
+    )
+    expect_equal(
+      row$counties_in_both + row$counties_stratified_only,
+      length(unique(of_indicator(stratified))),
+      label = paste0(what, "stratified counties counted")
+    )
+    expect_equal(
+      row$total_published + row$total_suppressed + row$total_other,
+      row$counties_in_both,
+      label = paste0(what, "counties by unstratified count")
+    )
+    expect_equal(
+      row$none_suppressed + row$one_suppressed + row$two_or_more_suppressed,
+      row$total_published,
+      label = paste0(what, "counties by suppressed cells")
+    )
+    expect_equal(
+      row$sum_equal + row$sum_less + row$sum_more,
+      row$all_published,
+      label = paste0(what, "counties with every stratum published")
+    )
+
+    # 1. The premise.
+    expect(
+      row$two_or_more_suppressed > 0,
+      paste0(
+        what,
+        "no county with a published unstratified count has two or more ",
+        "suppressed stratum cells, so the premise was not tested."
+      )
+    )
+    allowed <- one_suppressed_allowed(
+      indicator,
+      year,
+      strat,
+      row$total_published
+    )
+    expect(
+      row$one_suppressed <= allowed,
+      paste0(
+        what,
+        row$one_suppressed,
+        " of ",
+        row$total_published,
+        " counties with a published unstratified count have exactly one ",
+        "suppressed stratum cell; at most ",
+        allowed,
+        " expected."
+      )
+    )
+
+    # 2. and 3. Reported above; only that there was something to compare.
+    expect(
+      row$all_published > 0,
+      paste0(
+        what,
+        "no county with a published unstratified count has every stratum ",
+        "published, so there were no sums to compare."
+      )
+    )
+  }
+  invisible(counts)
+}
+
+for (year in c(2017, 2022)) {
+  for (strat in c("sex", "age", "race")) {
+    local({
+      year <- year
+      strat <- strat
+
+      test_that(
+        paste0(
+          "counties with a published total have no single suppressed ",
+          "stratum cell, HIV ",
+          year,
+          ", by ",
+          strat
+        ),
+        {
+          # Both downloads are shared with the pipeline runs above.
+          indicators <- .disease_indicators()
+          expect_strata_suppressed_in_twos(
+            live_county(year, strat),
+            live_county(year),
+            indicators$indicator[indicators$disease == "hiv"],
+            year,
+            strat
+          )
+        }
+      )
+    })
+  }
+}
+
 # CDC's rates on suppressed rows in its latest years (#157). The runs above
 # check 2017 and 2022; these check every year from 2024 to the latest year in
 # the package's code table, so the set grows as CDC adds years. CDC lists a
@@ -362,6 +548,96 @@ for (strat in list(NULL, "sex", "age", "race")) {
               " to ",
               latest,
               "."
+            )
+          )
+        }
+      }
+    )
+  })
+}
+
+# The same counts of suppressed stratum cells (#164) in CDC's latest years:
+# every year from 2024 to the latest in the package's code table, from the
+# downloads the check above makes for those years (no request is added). An
+# indicator CDC has not released for a year (HIV prevalence 2025, #149) has
+# no county rows in either response: that is reported, and the indicator
+# must still be checked in at least one of these years.
+for (strat in c("sex", "age", "race")) {
+  local({
+    strat <- strat
+
+    test_that(
+      paste0(
+        "counties with a published total have no single suppressed ",
+        "stratum cell in CDC's latest HIV years, by ",
+        strat
+      ),
+      {
+        indicators <- .disease_indicators()
+        indicators <- indicators$indicator[indicators$disease == "hiv"]
+        checked <- rlang::set_names(
+          rep(NA_real_, length(indicators)),
+          indicators
+        )
+
+        for (year in seq(.latest_atlas_year(), 2024)) {
+          stratified <- live_county_if_released(year, strat)
+          unstratified <- live_county_if_released(year)
+          # An indicator with rows in only one response is not unreleased:
+          # it is checked, and fails for having nothing to compare.
+          released <- intersect(
+            indicators,
+            c(
+              as.character(stratified$indicator),
+              as.character(unstratified$indicator)
+            )
+          )
+          for (indicator in setdiff(indicators, released)) {
+            message(
+              indicator,
+              ", by ",
+              strat,
+              ": CDC has no county rows for ",
+              year,
+              ", so its suppressed stratum cells were not counted for that ",
+              "year."
+            )
+          }
+          expect_strata_suppressed_in_twos(
+            stratified,
+            unstratified,
+            released,
+            year,
+            strat
+          )
+          for (indicator in released) {
+            checked[[indicator]] <- max(
+              checked[[indicator]],
+              year,
+              na.rm = TRUE
+            )
+          }
+        }
+
+        for (indicator in indicators) {
+          message(
+            indicator,
+            ", by ",
+            strat,
+            ": latest year with suppressed stratum cells counted is ",
+            checked[[indicator]],
+            "."
+          )
+          expect(
+            !is.na(checked[[indicator]]),
+            paste0(
+              "CDC returned no county rows for ",
+              indicator,
+              " (by ",
+              strat,
+              ") in 2024 to ",
+              .latest_atlas_year(),
+              ", so its suppressed stratum cells were not counted."
             )
           )
         }
