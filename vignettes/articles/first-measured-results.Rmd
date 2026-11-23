@@ -109,22 +109,27 @@ with the default `no_county = "report"`:
 | Remainder, by race | 44,429 | 33,659 | 32,382 |
 
 In a few states the remainder, the shortfall of the county rows against the
-published state total, was a large share of that total in 2022, under the
-same defaults:
+published state total, was a large share of that total in 2022, not
+stratified, under the same defaults:
 
-| 2022 | States and share of the state's total |
+| State | Share of the state's total, 2022 |
 |---|---|
-| Not stratified | Alaska 87%, Rhode Island 73%, Nebraska 60%, Idaho 47%, Vermont 19%, Wyoming 14% |
-| By sex | New Hampshire 94%, Maine 93%, Idaho 81%, Alaska 81%, Rhode Island 74% |
+| Alaska | 87% |
+| Rhode Island | 73% |
+| Nebraska | 60% |
+| Idaho | 47% |
+| Vermont | 19% |
+| Wyoming | 14% |
+
+Shares by sex, age or race are not shown by state: for some states they could
+come close to a single county's count.
 
 This is consistent with those states' county counts being largely suppressed.
 The cause has not been verified. The remainder measures how far the county
 rows fall short of the state's published total; it does not say where those
 cases are. County or tract estimates for such a state leave out about the
-share shown. Unstratified, that is most of the state's total in Alaska, Rhode
-Island and Nebraska, and smaller shares in Idaho, Vermont and Wyoming. By sex,
-it is most of the state totals by sex in New Hampshire, Maine, Idaho, Alaska
-and Rhode Island. `no_county_cases()` and
+share shown: most of the state's total in Alaska, Rhode Island and Nebraska,
+and smaller shares in Idaho, Vermont and Wyoming. `no_county_cases()` and
 `extrapolate_from_county()` now warn when more than 25% of a state's cases
 are in no county row, and name the states with their shares.
 
