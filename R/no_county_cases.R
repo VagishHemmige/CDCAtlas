@@ -29,10 +29,11 @@
 #' totals include cases with no county, so the figure could be that county's
 #' count exactly, and `no_county_cases()` doesn't report it.
 #'
-#' Counties are counted over both `x` and CDC's county table for `x`, and a
-#' county counts only if neither gives its count. So a county filtered out of
-#' `x`, or dropped by `impute_suppressed(not_available = "drop")`, still
-#' counts, and a county with a count in one table but not the other doesn't.
+#' Counties are counted in CDC's county table for `x`, and a county counts
+#' only if neither that table nor `x` gives its count. So a county filtered
+#' out of `x`, or dropped by `impute_suppressed(not_available = "drop")`,
+#' still counts; a county with a count in one table but not the other
+#' doesn't, and nor does a county in `x` that CDC's table doesn't list.
 #' CDC's table comes from the cache when `x` was downloaded in this session;
 #' otherwise it is downloaded. If CDC's table has no rows for a stratum, how
 #' many counties lack a count can't be known, so that stratum's remainder
@@ -195,10 +196,10 @@ no_county_cases <- function(x) {
   # minus the published counts is that county plus any cases with no county,
   # and CDC's documentation doesn't say there are any. So it could be that
   # county exactly: withhold every figure that gives it (#173). A county
-  # counts only if neither `x` nor CDC's county table gives its count, so
-  # filtering a county out of `x`, dropping a "Data not available" row, or a
-  # status in `x` that differs from CDC's doesn't make one hidden county look
-  # like two. Where CDC's table has no rows for the stratum, how many counties
+  # counts only if CDC's county table lists it and neither that table nor `x`
+  # gives its count, so filtering a county out of `x`, dropping a "Data not
+  # available" row, a status in `x` that differs from CDC's, or a county only
+  # in `x` doesn't make one hidden county look like two. Where CDC's table has no rows for the stratum, how many counties
   # lack a count is unknown, so it is withheld too. A gap of 0 before
   # imputation (unpublished_cases) over several counties is reported: it says
   # those counties had no cases, which identifies no one (maintainer, 22 Nov
@@ -233,13 +234,14 @@ no_county_cases <- function(x) {
   )])
 }
 
-# For each state stratum, the number of counties whose count neither `x` nor
-# CDC's county table publishes, over every county in either. `county` is the
-# per-row frame built in .no_county_cases(), with `fips` and `unpublished`.
-# Counties, not rows: a county listed twice counts once. A county with a count
-# in either table counts as published, since that count is public. Returns the
-# counts keyed as .row_key(report, keys), and the keys of the strata CDC's
-# table has rows for.
+# For each state stratum, the number of counties in CDC's county table whose
+# count neither that table nor `x` publishes. `county` is the per-row frame
+# built in .no_county_cases(), with `fips` and `unpublished`. Counties, not
+# rows: a county listed twice counts once. A county with a count in either
+# table counts as published, since that count is public. A county only in `x`
+# (a saved table with a county CDC's no longer lists) doesn't count: it can't
+# make CDC's one hidden county look like two. Returns the counts keyed as
+# .row_key(report, keys), and the keys of the strata CDC's table has rows for.
 .hidden_counties <- function(county, cdc, keys) {
   cdc <- data.frame(
     fips = as.character(cdc$fips),
@@ -249,9 +251,12 @@ no_county_cases <- function(x) {
   )
   cdc$year <- as.numeric(cdc$year)
   columns <- c("fips", keys, "unpublished")
-  counted <- rbind(county[columns], cdc[columns]) |>
+  counted <- rbind(
+    data.frame(county[columns], in_cdc = FALSE),
+    data.frame(cdc[columns], in_cdc = TRUE)
+  ) |>
     dplyr::summarize(
-      hidden = all(.data$unpublished),
+      hidden = any(.data$in_cdc) & all(.data$unpublished),
       .by = dplyr::all_of(c(keys, "fips"))
     ) |>
     dplyr::summarize(
