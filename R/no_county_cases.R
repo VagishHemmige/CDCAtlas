@@ -21,6 +21,30 @@
 #' `no_county = "spread"` shares it across the state's counties instead. See
 #' the "About CDC AtlasPlus data" article.
 #'
+#' @section State strata with one county row without a published count:
+#' Where a state stratum has exactly one county row without a published count
+#' (suppressed, "Data not available", or with no count for another reason),
+#' the state total minus the published counts is that county's count plus
+#' any cases with no county. CDC's documentation doesn't say that state
+#' totals include cases with no county, so the figure could be that county's
+#' count exactly, and `no_county_cases()` doesn't report it.
+#'
+#' Counties are counted in CDC's county table for `x`, and a county counts
+#' only if neither that table nor `x` gives its count. So a county filtered
+#' out of `x`, or dropped by `impute_suppressed(not_available = "drop")`,
+#' still counts; a county with a count in one table but not the other
+#' doesn't, and nor does a county in `x` that CDC's table doesn't list.
+#' CDC's table comes from the cache when `x` was downloaded in this session;
+#' otherwise it is downloaded. If CDC's table has no rows for a stratum, how
+#' many counties lack a count can't be known, so that stratum's remainder
+#' isn't reported either.
+#'
+#' For such a stratum `published_cases`, `unpublished_cases` and
+#' `no_county_cases` are `NA` and `no_county_withheld` says why, and a
+#' message says how many strata this applies to. `state_cases` (CDC's
+#' published total) and `imputed_cases` (the modeled estimate) are still
+#' given.
+#'
 #' @section States with many cases in no county row:
 #' `no_county_cases()` warns, once per call, when a state has more than 25% of
 #' its published state total in no county row of `x`: the remainder divided
@@ -53,15 +77,22 @@
 #'     \item{state_fips, state}{State FIPS code and name.}
 #'     \item{indicator, year, race_ethnicity, sex, age}{As in `x`.}
 #'     \item{state_cases}{The state total published by CDC.}
-#'     \item{published_cases}{Sum of the published county counts in `x`.}
+#'     \item{published_cases}{Sum of the published county counts in `x`.
+#'       `NA` if the remainder is withheld (see `no_county_withheld`).}
 #'     \item{unpublished_cases}{`state_cases - published_cases`: cases in
 #'       suppressed counties together with the remainder no county accounts
-#'       for.}
+#'       for. `NA` if withheld.}
 #'     \item{imputed_cases}{Sum of the counts [impute_suppressed()] filled in;
 #'       `NA` if `x` hasn't been imputed.}
 #'     \item{no_county_cases}{`unpublished_cases - imputed_cases`. Can be
 #'       negative if the imputed counts are too high, and is `NA` if `x` hasn't
 #'       been imputed.}
+#'     \item{no_county_withheld}{Why `published_cases`, `unpublished_cases`
+#'       and `no_county_cases` are not reported: `"one county row without a
+#'       published count"`, `"no CDC county rows to count unpublished
+#'       counties"`, or `NA` otherwise. (Where CDC suppressed the state
+#'       total, those columns are `NA` for that reason instead.) See the
+#'       section below.}
 #'   }
 #'
 #'   Every column computed from `state_cases` is `NA` if CDC suppressed the
@@ -69,7 +100,8 @@
 #'
 #' @details
 #' Downloads the state data matching `x` (same diseases, years and
-#' stratification) from CDC AtlasPlus. The remainder also includes any county
+#' stratification) from CDC AtlasPlus, and CDC's county table for `x` when it
+#' isn't in the cache. The remainder also includes any county
 #' without a count in `x`: "Data not available" rows, counties removed by
 #' filtering `x`, and suppressed rows [impute_suppressed()] couldn't estimate
 #' (marked `cases_source = "not estimated"`), which count as 0 imputed cases.
@@ -98,7 +130,12 @@ no_county_cases <- function(x) {
     .announce_not_estimated(x, "counted in the remainder with no county")
   }
   .inform_ehe_remainder(x)
-  report <- .no_county_cases(x, .fetch_state_totals(x))
+  report <- .no_county_cases(
+    x,
+    .fetch_state_totals(x),
+    .fetch_county_totals(x)
+  )
+  .announce_withheld(report)
   .warn_state_unplaced_cases(
     report,
     c(
@@ -110,9 +147,10 @@ no_county_cases <- function(x) {
   report
 }
 
-# The report itself, given the state rows. Separate so extrapolate_from_county()
-# can reuse the state rows it has already fetched.
-.no_county_cases <- function(x, state) {
+# The report itself, given the state rows and CDC's county table for `x`
+# (`cdc`; from the cache when `x` was downloaded in this session). Separate so
+# extrapolate_from_county() can reuse the rows it has already fetched.
+.no_county_cases <- function(x, state, cdc) {
   keys <- c("state_fips", .atlas_keys)
   source <- if ("cases_source" %in% names(x)) {
     x$cases_source
@@ -120,9 +158,11 @@ no_county_cases <- function(x) {
     ifelse(is.na(x$cases), "not imputed", "published")
   }
   county <- data.frame(
+    fips = as.character(x$fips),
     state_fips = substr(as.character(x$fips), 1, 2),
     lapply(as.data.frame(x[.atlas_keys]), as.character),
     published = ifelse(source == "published", x$cases, 0),
+    unpublished = source != "published",
     imputed = dplyr::case_when(
       source %in% c("published", "not available", "not estimated") ~ 0,
       source == "not imputed" ~ NA_real_,
@@ -152,6 +192,35 @@ no_county_cases <- function(x) {
   }
   report$no_county_cases <- report$unpublished_cases - report$imputed_cases
 
+  # With exactly one county whose count is unpublished, the state total
+  # minus the published counts is that county plus any cases with no county,
+  # and CDC's documentation doesn't say there are any. So it could be that
+  # county exactly: withhold every figure that gives it (#173). A county
+  # counts only if CDC's county table lists it and neither that table nor `x`
+  # gives its count, so filtering a county out of `x`, dropping a "Data not
+  # available" row, a status in `x` that differs from CDC's, or a county only
+  # in `x` doesn't make one hidden county look like two. Where CDC's table has no rows for the stratum, how many counties
+  # lack a count is unknown, so it is withheld too. A gap of 0 before
+  # imputation (unpublished_cases) over several counties is reported: it says
+  # those counties had no cases, which identifies no one (maintainer, 22 Nov
+  # 2026).
+  hidden <- .hidden_counties(county, cdc, keys)
+  report_key <- .row_key(report, keys)
+  hidden_counties <- hidden$counties[match(report_key, hidden$key)]
+  single <- hidden_counties %in% 1
+  unknown <- !single & !report_key %in% hidden$cdc_key
+  withheld <- !is.na(state_cases) & (single | unknown)
+  report$no_county_withheld <- dplyr::case_when(
+    !withheld ~ NA_character_,
+    single ~ "one county row without a published count",
+    .default = "no CDC county rows to count unpublished counties"
+  )
+  report[
+    withheld,
+    c("published_cases", "unpublished_cases", "no_county_cases")
+  ] <-
+    NA_real_
+
   tibble::as_tibble(report[c(
     "state_fips",
     "state",
@@ -160,8 +229,71 @@ no_county_cases <- function(x) {
     "published_cases",
     "unpublished_cases",
     "imputed_cases",
-    "no_county_cases"
+    "no_county_cases",
+    "no_county_withheld"
   )])
+}
+
+# For each state stratum, the number of counties in CDC's county table whose
+# count neither that table nor `x` publishes. `county` is the per-row frame
+# built in .no_county_cases(), with `fips` and `unpublished`. Counties, not
+# rows: a county listed twice counts once. A county with a count in either
+# table counts as published, since that count is public. A county only in `x`
+# (a saved table with a county CDC's no longer lists) doesn't count: it can't
+# make CDC's one hidden county look like two. Returns the counts keyed as
+# .row_key(report, keys), and the keys of the strata CDC's table has rows for.
+.hidden_counties <- function(county, cdc, keys) {
+  cdc <- data.frame(
+    fips = as.character(cdc$fips),
+    state_fips = substr(as.character(cdc$fips), 1, 2),
+    lapply(as.data.frame(cdc[.atlas_keys]), as.character),
+    unpublished = is.na(cdc$cases)
+  )
+  cdc$year <- as.numeric(cdc$year)
+  columns <- c("fips", keys, "unpublished")
+  counted <- rbind(
+    data.frame(county[columns], in_cdc = FALSE),
+    data.frame(cdc[columns], in_cdc = TRUE)
+  ) |>
+    dplyr::summarize(
+      hidden = any(.data$in_cdc) & all(.data$unpublished),
+      .by = dplyr::all_of(c(keys, "fips"))
+    ) |>
+    dplyr::summarize(
+      counties = sum(.data$hidden),
+      .by = dplyr::all_of(keys)
+    )
+  list(
+    key = .row_key(counted, keys),
+    counties = counted$counties,
+    cdc_key = unique(.row_key(cdc, keys))
+  )
+}
+
+# Message saying how many state strata had their remainder withheld (#173).
+.announce_withheld <- function(report) {
+  n <- sum(!is.na(report$no_county_withheld))
+  if (n == 0) {
+    return(invisible())
+  }
+  single <- sum(
+    report$no_county_withheld %in% "one county row without a published count"
+  )
+  unknown <- n - single
+  cli::cli_inform(c(
+    "i" = "{cli::qty(n)}The remainder{?s} of {n} state strat{?um is/a are}
+           not reported ({.code NA}):",
+    "*" = if (single > 0) {
+      "{single} with exactly one county row without a published count (the
+       remainder could be that county's count)"
+    },
+    "*" = if (unknown > 0) {
+      "{unknown} with no rows in CDC's county table, so it can't be known how
+       many counties lack a count"
+    },
+    " " = "{.field no_county_withheld} says which. They are left out of any
+           total or share of cases in no county row."
+  ))
 }
 
 # Message naming the counties whose suppressed rows impute_suppressed() couldn't
@@ -294,6 +426,10 @@ no_county_cases <- function(x) {
       rlang::set_names(lines, rep("*", length(lines))),
       "i" = "Percentages are of the state totals CDC published for the strata
              in {.arg x}.",
+      "i" = if (any(!is.na(report$no_county_withheld))) {
+        "Strata whose remainder isn't reported ({.field no_county_withheld})
+         are left out of both."
+      },
       with_qty(consequence),
       "i" = "This happens when a state's county counts are largely
              suppressed, or when {.arg x} lacks some of its counties.

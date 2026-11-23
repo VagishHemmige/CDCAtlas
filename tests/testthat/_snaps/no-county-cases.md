@@ -1,15 +1,50 @@
+# a state stratum with exactly one county row without a published count has its remainder withheld (#173)
+
+    Code
+      report <- no_county_cases(county)
+    Message
+      i The remainders of 2 state strata are not reported (`NA`):
+      * 2 with exactly one county row without a published count (the remainder could be that county's count)
+        no_county_withheld says which. They are left out of any total or share of cases in no county row.
+
+# a stratum missing from CDC's county table is withheld (#173)
+
+    Code
+      report <- no_county_cases(county)
+    Message
+      i The remainder of 1 state stratum is not reported (`NA`):
+      * 1 with no rows in CDC's county table, so it can't be known how many counties lack a count
+        no_county_withheld says which. They are left out of any total or share of cases in no county row.
+    Condition
+      Warning:
+      1 state has more than 25% of its published state total in no county row of `x`.
+      * HIV prevalence 2022: Alabama (52%)
+      i Percentages are of the state totals CDC published for the strata in `x`.
+      i Strata whose remainder isn't reported (no_county_withheld) are left out of both.
+      ! Adding up this state's county counts, or estimating smaller areas from them, leaves those cases out, so the results are too low by about that share for those strata.
+      i This happens when a state's county counts are largely suppressed, or when `x` lacks some of its counties. CDCAtlas doesn't check the cause.
+
+# before imputation, one row without a count also withholds the remainder (#173)
+
+    Code
+      report <- no_county_cases(fake_county_atlas(suppressed = "01003"))
+    Message
+      i The remainders of 2 state strata are not reported (`NA`):
+      * 2 with exactly one county row without a published count (the remainder could be that county's count)
+        no_county_withheld says which. They are left out of any total or share of cases in no county row.
+
 # rows impute_suppressed() couldn't estimate count towards the remainder
 
     Code
       report <- no_county_cases(not_estimated)
     Message
-      i 2 rows with no count that `impute_suppressed()` couldn't estimate were counted in the remainder with no county.
-        County: "County 01003".
+      i 4 rows with no count that `impute_suppressed()` couldn't estimate were counted in the remainder with no county.
+        Counties: "County 01001" and "County 01003".
     Condition
       Warning:
       1 state has more than 25% of its published state total in no county row of `x`.
-      * HIV diagnoses 2022: Alabama (98%)
-      * HIV prevalence 2022: Alabama (85%)
+      * HIV diagnoses 2022: Alabama (100%)
+      * HIV prevalence 2022: Alabama (100%)
       i Percentages are of the state totals CDC published for the strata in `x`.
       ! Adding up this state's county counts, or estimating smaller areas from them, leaves those cases out, so the results are too low by about that share for those strata.
       i This happens when a state's county counts are largely suppressed, or when `x` lacks some of its counties. CDCAtlas doesn't check the cause.

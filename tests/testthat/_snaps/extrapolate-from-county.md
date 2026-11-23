@@ -12,20 +12,31 @@
       2 county strata had cases but no ACS population, so their estimates are `NA`.
       i Use `empty_strata = "total"` or `"equal"` to share them anyway.
 
+# a withheld remainder is not spread (#173)
+
+    Code
+      tracts <- extrapolate_from_county(imputed, no_county = "spread")
+    Message
+      i Cases in state totals with no county, to be spread across each state's counties:
+      * HIV diagnoses 2022: 0
+      * HIV prevalence 2022: 0
+      ! 2 state strata whose remainder could be a single county's count or can't be checked (not reported or spread, and not in the totals above; see no_county_withheld)
+        See `attr(x, "no_county_cases")` for each state.
+
 # remainders with no county to receive them are reported
 
     Code
       invisible(extrapolate_from_county(county, no_county = "spread"))
     Message
       i Cases in state totals with no county, to be spread across each state's counties:
-      * HIV diagnoses 2022: 342
-      * HIV prevalence 2022: 542
+      * HIV diagnoses 2022: 364
+      * HIV prevalence 2022: 764
         See `attr(x, "no_county_cases")` for each state.
     Condition
       Warning:
       2 states have more than 25% of their published state total in no county row of `x`.
-      * HIV diagnoses 2022: Alaska (97%) and Alabama (66%)
-      * HIV prevalence 2022: Alaska (79%) and Alabama (52%)
+      * HIV diagnoses 2022: Alabama (100%) and Alaska (100%)
+      * HIV prevalence 2022: Alabama (100%) and Alaska (100%)
       i Percentages are of the state totals CDC published for the strata in `x`.
       ! With `no_county = "spread"`, any of those cases that reach areas are placed by assumption: the county data don't say where they are.
       i This happens when a state's county counts are largely suppressed, or when `x` lacks some of its counties. CDCAtlas doesn't check the cause.
@@ -36,8 +47,8 @@
       i See `attr(x, "not_allocated")`.
     Message
       i Cases with no county that could not be spread (no county with tracts in that state and stratum, or no tracts with population there):
-      * HIV diagnoses 2022: 321
-      * HIV prevalence 2022: 421
+      * HIV diagnoses 2022: 332
+      * HIV prevalence 2022: 532
 
 # spread cases that reach no area are reported as not spread (#114)
 
@@ -261,19 +272,10 @@
       tracts <- extrapolate_from_county(county)
     Message
       i Cases in state totals with no county are not allocated to tracts:
-      * HIV diagnoses 2022: 21
-      * HIV prevalence 2022: 121
+      * HIV diagnoses 2022: 0
+      * HIV prevalence 2022: 0
+      ! 2 state strata whose remainder could be a single county's count or can't be checked (not reported, and not in the totals above; see no_county_withheld)
         See `attr(x, "no_county_cases")` for each state.
-    Condition
-      Warning:
-      1 state has more than 25% of its published state total in no county row of `x`.
-      * HIV diagnoses 2022: Alabama (66%)
-      * HIV prevalence 2022: Alabama (52%)
-      i Percentages are of the state totals CDC published for the strata in `x`.
-      ! County and tract estimates for this state leave those cases out, so they are too low by about that share for those strata.
-      i This happens when a state's county counts are largely suppressed, or when `x` lacks some of its counties. CDCAtlas doesn't check the cause.
-      i See `attr(x, "no_county_cases")` for each state.
-    Message
       i 2 rows with no count that `impute_suppressed()` couldn't estimate were left out of the tract estimates and counted in the remainder with no county.
         County: "County 01003".
 

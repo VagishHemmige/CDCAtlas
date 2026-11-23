@@ -357,20 +357,21 @@ test_that("imputed counts are allocated like published ones", {
 
 test_that("no-county cases are reported, not allocated, by default", {
   state <- fake_state_atlas(no_county = 500, suppressed = character(0))
-  county <- fake_county_atlas(suppressed = "01003")
+  county <- fake_county_atlas(suppressed = both_counties)
   tracts <- run_extrapolation(county = county, state = state)
   report <- attr(tracts, "no_county_cases")
 
-  imputed <- c(4, 4)
+  # Both counties capped at 4.
+  imputed <- c(8, 8)
   expect_equal(report$imputed_cases, imputed)
-  expect_equal(report$no_county_cases, c(32, 232) + 500 - c(11, 111) - imputed)
-  expect_equal(sum(tracts$area_cases), sum(c(11, 111) + imputed))
+  expect_equal(report$no_county_cases, c(32, 232) + 500 - imputed)
+  expect_equal(sum(tracts$area_cases), sum(imputed))
   expect_equal(unique(tracts$county_cases_spread), 0)
 })
 
 test_that("no-county cases can be spread across counties by population", {
   state <- fake_state_atlas(no_county = 500, suppressed = character(0))
-  county <- fake_county_atlas(suppressed = "01003")
+  county <- fake_county_atlas(suppressed = both_counties)
   tracts <- run_extrapolation(
     county = county,
     state = state,
@@ -399,8 +400,25 @@ test_that("no-county cases can be spread across counties by population", {
   expect_equal(check$area_cases_sum, check$county_cases)
 })
 
+test_that("a withheld remainder is not spread (#173)", {
+  # 01003 is the one county row without a published count, so the state
+  # total minus the published counts could be its count exactly.
+  state <- fake_state_atlas(no_county = 500, suppressed = character(0))
+  county <- fake_county_atlas(suppressed = "01003")
+  local_fake_sources(state = state)
+  imputed <- impute_suppressed(county)
+
+  expect_snapshot(
+    tracts <- extrapolate_from_county(imputed, no_county = "spread")
+  )
+  expect_equal(unique(tracts$county_cases_spread), 0)
+  report <- attr(tracts, "no_county_cases")
+  expect_equal(report$no_county_cases, c(NA_real_, NA_real_))
+  expect_equal(sum(tracts$area_cases), sum(c(11, 111) + c(4, 4)))
+})
+
 test_that("each state's remainder is spread within that state", {
-  two <- two_state_atlas()
+  two <- two_state_atlas(both_counties)
   county <- impute_suppressed(two$county, method = "zero")
   tracts <- run_extrapolation(
     county = county,
@@ -420,7 +438,7 @@ test_that("each state's remainder is spread within that state", {
 
 test_that("remainders with no county to receive them are reported", {
   # State 02's counties have no tracts, so its remainder can't be spread.
-  two <- two_state_atlas()
+  two <- two_state_atlas(both_counties)
   acs <- two$acs[substr(two$acs$GEOID, 1, 2) == "01", ]
   local_fake_sources(state = two$state, acs = acs)
   county <- impute_suppressed(two$county, method = "zero")
@@ -530,7 +548,7 @@ test_that("spreading stops for HIV estimates, whose counties are EHE only (#109)
 })
 
 test_that("spreading works on whole states filtered from a larger table (#54)", {
-  two <- two_state_atlas()
+  two <- two_state_atlas(both_counties)
   state_02 <- two$county[substr(two$county$fips, 1, 2) == "02", ]
 
   tracts <- run_extrapolation(

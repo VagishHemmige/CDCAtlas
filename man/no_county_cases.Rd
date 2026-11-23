@@ -16,15 +16,20 @@ A tibble with one row per state, indicator, year and stratum:
 \item{state_fips, state}{State FIPS code and name.}
 \item{indicator, year, race_ethnicity, sex, age}{As in \code{x}.}
 \item{state_cases}{The state total published by CDC.}
-\item{published_cases}{Sum of the published county counts in \code{x}.}
+\item{published_cases}{Sum of the published county counts in \code{x}.
+\code{NA} if the remainder is withheld (see \code{no_county_withheld}).}
 \item{unpublished_cases}{\code{state_cases - published_cases}: cases in
 suppressed counties together with the remainder no county accounts
-for.}
+for. \code{NA} if withheld.}
 \item{imputed_cases}{Sum of the counts \code{\link[=impute_suppressed]{impute_suppressed()}} filled in;
 \code{NA} if \code{x} hasn't been imputed.}
 \item{no_county_cases}{\code{unpublished_cases - imputed_cases}. Can be
 negative if the imputed counts are too high, and is \code{NA} if \code{x} hasn't
 been imputed.}
+\item{no_county_withheld}{Why \code{published_cases}, \code{unpublished_cases}
+and \code{no_county_cases} are not reported: \code{"one county row without a published count"}, \code{"no CDC county rows to count unpublished counties"}, or \code{NA} otherwise. (Where CDC suppressed the state
+total, those columns are \code{NA} for that reason instead.) See the
+section below.}
 }
 
 Every column computed from \code{state_cases} is \code{NA} if CDC suppressed the
@@ -53,7 +58,8 @@ the "About CDC AtlasPlus data" article.
 }
 \details{
 Downloads the state data matching \code{x} (same diseases, years and
-stratification) from CDC AtlasPlus. The remainder also includes any county
+stratification) from CDC AtlasPlus, and CDC's county table for \code{x} when it
+isn't in the cache. The remainder also includes any county
 without a count in \code{x}: "Data not available" rows, counties removed by
 filtering \code{x}, and suppressed rows \code{\link[=impute_suppressed]{impute_suppressed()}} couldn't estimate
 (marked \code{cases_source = "not estimated"}), which count as 0 imputed cases.
@@ -62,6 +68,32 @@ stratum) with at least one row in \code{x}: if
 \code{impute_suppressed(not_available = "drop")} or filtering removed every row
 of a group, its state total is not reported.
 }
+\section{State strata with one county row without a published count}{
+
+Where a state stratum has exactly one county row without a published count
+(suppressed, "Data not available", or with no count for another reason),
+the state total minus the published counts is that county's count plus
+any cases with no county. CDC's documentation doesn't say that state
+totals include cases with no county, so the figure could be that county's
+count exactly, and \code{no_county_cases()} doesn't report it.
+
+Counties are counted in CDC's county table for \code{x}, and a county counts
+only if neither that table nor \code{x} gives its count. So a county filtered
+out of \code{x}, or dropped by \code{impute_suppressed(not_available = "drop")},
+still counts; a county with a count in one table but not the other
+doesn't, and nor does a county in \code{x} that CDC's table doesn't list.
+CDC's table comes from the cache when \code{x} was downloaded in this session;
+otherwise it is downloaded. If CDC's table has no rows for a stratum, how
+many counties lack a count can't be known, so that stratum's remainder
+isn't reported either.
+
+For such a stratum \code{published_cases}, \code{unpublished_cases} and
+\code{no_county_cases} are \code{NA} and \code{no_county_withheld} says why, and a
+message says how many strata this applies to. \code{state_cases} (CDC's
+published total) and \code{imputed_cases} (the modeled estimate) are still
+given.
+}
+
 \section{States with many cases in no county row}{
 
 \code{no_county_cases()} warns, once per call, when a state has more than 25\% of

@@ -39,6 +39,43 @@ test_that("no-county remainders match #27 (Pennsylvania HIV prevalence)", {
   for (year in names(expected)) {
     county <- live_county(as.numeric(year))
     report <- no_county_cases(county)
+    # Count only (#173): unstratified state strata whose remainder is
+    # withheld, by reason, among those that can be checked (a published state
+    # total), and how many can't be checked (no published state total). The
+    # provisional article lists 2022 unstratified state shares on the basis
+    # that none is withheld; read a zero only over the strata checked here.
+    for (indicator in c("HIV diagnoses", "HIV prevalence")) {
+      rows <- report[report$indicator == indicator, ]
+      checked <- !is.na(rows$state_cases)
+      reasons <- table(rows$no_county_withheld[checked])
+      message(
+        "Withheld remainders, ",
+        indicator,
+        " ",
+        year,
+        ", unstratified: ",
+        if (nrow(rows) == 0) {
+          "no state strata returned."
+        } else {
+          paste0(
+            sum(!is.na(rows$no_county_withheld[checked])),
+            " of ",
+            sum(checked),
+            " state strata with a published state total",
+            if (length(reasons) > 0) {
+              paste0(
+                " (",
+                paste(names(reasons), reasons, sep = ": ", collapse = "; "),
+                ")"
+              )
+            },
+            "; ",
+            sum(!checked),
+            " without one, not checked."
+          )
+        }
+      )
+    }
     pa <- report[
       report$state_fips == "42" & report$indicator == "HIV prevalence",
     ]
