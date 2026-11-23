@@ -520,7 +520,7 @@ test_that("crosswalked and duplicated areas are counted", {
 })
 
 test_that("by_state adds each state's totals and remainder", {
-  data <- two_state_atlas()
+  data <- two_state_atlas(both_counties)
   local_fake_sources(state = data$state, acs = data$acs)
   suppressMessages({
     imputed <- impute_suppressed(data$county)
@@ -539,19 +539,20 @@ test_that("by_state adds each state's totals and remainder", {
     by_state$measure,
     c(
       "state_strata_without_total",
+      "state_strata_remainder_withheld",
       "state_cases",
       "published_cases",
       "imputed_cases",
       "remainder_signed"
     )
   )
-  # Prevalence: counties hold 111 and 121; 01003 and 02003 are suppressed and
-  # capped at 4. State 02 has 300 more cases with no county.
+  # Prevalence: every county is suppressed and capped at 4, two per state.
+  # State 02 has 300 more cases with no county.
   expect_equal(value("state_cases", "01"), 232)
   expect_equal(value("state_cases", "02"), 532)
-  expect_equal(value("imputed_cases", "02"), 4)
-  expect_equal(value("remainder_signed", "01"), 232 - 111 - 4)
-  expect_equal(value("remainder_signed", "02"), 532 - 111 - 4)
+  expect_equal(value("imputed_cases", "02"), 8)
+  expect_equal(value("remainder_signed", "01"), 232 - 8)
+  expect_equal(value("remainder_signed", "02"), 532 - 8)
   expect_equal(
     value("remainder_signed", "all"),
     value("remainder_signed", "01") + value("remainder_signed", "02")
@@ -693,7 +694,7 @@ test_that("a state with no published total is unknown, not zero", {
   expect_equal(detail("state_cases", "all")$value, 232)
   expect_match(detail("state_cases", "all")$note, "1 state strat")
   expect_match(detail("remainder_signed", "all")$note, "1 state strat")
-  expect_equal(detail("remainder_signed", "all")$value, 232 - 111 - 4)
+  expect_equal(detail("remainder_signed", "all")$value, 232 - 8)
   expect_equal(detail("state_strata_without_total", "all")$value, 1)
 })
 
@@ -728,11 +729,15 @@ test_that("no state with a published total leaves every case measure unknown", {
 })
 
 test_that("a published state total of zero stays zero", {
-  # State 02 publishes 0 cases, though its counties publish 111.
-  rows <- report_two_states(function(state) {
-    state$cases[state$fips == "02" & state$indicator == "HIV prevalence"] <- 0
-    state
-  })
+  # State 02 publishes 0 cases, though its counties publish 232 (nothing is
+  # suppressed, so nothing is withheld).
+  rows <- report_two_states(
+    function(state) {
+      state$cases[state$fips == "02" & state$indicator == "HIV prevalence"] <- 0
+      state
+    },
+    suppressed = character(0)
+  )
   detail <- function(measure, state_fips) {
     rows[rows$measure == measure & rows$state_fips == state_fips, ]
   }
@@ -741,11 +746,11 @@ test_that("a published state total of zero stays zero", {
   expect_equal(zero$value, 0)
   expect_equal(zero$note, NA_character_)
   expect_equal(detail("state_strata_without_total", "02")$value, 0)
-  expect_equal(detail("published_cases", "02")$value, 111)
+  expect_equal(detail("published_cases", "02")$value, 232)
   expect_equal(detail("imputed_cases", "02")$value, 0)
-  expect_equal(detail("remainder_signed", "02")$value, -111)
+  expect_equal(detail("remainder_signed", "02")$value, -232)
   expect_equal(detail("state_cases", "all")$value, 232)
-  expect_equal(detail("remainder_signed", "all")$value, 117 - 111)
+  expect_equal(detail("remainder_signed", "all")$value, 0 - 232)
 })
 
 test_that("the report refuses areas allocated from a different imputation", {
@@ -830,7 +835,7 @@ test_that("the report refuses allocations it can't account for yet", {
 
   # The remainder spread across counties: it would be counted both as the
   # remainder and as allocated cases.
-  data <- two_state_atlas()
+  data <- two_state_atlas(both_counties)
   local_fake_sources(state = data$state, acs = data$acs)
   suppressMessages({
     imputed <- impute_suppressed(data$county)

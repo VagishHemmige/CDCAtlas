@@ -155,8 +155,12 @@ report_crosswalk <- data.frame(
 # two_state_atlas() run through the pipeline and the report, by state, after
 # `change_state` has altered the state rows. Returns the report's rows for
 # HIV prevalence.
-report_two_states <- function(change_state, env = parent.frame()) {
-  data <- two_state_atlas()
+report_two_states <- function(
+  change_state,
+  suppressed = both_counties,
+  env = parent.frame()
+) {
+  data <- two_state_atlas(suppressed)
   local_fake_sources(
     state = change_state(data$state),
     acs = data$acs,

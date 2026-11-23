@@ -3,7 +3,10 @@
 # is made up, so the right answers are known exactly.
 #
 # State 01 has two counties: 01001 with three tracts and 01003 with one (a
-# very small county, like Loving County, TX).
+# very small county, like Loving County, TX). With one of them suppressed,
+# no_county_cases() withholds the remainder (#173), so tests of the
+# remainder's arithmetic suppress both.
+both_counties <- c("01001", "01003")
 
 fake_tracts <- data.frame(
   geoid = c("01001000100", "01001000200", "01001000300", "01003000100"),
@@ -273,9 +276,11 @@ county_vs_areas <- function(areas) {
 
 # Two states: state 02 is a copy of state 01 (counties 02001 and 02003, the
 # same tracts) with twice the state population and 300 more cases with no
-# county. County 01003 and 02003 are suppressed.
-two_state_atlas <- function() {
-  county_01 <- fake_county_atlas(suppressed = "01003")
+# county. County 01003 and 02003 are suppressed, or the counties of state 01
+# in `suppressed` and their copies in state 02. With one suppressed county a
+# state stratum's remainder is withheld (#173); suppress both to see it.
+two_state_atlas <- function(suppressed = "01003") {
+  county_01 <- fake_county_atlas(suppressed = suppressed)
   county_01$fips <- as.character(county_01$fips)
   county_02 <- county_01
   county_02$fips <- sub("^01", "02", county_02$fips)

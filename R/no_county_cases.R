@@ -21,6 +21,20 @@
 #' `no_county = "spread"` shares it across the state's counties instead. See
 #' the "About CDC AtlasPlus data" article.
 #'
+#' @section State strata with one county row without a published count:
+#' Where a state stratum has exactly one county row in `x` without a published
+#' count (suppressed, "Data not available", or with no count for another
+#' reason), the state total minus the published counts is that county's
+#' count plus any cases with no county. CDC's documentation doesn't say that
+#' state totals include cases with no county, so the figure could be that
+#' county's count exactly. `no_county_cases()` doesn't report it:
+#' `published_cases`, `unpublished_cases` and `no_county_cases` are `NA`,
+#' `no_county_withheld` says why, and a message says how many state strata
+#' this applies to. `state_cases` (CDC's published total) and
+#' `imputed_cases` (the modeled estimate) are still given. Only rows in `x`
+#' are counted: a county row removed before this step, for example by
+#' `impute_suppressed(not_available = "drop")`, is not.
+#'
 #' @section States with many cases in no county row:
 #' `no_county_cases()` warns, once per call, when a state has more than 25% of
 #' its published state total in no county row of `x`: the remainder divided
@@ -53,15 +67,21 @@
 #'     \item{state_fips, state}{State FIPS code and name.}
 #'     \item{indicator, year, race_ethnicity, sex, age}{As in `x`.}
 #'     \item{state_cases}{The state total published by CDC.}
-#'     \item{published_cases}{Sum of the published county counts in `x`.}
+#'     \item{published_cases}{Sum of the published county counts in `x`.
+#'       `NA` if the remainder is withheld (see `no_county_withheld`).}
 #'     \item{unpublished_cases}{`state_cases - published_cases`: cases in
 #'       suppressed counties together with the remainder no county accounts
-#'       for.}
+#'       for. `NA` if withheld.}
 #'     \item{imputed_cases}{Sum of the counts [impute_suppressed()] filled in;
 #'       `NA` if `x` hasn't been imputed.}
 #'     \item{no_county_cases}{`unpublished_cases - imputed_cases`. Can be
 #'       negative if the imputed counts are too high, and is `NA` if `x` hasn't
 #'       been imputed.}
+#'     \item{no_county_withheld}{Why `published_cases`, `unpublished_cases`
+#'       and `no_county_cases` are not reported: `"one county row without a
+#'       published count"`, or `NA` otherwise. (Where CDC suppressed the
+#'       state total, those columns are `NA` for that reason instead.) See the
+#'       section below.}
 #'   }
 #'
 #'   Every column computed from `state_cases` is `NA` if CDC suppressed the
@@ -99,6 +119,7 @@ no_county_cases <- function(x) {
   }
   .inform_ehe_remainder(x)
   report <- .no_county_cases(x, .fetch_state_totals(x))
+  .announce_withheld(report)
   .warn_state_unplaced_cases(
     report,
     c(
@@ -123,6 +144,7 @@ no_county_cases <- function(x) {
     state_fips = substr(as.character(x$fips), 1, 2),
     lapply(as.data.frame(x[.atlas_keys]), as.character),
     published = ifelse(source == "published", x$cases, 0),
+    unpublished = source != "published",
     imputed = dplyr::case_when(
       source %in% c("published", "not available", "not estimated") ~ 0,
       source == "not imputed" ~ NA_real_,
@@ -134,6 +156,7 @@ no_county_cases <- function(x) {
   report <- county |>
     dplyr::summarize(
       published_cases = sum(.data$published),
+      unpublished_rows = sum(.data$unpublished),
       imputed_cases = sum(.data$imputed),
       .by = dplyr::all_of(keys)
     )
@@ -152,6 +175,22 @@ no_county_cases <- function(x) {
   }
   report$no_county_cases <- report$unpublished_cases - report$imputed_cases
 
+  # With exactly one county row without a published count, the state total
+  # minus the published counts is that row plus any cases with no county, and
+  # CDC's documentation doesn't say there are any. So it could be that row
+  # exactly: withhold every figure that gives it (#173).
+  withheld <- report$unpublished_rows == 1 & !is.na(state_cases)
+  report$no_county_withheld <- ifelse(
+    withheld,
+    "one county row without a published count",
+    NA_character_
+  )
+  report[
+    withheld,
+    c("published_cases", "unpublished_cases", "no_county_cases")
+  ] <-
+    NA_real_
+
   tibble::as_tibble(report[c(
     "state_fips",
     "state",
@@ -160,8 +199,24 @@ no_county_cases <- function(x) {
     "published_cases",
     "unpublished_cases",
     "imputed_cases",
-    "no_county_cases"
+    "no_county_cases",
+    "no_county_withheld"
   )])
+}
+
+# Message saying how many state strata had their remainder withheld (#173).
+.announce_withheld <- function(report) {
+  n <- sum(!is.na(report$no_county_withheld))
+  if (n == 0) {
+    return(invisible())
+  }
+  cli::cli_inform(c(
+    "i" = "{n} state strat{?um has/a have} exactly one county row without a
+           published count, so {?its/their} remainder is not reported
+           ({.code NA}): it could be that county's count.",
+    " " = "{.field no_county_withheld} says which. They are left out of any
+           share of cases in no county row."
+  ))
 }
 
 # Message naming the counties whose suppressed rows impute_suppressed() couldn't

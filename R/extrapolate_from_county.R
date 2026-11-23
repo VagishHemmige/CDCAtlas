@@ -43,7 +43,9 @@
 #'     the cache when `x` was downloaded in this session. Negative
 #'     remainders are not spread, nor are remainders in a state with no
 #'     allocated county in that stratum; the message says how many cases
-#'     could not be spread. Not available for CDC's HIV estimates (EHE
+#'     could not be spread. A remainder [no_county_cases()] withholds, where a
+#'     state stratum has exactly one county row without a published count,
+#'     is not spread either. Not available for CDC's HIV estimates (EHE
 #'     counties only).
 #'
 #'   With either choice, a warning (class `"cdcatlas_state_unplaced_cases"`)
@@ -1234,9 +1236,17 @@ extrapolate_from_county <- function(
       "{sum(report$no_county_cases < 0, na.rm = TRUE)} state strat{?um/a}
        with a negative remainder (counted as 0)"
     },
-    if (anyNA(report$no_county_cases)) {
-      "{sum(is.na(report$no_county_cases))} state strat{?um/a} with no state
+    if (anyNA(report$state_cases)) {
+      "{sum(is.na(report$state_cases))} state strat{?um/a} with no state
        total (left out)"
+    },
+    if (any(!is.na(report$no_county_withheld))) {
+      paste0(
+        "{sum(!is.na(report$no_county_withheld))} state strat{?um/a} with
+         exactly one county row without a published count (",
+        if (no_county == "spread") "not reported or spread" else "not reported",
+        ": it could be that county's count)"
+      )
     }
   )
   cli::cli_inform(c(

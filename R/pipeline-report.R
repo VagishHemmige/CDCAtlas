@@ -720,22 +720,42 @@
 # Cases with no county: the state remainder -----------------------------------------
 
 # `remainder` is no_county_cases() output: one row per state stratum. Sums are
-# over state strata with a published state total; the others are counted, not
-# treated as 0.
+# over state strata with a published state total and a remainder that isn't
+# withheld; the others are counted, not treated as 0. A withheld remainder
+# (exactly one county row without a published count, #173) is left out of
+# every sum here, not only its own row: a sum that included it, beside the
+# other states' figures, would give it back by subtraction.
 .report_remainder <- function(remainder) {
   step <- "no county"
-  has_total <- !is.na(remainder$state_cases)
+  no_total <- is.na(remainder$state_cases)
+  withheld <- !no_total & !is.na(remainder$no_county_withheld)
+  has_total <- !no_total & !withheld
   with_total <- remainder[has_total, , drop = FALSE]
   left <- with_total$no_county_cases
   # With no published state total here, nothing below is known: an empty sum
   # would be 0, which would read as a published zero.
   known <- any(has_total)
-  coverage <- if (!known) {
+  coverage <- if (!known && any(withheld) && !any(no_total)) {
+    .report_withheld_note
+  } else if (!known) {
     .report_no_total_note
   } else if (any(!has_total)) {
     paste(
-      sum(!has_total),
-      "state strata have no published state total and are left out, not counted as 0."
+      c(
+        if (any(no_total)) {
+          paste(
+            sum(no_total),
+            "state strata have no published state total and are left out, not counted as 0."
+          )
+        },
+        if (any(withheld)) {
+          paste(
+            sum(withheld),
+            "state strata have exactly one county row without a published count, so their remainder is withheld and they are left out."
+          )
+        }
+      ),
+      collapse = " "
     )
   } else {
     NA_character_
@@ -778,7 +798,8 @@
   }
   dplyr::bind_rows(
     count("state_strata", nrow(remainder)),
-    count("state_strata_without_total", sum(!has_total)),
+    count("state_strata_without_total", sum(no_total)),
+    count("state_strata_remainder_withheld", sum(withheld)),
     cases("state_cases", state_cases, "published"),
     cases("published_cases", sum(with_total$published_cases), "published"),
     cases("unpublished_cases", sum(with_total$unpublished_cases), "derived"),
@@ -804,6 +825,8 @@
 
 .report_no_total_note <- "Unknown, not 0: the state strata here have no published state total."
 
+.report_withheld_note <- "Not reported: the state strata here have exactly one county row without a published count, so the remainder could be that county's count."
+
 # One state's totals and remainder, with the number of its strata that have no
 # published total. A single state stratum has one remainder, so its positive
 # and negative parts are given only for groups together.
@@ -811,6 +834,7 @@
   out <- .report_remainder(remainder)
   keep <- c(
     "state_strata_without_total",
+    "state_strata_remainder_withheld",
     "state_cases",
     "published_cases",
     "imputed_cases",

@@ -1,15 +1,31 @@
+# a state stratum with exactly one county row without a published count has its remainder withheld (#173)
+
+    Code
+      report <- no_county_cases(county)
+    Message
+      i 2 state strata have exactly one county row without a published count, so their remainder is not reported (`NA`): it could be that county's count.
+        no_county_withheld says which. They are left out of any share of cases in no county row.
+
+# before imputation, one row without a count also withholds the remainder (#173)
+
+    Code
+      report <- no_county_cases(fake_county_atlas(suppressed = "01003"))
+    Message
+      i 2 state strata have exactly one county row without a published count, so their remainder is not reported (`NA`): it could be that county's count.
+        no_county_withheld says which. They are left out of any share of cases in no county row.
+
 # rows impute_suppressed() couldn't estimate count towards the remainder
 
     Code
       report <- no_county_cases(not_estimated)
     Message
-      i 2 rows with no count that `impute_suppressed()` couldn't estimate were counted in the remainder with no county.
-        County: "County 01003".
+      i 4 rows with no count that `impute_suppressed()` couldn't estimate were counted in the remainder with no county.
+        Counties: "County 01001" and "County 01003".
     Condition
       Warning:
       1 state has more than 25% of its published state total in no county row of `x`.
-      * HIV diagnoses 2022: Alabama (98%)
-      * HIV prevalence 2022: Alabama (85%)
+      * HIV diagnoses 2022: Alabama (100%)
+      * HIV prevalence 2022: Alabama (100%)
       i Percentages are of the state totals CDC published for the strata in `x`.
       ! Adding up this state's county counts, or estimating smaller areas from them, leaves those cases out, so the results are too low by about that share for those strata.
       i This happens when a state's county counts are largely suppressed, or when `x` lacks some of its counties. CDCAtlas doesn't check the cause.

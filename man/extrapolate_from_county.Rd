@@ -53,7 +53,9 @@ filter the result. Checking needs CDC's county table, which comes from
 the cache when \code{x} was downloaded in this session. Negative
 remainders are not spread, nor are remainders in a state with no
 allocated county in that stratum; the message says how many cases
-could not be spread. Not available for CDC's HIV estimates (EHE
+could not be spread. A remainder \code{\link[=no_county_cases]{no_county_cases()}} withholds, where a
+state stratum has exactly one county row without a published count,
+is not spread either. Not available for CDC's HIV estimates (EHE
 counties only).
 }
 
