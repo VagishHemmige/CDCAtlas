@@ -125,9 +125,15 @@ residual also contains it; require evidence of compatible coverage before
 using an equality constraint. Label the outputs as modeled, distinct from
 observed values. Still not allowed:
 
-- Deriving the value of a single suppressed cell from a residual: exactly one
-  suppressed cell within a published total, or any case where the public
-  figures determine a cell exactly, such as a zero residual.
+- Deriving the value of a single suppressed cell from a residual: a residual
+  spanning exactly one unpublished cell is withheld, including when it is
+  zero, as is any other case where the public figures determine a cell
+  exactly. One exception (maintainer's decision, 22 November 2026): where two
+  or more cells are unpublished, an aggregate gap of zero before imputation
+  (the total minus the published cells) may be reported, when the published
+  cells and the total have compatible coverage. Report only the aggregate. A
+  remainder of zero after imputation means only that the modeled and
+  published counts together account for the total.
 - Publishing per-area residuals, bounds or intervals for individual suppressed
   cells.
 - Combining further tables to narrow a cell.
