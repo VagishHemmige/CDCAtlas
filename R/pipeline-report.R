@@ -113,10 +113,12 @@
 
   state <- .fetch_state_totals(imputed)
   imputed <- .report_raw_estimates(imputed, state, cap, floor, population, call)
-  remainder <- .no_county_cases(imputed, state)
+  remainder <- .no_county_cases(imputed, state, .fetch_county_totals(imputed))
+  # The remainder computed here, not the one attached to `areas`: once the
+  # check shows they're from the same run they agree, and an allocation saved
+  # by an older version may lack `no_county_withheld` (#173).
   if (!is.null(areas)) {
     .check_report_same_run(imputed, areas, remainder, call)
-    remainder <- attr(areas, "no_county_cases")
   }
 
   frames <- list(
@@ -243,8 +245,12 @@
     )
   }
   rows <- match(expected_key, attached_key)
+  # A withheld stratum's published_cases is NA here (#173), and may not be in
+  # an allocation saved by an older version, so it isn't compared.
+  shown <- is.na(expected$no_county_withheld)
   for (column in c("state_cases", "published_cases", "imputed_cases")) {
-    bad <- differs(expected[[column]], attached[[column]][rows])
+    compare <- if (column == "published_cases") shown else TRUE
+    bad <- compare & differs(expected[[column]], attached[[column]][rows])
     if (any(bad)) {
       stop_mismatch(
         "{.field {column}} in its {.field no_county_cases} attribute differs
@@ -735,28 +741,31 @@
   # With no published state total here, nothing below is known: an empty sum
   # would be 0, which would read as a published zero.
   known <- any(has_total)
-  coverage <- if (!known && any(withheld) && !any(no_total)) {
+  left_out <- paste(
+    c(
+      if (any(no_total)) {
+        paste(
+          sum(no_total),
+          "state strata have no published state total and are left out, not counted as 0."
+        )
+      },
+      if (any(withheld)) {
+        paste(
+          sum(withheld),
+          "state strata have exactly one county row without a published count, so their remainder is withheld and they are left out."
+        )
+      }
+    ),
+    collapse = " "
+  )
+  coverage <- if (!known && !any(withheld)) {
+    .report_no_total_note
+  } else if (!known && !any(no_total)) {
     .report_withheld_note
   } else if (!known) {
-    .report_no_total_note
+    paste("Unknown, not 0:", left_out)
   } else if (any(!has_total)) {
-    paste(
-      c(
-        if (any(no_total)) {
-          paste(
-            sum(no_total),
-            "state strata have no published state total and are left out, not counted as 0."
-          )
-        },
-        if (any(withheld)) {
-          paste(
-            sum(withheld),
-            "state strata have exactly one county row without a published count, so their remainder is withheld and they are left out."
-          )
-        }
-      ),
-      collapse = " "
-    )
+    left_out
   } else {
     NA_character_
   }
@@ -775,7 +784,7 @@
       if (known && state_cases != 0) value / state_cases else NA,
       "proportion",
       "derived",
-      denominator = "state_cases: CDC's state totals, in state strata with a published total",
+      denominator = "state_cases: CDC's state totals, in state strata with a published total and a remainder that isn't withheld",
       note = note
     )
   }

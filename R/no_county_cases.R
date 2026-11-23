@@ -22,18 +22,24 @@
 #' the "About CDC AtlasPlus data" article.
 #'
 #' @section State strata with one county row without a published count:
-#' Where a state stratum has exactly one county row in `x` without a published
-#' count (suppressed, "Data not available", or with no count for another
-#' reason), the state total minus the published counts is that county's
-#' count plus any cases with no county. CDC's documentation doesn't say that
-#' state totals include cases with no county, so the figure could be that
-#' county's count exactly. `no_county_cases()` doesn't report it:
-#' `published_cases`, `unpublished_cases` and `no_county_cases` are `NA`,
-#' `no_county_withheld` says why, and a message says how many state strata
-#' this applies to. `state_cases` (CDC's published total) and
-#' `imputed_cases` (the modeled estimate) are still given. Only rows in `x`
-#' are counted: a county row removed before this step, for example by
-#' `impute_suppressed(not_available = "drop")`, is not.
+#' Where a state stratum has exactly one county row without a published count
+#' (suppressed, "Data not available", or with no count for another reason),
+#' the state total minus the published counts is that county's count plus
+#' any cases with no county. CDC's documentation doesn't say that state
+#' totals include cases with no county, so the figure could be that county's
+#' count exactly, and `no_county_cases()` doesn't report it.
+#'
+#' Rows are counted both in `x` and in CDC's county table for `x`, so a
+#' county filtered out of `x`, or dropped by
+#' `impute_suppressed(not_available = "drop")`, still counts. CDC's table
+#' comes from the cache when `x` was downloaded in this session; otherwise it
+#' is downloaded.
+#'
+#' For such a stratum `published_cases`, `unpublished_cases` and
+#' `no_county_cases` are `NA` and `no_county_withheld` says why, and a
+#' message says how many strata this applies to. `state_cases` (CDC's
+#' published total) and `imputed_cases` (the modeled estimate) are still
+#' given.
 #'
 #' @section States with many cases in no county row:
 #' `no_county_cases()` warns, once per call, when a state has more than 25% of
@@ -79,8 +85,8 @@
 #'       been imputed.}
 #'     \item{no_county_withheld}{Why `published_cases`, `unpublished_cases`
 #'       and `no_county_cases` are not reported: `"one county row without a
-#'       published count"`, or `NA` otherwise. (Where CDC suppressed the
-#'       state total, those columns are `NA` for that reason instead.) See the
+#'       published count"`, or `NA` otherwise. (Where CDC suppressed the state
+#'       total, those columns are `NA` for that reason instead.) See the
 #'       section below.}
 #'   }
 #'
@@ -89,7 +95,8 @@
 #'
 #' @details
 #' Downloads the state data matching `x` (same diseases, years and
-#' stratification) from CDC AtlasPlus. The remainder also includes any county
+#' stratification) from CDC AtlasPlus, and CDC's county table for `x` when it
+#' isn't in the cache. The remainder also includes any county
 #' without a count in `x`: "Data not available" rows, counties removed by
 #' filtering `x`, and suppressed rows [impute_suppressed()] couldn't estimate
 #' (marked `cases_source = "not estimated"`), which count as 0 imputed cases.
@@ -118,7 +125,11 @@ no_county_cases <- function(x) {
     .announce_not_estimated(x, "counted in the remainder with no county")
   }
   .inform_ehe_remainder(x)
-  report <- .no_county_cases(x, .fetch_state_totals(x))
+  report <- .no_county_cases(
+    x,
+    .fetch_state_totals(x),
+    .fetch_county_totals(x)
+  )
   .announce_withheld(report)
   .warn_state_unplaced_cases(
     report,
@@ -131,9 +142,10 @@ no_county_cases <- function(x) {
   report
 }
 
-# The report itself, given the state rows. Separate so extrapolate_from_county()
-# can reuse the state rows it has already fetched.
-.no_county_cases <- function(x, state) {
+# The report itself, given the state rows and CDC's county table for `x`
+# (`cdc`; from the cache when `x` was downloaded in this session). Separate so
+# extrapolate_from_county() can reuse the rows it has already fetched.
+.no_county_cases <- function(x, state, cdc) {
   keys <- c("state_fips", .atlas_keys)
   source <- if ("cases_source" %in% names(x)) {
     x$cases_source
@@ -178,8 +190,18 @@ no_county_cases <- function(x) {
   # With exactly one county row without a published count, the state total
   # minus the published counts is that row plus any cases with no county, and
   # CDC's documentation doesn't say there are any. So it could be that row
-  # exactly: withhold every figure that gives it (#173).
-  withheld <- report$unpublished_rows == 1 & !is.na(state_cases)
+  # exactly: withhold every figure that gives it (#173). Rows are counted both
+  # in `x` and in CDC's county table, so filtering a county out of `x`, or
+  # dropping a "Data not available" row, doesn't hide it. A remainder of 0
+  # over several rows is reported: it would say those counties had no cases,
+  # which identifies no one (maintainer, 22 Nov 2026).
+  cdc_unpublished <- .unpublished_rows(cdc, keys)
+  cdc_rows <- cdc_unpublished$rows[
+    match(.row_key(report, keys), cdc_unpublished$key)
+  ]
+  cdc_rows[is.na(cdc_rows)] <- 0
+  withheld <- !is.na(state_cases) &
+    (report$unpublished_rows == 1 | cdc_rows == 1)
   report$no_county_withheld <- ifelse(
     withheld,
     "one county row without a published count",
@@ -204,6 +226,23 @@ no_county_cases <- function(x) {
   )])
 }
 
+# For each state stratum of CDC's county table, the number of county rows
+# without a count, keyed as .row_key(report, keys).
+.unpublished_rows <- function(cdc, keys) {
+  cdc <- data.frame(
+    state_fips = substr(as.character(cdc$fips), 1, 2),
+    lapply(as.data.frame(cdc[.atlas_keys]), as.character),
+    unpublished = is.na(cdc$cases)
+  )
+  cdc$year <- as.numeric(cdc$year)
+  counted <- cdc |>
+    dplyr::summarize(
+      rows = sum(.data$unpublished),
+      .by = dplyr::all_of(keys)
+    )
+  list(key = .row_key(counted, keys), rows = counted$rows)
+}
+
 # Message saying how many state strata had their remainder withheld (#173).
 .announce_withheld <- function(report) {
   n <- sum(!is.na(report$no_county_withheld))
@@ -215,7 +254,7 @@ no_county_cases <- function(x) {
            published count, so {?its/their} remainder is not reported
            ({.code NA}): it could be that county's count.",
     " " = "{.field no_county_withheld} says which. They are left out of any
-           share of cases in no county row."
+           total or share of cases in no county row."
   ))
 }
 
@@ -349,6 +388,10 @@ no_county_cases <- function(x) {
       rlang::set_names(lines, rep("*", length(lines))),
       "i" = "Percentages are of the state totals CDC published for the strata
              in {.arg x}.",
+      "i" = if (any(!is.na(report$no_county_withheld))) {
+        "Strata whose remainder isn't reported ({.field no_county_withheld})
+         are left out of both."
+      },
       with_qty(consequence),
       "i" = "This happens when a state's county counts are largely
              suppressed, or when {.arg x} lacks some of its counties.

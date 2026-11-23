@@ -340,7 +340,11 @@ extrapolate_from_county <- function(
   } else {
     .inform_ehe_remainder(x)
   }
-  report <- .no_county_cases(x, .fetch_state_totals(x))
+  report <- .no_county_cases(
+    x,
+    .fetch_state_totals(x),
+    .fetch_county_totals(x)
+  )
 
   county <- .county_cases(x)
   county$county_cases_unknown <- 0
@@ -1244,8 +1248,12 @@ extrapolate_from_county <- function(
       paste0(
         "{sum(!is.na(report$no_county_withheld))} state strat{?um/a} with
          exactly one county row without a published count (",
-        if (no_county == "spread") "not reported or spread" else "not reported",
-        ": it could be that county's count)"
+        if (no_county == "spread") {
+          "not reported or spread, and not in the totals above"
+        } else {
+          "not reported, and not in the totals above"
+        },
+        "; see {.field no_county_withheld})"
       )
     }
   )

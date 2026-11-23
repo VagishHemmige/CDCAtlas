@@ -20,7 +20,7 @@
       i Cases in state totals with no county, to be spread across each state's counties:
       * HIV diagnoses 2022: 0
       * HIV prevalence 2022: 0
-      ! 2 state strata with exactly one county row without a published count (not reported or spread: it could be that county's count)
+      ! 2 state strata with exactly one county row without a published count (not reported or spread, and not in the totals above; see no_county_withheld)
         See `attr(x, "no_county_cases")` for each state.
 
 # remainders with no county to receive them are reported
@@ -274,7 +274,7 @@
       i Cases in state totals with no county are not allocated to tracts:
       * HIV diagnoses 2022: 0
       * HIV prevalence 2022: 0
-      ! 2 state strata with exactly one county row without a published count (not reported: it could be that county's count)
+      ! 2 state strata with exactly one county row without a published count (not reported, and not in the totals above; see no_county_withheld)
         See `attr(x, "no_county_cases")` for each state.
       i 2 rows with no count that `impute_suppressed()` couldn't estimate were left out of the tract estimates and counted in the remainder with no county.
         County: "County 01003".

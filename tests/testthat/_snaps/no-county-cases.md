@@ -4,7 +4,7 @@
       report <- no_county_cases(county)
     Message
       i 2 state strata have exactly one county row without a published count, so their remainder is not reported (`NA`): it could be that county's count.
-        no_county_withheld says which. They are left out of any share of cases in no county row.
+        no_county_withheld says which. They are left out of any total or share of cases in no county row.
 
 # before imputation, one row without a count also withholds the remainder (#173)
 
@@ -12,7 +12,7 @@
       report <- no_county_cases(fake_county_atlas(suppressed = "01003"))
     Message
       i 2 state strata have exactly one county row without a published count, so their remainder is not reported (`NA`): it could be that county's count.
-        no_county_withheld says which. They are left out of any share of cases in no county row.
+        no_county_withheld says which. They are left out of any total or share of cases in no county row.
 
 # rows impute_suppressed() couldn't estimate count towards the remainder
 

@@ -728,6 +728,55 @@ test_that("no state with a published total leaves every case measure unknown", {
   )
 })
 
+test_that("withheld strata are left out of every remainder sum (#173)", {
+  # State 01: one suppressed county, so its remainder is withheld. State 02:
+  # no published prevalence total. Nothing is known nationally, and the note
+  # names both reasons.
+  rows <- report_two_states(
+    function(state) {
+      state[!(state$fips == "02" & state$indicator == "HIV prevalence"), ]
+    },
+    suppressed = "01003"
+  )
+  national <- rows[rows$state_fips == "all", ]
+  value <- function(measure) national$value[national$measure == measure]
+  note <- function(measure) national$note[national$measure == measure]
+
+  expect_equal(value("remainder_signed"), NA_real_)
+  expect_equal(value("state_strata_remainder_withheld"), 1)
+  expect_equal(value("state_strata_without_total"), 1)
+  expect_match(note("remainder_signed"), "^Unknown, not 0:")
+  expect_match(note("remainder_signed"), "no published state total")
+  expect_match(note("remainder_signed"), "withheld")
+  alabama <- rows[rows$state_fips == "01", ]
+  expect_equal(
+    alabama$value[alabama$measure == "remainder_signed"],
+    NA_real_
+  )
+  expect_match(
+    alabama$note[alabama$measure == "remainder_signed"],
+    "exactly one county row without a published count"
+  )
+})
+
+test_that("an allocation saved without no_county_withheld is still reported (#173)", {
+  data <- two_state_atlas(both_counties)
+  local_fake_sources(state = data$state, acs = data$acs)
+  suppressMessages({
+    imputed <- impute_suppressed(data$county)
+    areas <- without_unplaced_warning(extrapolate_from_county(imputed))
+  })
+  older <- areas
+  attached <- attr(older, "no_county_cases")
+  attached$no_county_withheld <- NULL
+  attr(older, "no_county_cases") <- attached
+
+  expect_equal(
+    .pipeline_report(data$county, imputed, older),
+    .pipeline_report(data$county, imputed, areas)
+  )
+})
+
 test_that("a published state total of zero stays zero", {
   # State 02 publishes 0 cases, though its counties publish 232 (nothing is
   # suppressed, so nothing is withheld).

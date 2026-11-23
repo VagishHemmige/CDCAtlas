@@ -241,6 +241,15 @@ fake_state_response <- function(state, payload) {
   ]
 }
 
+# County data as CDC returned it, before impute_suppressed() filled in counts:
+# what CDC's county table holds for the counties in `x`.
+as_downloaded <- function(x) {
+  if ("cases_source" %in% names(x)) {
+    x$cases[x$cases_source != "published"] <- NA
+  }
+  x
+}
+
 local_fake_sources <- function(
   state = fake_state_atlas(),
   acs = fake_acs(),
@@ -250,7 +259,7 @@ local_fake_sources <- function(
   local_mocked_bindings(
     .request_atlas = function(payload) fake_state_response(state, payload),
     .label_atlas_columns = function(df) df,
-    .fetch_county_totals = function(x) county_totals %||% x,
+    .fetch_county_totals = function(x) county_totals %||% as_downloaded(x),
     .check_census_ready = function(call) invisible(),
     .get_acs_areas = function(variables, year, states, to) {
       if (to == "block group") {

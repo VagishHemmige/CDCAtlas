@@ -73,6 +73,63 @@ test_that("a remainder is withheld only where one county row lacks a published c
   expect_equal(report_two$no_county_cases, c(NA, 232))
 })
 
+test_that("a county filtered out of `x` still counts towards the one-row rule (#173)", {
+  # 01003, the only suppressed county, is filtered out. CDC's county table
+  # still has it, so the remainder (01003 plus any cases with no county) is
+  # withheld.
+  full <- fake_county_atlas(suppressed = "01003")
+  local_fake_sources(county_totals = full)
+  county <- impute_suppressed(full[full$fips == "01001", ], method = "zero")
+
+  report <- suppressMessages(no_county_cases(county))
+  expect_equal(report$no_county_cases, c(NA_real_, NA_real_))
+  expect_equal(
+    report$no_county_withheld,
+    rep("one county row without a published count", 2)
+  )
+})
+
+test_that("a 'Data not available' row dropped from `x` still counts towards the one-row rule (#173)", {
+  full <- fake_county_atlas()
+  full$cases[full$fips == "01003"] <- NA
+  full$data_status[full$fips == "01003"] <- "Data not available"
+  local_fake_sources(county_totals = full)
+
+  for (not_available in c("keep", "drop")) {
+    report <- suppressMessages(no_county_cases(suppressMessages(
+      impute_suppressed(full, not_available = not_available)
+    )))
+    expect_equal(
+      report$no_county_cases,
+      c(NA_real_, NA_real_),
+      label = not_available
+    )
+    expect_equal(
+      report$no_county_withheld,
+      rep("one county row without a published count", 2),
+      label = not_available
+    )
+  }
+})
+
+test_that("a remainder of 0 over several unpublished rows is reported (#173)", {
+  # Both counties suppressed (two rows). Diagnoses: the state publishes 0, so
+  # the remainder is 0, which identifies no one and is reported. Prevalence: a
+  # positive gap.
+  state <- fake_state_atlas()
+  state$cases[state$indicator == "HIV diagnoses"] <- 0
+  local_fake_sources(state = state)
+  county <- impute_suppressed(
+    fake_county_atlas(suppressed = both_counties),
+    method = "zero"
+  )
+
+  report <- without_unplaced_warning(suppressMessages(no_county_cases(county)))
+  expect_equal(report$no_county_withheld, c(NA_character_, NA_character_))
+  expect_equal(report$no_county_cases, c(0, 232))
+  expect_equal(report$state_cases, c(0, 232))
+})
+
 test_that("before imputation, one row without a count also withholds the remainder (#173)", {
   local_fake_sources()
   expect_snapshot(
