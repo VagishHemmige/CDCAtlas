@@ -108,8 +108,6 @@ test_that("a stratum missing from CDC's county table is withheld (#173)", {
 test_that("a county listed twice in CDC's county table counts once (#173)", {
   # `x` has only 01001 (published). CDC's table lists 01003, the only
   # suppressed county, twice: still one county, so the remainder is withheld.
-  # Control: CDC's table has two distinct counties without a count, so the
-  # remainder is reported.
   full <- fake_county_atlas(suppressed = "01003")
   county <- impute_suppressed(full[full$fips == "01001", ], method = "zero")
 
@@ -120,10 +118,46 @@ test_that("a county listed twice in CDC's county table counts once (#173)", {
     report$no_county_withheld,
     rep("one county row without a published count", 2)
   )
+})
 
+test_that("a county with a count in either `x` or CDC's county table is not hidden (#173)", {
+  # Only 01003 has no count anywhere, so the remainder is 01003 plus any cases
+  # with no county, and is withheld, whichever table has the other county's
+  # count.
+  withheld <- rep("one county row without a published count", 2)
+
+  # `x` has only 01001, with a count; CDC's table has both, without.
   local_fake_sources(
     county_totals = fake_county_atlas(suppressed = both_counties)
   )
+  full <- fake_county_atlas()
+  county <- impute_suppressed(full[full$fips == "01001", ], method = "zero")
+  report <- suppressMessages(no_county_cases(county))
+  expect_equal(report$no_county_withheld, withheld)
+  expect_equal(report$no_county_cases, c(NA_real_, NA_real_))
+
+  # CDC's table publishes 01001, `x` doesn't.
+  local_fake_sources(county_totals = fake_county_atlas(suppressed = "01003"))
+  county <- impute_suppressed(
+    fake_county_atlas(suppressed = both_counties),
+    method = "zero"
+  )
+  report <- suppressMessages(no_county_cases(county))
+  expect_equal(report$no_county_withheld, withheld)
+  expect_equal(report$no_county_cases, c(NA_real_, NA_real_))
+})
+
+test_that("two counties without a count in either table give a reported remainder (#173)", {
+  # Three synthetic counties: 01001 published, 01003 and 01005 suppressed in
+  # both `x` and CDC's county table.
+  two <- fake_county_atlas(suppressed = both_counties)
+  third <- two[two$fips == "01003", ]
+  third$fips <- "01005"
+  third$geography <- "County 01005"
+  full <- rbind(fake_county_atlas(suppressed = "01003"), third)
+  local_fake_sources(county_totals = full)
+  county <- impute_suppressed(full, method = "zero")
+
   report <- without_unplaced_warning(suppressMessages(no_county_cases(county)))
   expect_equal(report$no_county_withheld, c(NA_character_, NA_character_))
   expect_equal(report$no_county_cases, c(32, 232) - c(11, 111))

@@ -77,13 +77,14 @@ any cases with no county. CDC's documentation doesn't say that state
 totals include cases with no county, so the figure could be that county's
 count exactly, and \code{no_county_cases()} doesn't report it.
 
-Rows are counted both in \code{x} and in CDC's county table for \code{x}, so a
-county filtered out of \code{x}, or dropped by
-\code{impute_suppressed(not_available = "drop")}, still counts. CDC's table
-comes from the cache when \code{x} was downloaded in this session; otherwise it
-is downloaded. If CDC's table has no rows for a stratum, how many counties
-lack a count can't be known, so that stratum's remainder isn't reported
-either.
+Counties are counted over both \code{x} and CDC's county table for \code{x}, and a
+county counts only if neither gives its count. So a county filtered out of
+\code{x}, or dropped by \code{impute_suppressed(not_available = "drop")}, still
+counts, and a county with a count in one table but not the other doesn't.
+CDC's table comes from the cache when \code{x} was downloaded in this session;
+otherwise it is downloaded. If CDC's table has no rows for a stratum, how
+many counties lack a count can't be known, so that stratum's remainder
+isn't reported either.
 
 For such a stratum \code{published_cases}, \code{unpublished_cases} and
 \code{no_county_cases} are \code{NA} and \code{no_county_withheld} says why, and a
