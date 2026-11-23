@@ -176,6 +176,25 @@ test_that("a county only in `x` doesn't count as hidden (#173)", {
   }
 })
 
+test_that("a county without a count that CDC's table doesn't list still withholds the remainder (#173)", {
+  # `x`: 01001 published, 01003 without a count. CDC's table lists 01001
+  # only, so it says nothing about 01003. 01003 is still the one county
+  # without a count, so the remainder is withheld.
+  x <- fake_county_atlas(suppressed = "01003")
+  local_fake_sources(county_totals = x[x$fips == "01001", ])
+
+  report <- suppressMessages(no_county_cases(
+    impute_suppressed(x, method = "zero")
+  ))
+  expect_equal(
+    report$no_county_withheld,
+    rep("one county row without a published count", 2)
+  )
+  for (column in c("published_cases", "unpublished_cases", "no_county_cases")) {
+    expect_equal(report[[column]], c(NA_real_, NA_real_), label = column)
+  }
+})
+
 test_that("two counties without a count in either table give a reported remainder (#173)", {
   # Three synthetic counties: 01001 published, 01003 and 01005 suppressed in
   # both `x` and CDC's county table.
