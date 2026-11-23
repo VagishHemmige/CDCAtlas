@@ -33,7 +33,9 @@
 #' county filtered out of `x`, or dropped by
 #' `impute_suppressed(not_available = "drop")`, still counts. CDC's table
 #' comes from the cache when `x` was downloaded in this session; otherwise it
-#' is downloaded.
+#' is downloaded. If CDC's table has no rows for a stratum, how many counties
+#' lack a count can't be known, so that stratum's remainder isn't reported
+#' either.
 #'
 #' For such a stratum `published_cases`, `unpublished_cases` and
 #' `no_county_cases` are `NA` and `no_county_withheld` says why, and a
@@ -85,7 +87,8 @@
 #'       been imputed.}
 #'     \item{no_county_withheld}{Why `published_cases`, `unpublished_cases`
 #'       and `no_county_cases` are not reported: `"one county row without a
-#'       published count"`, or `NA` otherwise. (Where CDC suppressed the state
+#'       published count"`, `"no CDC county rows to count unpublished
+#'       counties"`, or `NA` otherwise. (Where CDC suppressed the state
 #'       total, those columns are `NA` for that reason instead.) See the
 #'       section below.}
 #'   }
@@ -192,20 +195,22 @@ no_county_cases <- function(x) {
   # CDC's documentation doesn't say there are any. So it could be that row
   # exactly: withhold every figure that gives it (#173). Rows are counted both
   # in `x` and in CDC's county table, so filtering a county out of `x`, or
-  # dropping a "Data not available" row, doesn't hide it. A remainder of 0
-  # over several rows is reported: it would say those counties had no cases,
-  # which identifies no one (maintainer, 22 Nov 2026).
+  # dropping a "Data not available" row, doesn't hide it. Where CDC's table
+  # has no rows for the stratum, how many counties lack a count is unknown,
+  # so it is withheld too. A gap of 0 before imputation (unpublished_cases)
+  # over several rows is reported: it says those counties had no cases, which
+  # identifies no one (maintainer, 22 Nov 2026).
   cdc_unpublished <- .unpublished_rows(cdc, keys)
   cdc_rows <- cdc_unpublished$rows[
     match(.row_key(report, keys), cdc_unpublished$key)
   ]
-  cdc_rows[is.na(cdc_rows)] <- 0
-  withheld <- !is.na(state_cases) &
-    (report$unpublished_rows == 1 | cdc_rows == 1)
-  report$no_county_withheld <- ifelse(
-    withheld,
-    "one county row without a published count",
-    NA_character_
+  single <- report$unpublished_rows == 1 | cdc_rows %in% 1
+  unknown <- !single & is.na(cdc_rows)
+  withheld <- !is.na(state_cases) & (single | unknown)
+  report$no_county_withheld <- dplyr::case_when(
+    !withheld ~ NA_character_,
+    single ~ "one county row without a published count",
+    .default = "no CDC county rows to count unpublished counties"
   )
   report[
     withheld,
@@ -249,10 +254,21 @@ no_county_cases <- function(x) {
   if (n == 0) {
     return(invisible())
   }
+  single <- sum(
+    report$no_county_withheld %in% "one county row without a published count"
+  )
+  unknown <- n - single
   cli::cli_inform(c(
-    "i" = "{n} state strat{?um has/a have} exactly one county row without a
-           published count, so {?its/their} remainder is not reported
-           ({.code NA}): it could be that county's count.",
+    "i" = "{cli::qty(n)}The remainder{?s} of {n} state strat{?um is/a are}
+           not reported ({.code NA}):",
+    "*" = if (single > 0) {
+      "{single} with exactly one county row without a published count (the
+       remainder could be that county's count)"
+    },
+    "*" = if (unknown > 0) {
+      "{unknown} with no rows in CDC's county table, so it can't be known how
+       many counties lack a count"
+    },
     " " = "{.field no_county_withheld} says which. They are left out of any
            total or share of cases in no county row."
   ))

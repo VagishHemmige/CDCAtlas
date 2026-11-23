@@ -27,7 +27,7 @@ for. \code{NA} if withheld.}
 negative if the imputed counts are too high, and is \code{NA} if \code{x} hasn't
 been imputed.}
 \item{no_county_withheld}{Why \code{published_cases}, \code{unpublished_cases}
-and \code{no_county_cases} are not reported: \code{"one county row without a published count"}, or \code{NA} otherwise. (Where CDC suppressed the state
+and \code{no_county_cases} are not reported: \code{"one county row without a published count"}, \code{"no CDC county rows to count unpublished counties"}, or \code{NA} otherwise. (Where CDC suppressed the state
 total, those columns are \code{NA} for that reason instead.) See the
 section below.}
 }
@@ -81,7 +81,9 @@ Rows are counted both in \code{x} and in CDC's county table for \code{x}, so a
 county filtered out of \code{x}, or dropped by
 \code{impute_suppressed(not_available = "drop")}, still counts. CDC's table
 comes from the cache when \code{x} was downloaded in this session; otherwise it
-is downloaded.
+is downloaded. If CDC's table has no rows for a stratum, how many counties
+lack a count can't be known, so that stratum's remainder isn't reported
+either.
 
 For such a stratum \code{published_cases}, \code{unpublished_cases} and
 \code{no_county_cases} are \code{NA} and \code{no_county_withheld} says why, and a

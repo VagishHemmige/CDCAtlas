@@ -126,10 +126,8 @@ using an equality constraint. Label the outputs as modeled, distinct from
 observed values. Still not allowed:
 
 - Deriving the value of a single suppressed cell from a residual: exactly one
-  suppressed cell within a published total, or any other case where the
-  public figures determine a positive cell exactly. A residual of zero may be
-  reported: it says the cells within it had no cases, which identifies no one
-  (maintainer's decision, 22 November 2026).
+  suppressed cell within a published total, or any case where the public
+  figures determine a cell exactly, such as a zero residual.
 - Publishing per-area residuals, bounds or intervals for individual suppressed
   cells.
 - Combining further tables to narrow a cell.

@@ -3,15 +3,34 @@
     Code
       report <- no_county_cases(county)
     Message
-      i 2 state strata have exactly one county row without a published count, so their remainder is not reported (`NA`): it could be that county's count.
+      i The remainders of 2 state strata are not reported (`NA`):
+      * 2 with exactly one county row without a published count (the remainder could be that county's count)
         no_county_withheld says which. They are left out of any total or share of cases in no county row.
+
+# a stratum missing from CDC's county table is withheld (#173)
+
+    Code
+      report <- no_county_cases(county)
+    Message
+      i The remainder of 1 state stratum is not reported (`NA`):
+      * 1 with no rows in CDC's county table, so it can't be known how many counties lack a count
+        no_county_withheld says which. They are left out of any total or share of cases in no county row.
+    Condition
+      Warning:
+      1 state has more than 25% of its published state total in no county row of `x`.
+      * HIV prevalence 2022: Alabama (52%)
+      i Percentages are of the state totals CDC published for the strata in `x`.
+      i Strata whose remainder isn't reported (no_county_withheld) are left out of both.
+      ! Adding up this state's county counts, or estimating smaller areas from them, leaves those cases out, so the results are too low by about that share for those strata.
+      i This happens when a state's county counts are largely suppressed, or when `x` lacks some of its counties. CDCAtlas doesn't check the cause.
 
 # before imputation, one row without a count also withholds the remainder (#173)
 
     Code
       report <- no_county_cases(fake_county_atlas(suppressed = "01003"))
     Message
-      i 2 state strata have exactly one county row without a published count, so their remainder is not reported (`NA`): it could be that county's count.
+      i The remainders of 2 state strata are not reported (`NA`):
+      * 2 with exactly one county row without a published count (the remainder could be that county's count)
         no_county_withheld says which. They are left out of any total or share of cases in no county row.
 
 # rows impute_suppressed() couldn't estimate count towards the remainder

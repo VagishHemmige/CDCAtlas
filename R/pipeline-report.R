@@ -728,7 +728,7 @@
 # `remainder` is no_county_cases() output: one row per state stratum. Sums are
 # over state strata with a published state total and a remainder that isn't
 # withheld; the others are counted, not treated as 0. A withheld remainder
-# (exactly one county row without a published count, #173) is left out of
+# (see no_county_cases(), #173) is left out of
 # every sum here, not only its own row: a sum that included it, beside the
 # other states' figures, would give it back by subtraction.
 .report_remainder <- function(remainder) {
@@ -752,7 +752,7 @@
       if (any(withheld)) {
         paste(
           sum(withheld),
-          "state strata have exactly one county row without a published count, so their remainder is withheld and they are left out."
+          "state strata have a withheld remainder (one county row without a published count, or no CDC county rows to count them) and are left out."
         )
       }
     ),
@@ -834,7 +834,7 @@
 
 .report_no_total_note <- "Unknown, not 0: the state strata here have no published state total."
 
-.report_withheld_note <- "Not reported: the state strata here have exactly one county row without a published count, so the remainder could be that county's count."
+.report_withheld_note <- "Not reported: the remainder of the state strata here is withheld (one county row without a published count, or no CDC county rows to count them)."
 
 # One state's totals and remainder, with the number of its strata that have no
 # published total. A single state stratum has one remainder, so its positive

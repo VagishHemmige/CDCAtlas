@@ -755,7 +755,7 @@ test_that("withheld strata are left out of every remainder sum (#173)", {
   )
   expect_match(
     alabama$note[alabama$measure == "remainder_signed"],
-    "exactly one county row without a published count"
+    "withheld"
   )
 })
 

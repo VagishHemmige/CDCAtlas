@@ -89,6 +89,22 @@ test_that("a county filtered out of `x` still counts towards the one-row rule (#
   )
 })
 
+test_that("a stratum missing from CDC's county table is withheld (#173)", {
+  # `x` has only published rows. CDC's county table has prevalence (with no
+  # unpublished rows) but no diagnoses rows, so for diagnoses it can't be
+  # known how many counties lack a count. Prevalence is reported.
+  full <- fake_county_atlas()
+  local_fake_sources(county_totals = full[full$indicator == "HIV prevalence", ])
+  county <- impute_suppressed(full[full$fips == "01001", ], method = "zero")
+
+  expect_snapshot(report <- no_county_cases(county))
+  expect_equal(
+    report$no_county_withheld,
+    c("no CDC county rows to count unpublished counties", NA)
+  )
+  expect_equal(report$no_county_cases, c(NA, 232 - 111))
+})
+
 test_that("a 'Data not available' row dropped from `x` still counts towards the one-row rule (#173)", {
   full <- fake_county_atlas()
   full$cases[full$fips == "01003"] <- NA
