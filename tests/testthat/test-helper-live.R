@@ -1239,3 +1239,43 @@ test_that("expect_no_single_suppressed_county() stops on a response for another 
     "must be for 2022 only"
   )
 })
+
+test_that("unplaced_warning_names() looks for the state in one indicator's entry (#164)", {
+  # Made-up warnings in the shape the pipeline gives.
+  warning <- function(diagnoses, prevalence) {
+    paste(
+      "2 states have more than 25% of their published state total in no county row of `x`.",
+      paste0("* HIV diagnoses 2022: ", diagnoses),
+      paste0("* HIV prevalence 2022: ", prevalence),
+      "i Percentages are of the state totals CDC published for the strata in `x`.",
+      sep = "\n"
+    )
+  }
+  only_diagnoses <- warning("Alaska (87%)", "Idaho (47%)")
+  in_prevalence <- warning("Idaho (47%)", "Rhode Island (73%) and Alaska (87%)")
+
+  # Alaska is somewhere in both warnings.
+  expect_match(only_diagnoses, "Alaska \\(")
+  expect_match(in_prevalence, "Alaska \\(")
+  expect_false(
+    unplaced_warning_names(only_diagnoses, "HIV prevalence 2022", "Alaska")
+  )
+  expect_true(
+    unplaced_warning_names(in_prevalence, "HIV prevalence 2022", "Alaska")
+  )
+  expect_true(
+    unplaced_warning_names(only_diagnoses, "HIV diagnoses 2022", "Alaska")
+  )
+  # Another year's entry, or no entry at all, is not a match.
+  expect_false(
+    unplaced_warning_names(in_prevalence, "HIV prevalence 2021", "Alaska")
+  )
+  # A wrapped entry and a different bullet are read the same way.
+  wrapped <- sub(
+    " and Alaska",
+    " and\n  Alaska",
+    gsub("* ", "\u2022 ", in_prevalence, fixed = TRUE),
+    fixed = TRUE
+  )
+  expect_true(unplaced_warning_names(wrapped, "HIV prevalence 2022", "Alaska"))
+})

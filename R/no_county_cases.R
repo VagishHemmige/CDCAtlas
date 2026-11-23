@@ -23,19 +23,24 @@
 #'
 #' @section States with many cases in no county row:
 #' `no_county_cases()` warns, once per call, when a state has more than 25% of
-#' its cases in no county row: the remainder divided by the state total, with
-#' both added up over the state's strata, separately for each indicator and
-#' year. The warning (class `"cdcatlas_state_unplaced_cases"`) names the
-#' states with their percentages, the five largest for each indicator and
-#' year. County counts for such a state, added up or shared across smaller
-#' areas, leave those cases out and are too low by about that share. This
-#' happens when a state's county counts are largely suppressed, or when `x`
-#' lacks some of the state's counties; the package does not check the cause.
-#' Nothing in the report changes.
+#' its published state total in no county row of `x`: the remainder divided
+#' by the state total, with both added up over the state's strata that are in
+#' `x` and have a published state total, separately for each indicator and
+#' year. The percentage is of the state totals CDC published for the strata
+#' in `x`. It is not a share of every case in the state when `x` lacks a
+#' stratum (data filtered to one sex, say) or CDC published no total for one.
+#' The warning (class `"cdcatlas_state_unplaced_cases"`) names the states
+#' with their percentages, the five largest for each indicator and year.
+#' County counts for such a state, added up or shared across smaller areas,
+#' leave those cases out and are too low by about that share for those
+#' strata. This happens when a state's county counts are largely suppressed,
+#' or when `x` lacks some of the state's counties; the package does not check
+#' the cause. Nothing in the report changes.
 #'
 #' A state is assessed only where CDC published its total and `x` has been
-#' through [impute_suppressed()]. Strata with no published state total are
-#' left out of its share, and so are states with no cases. CDC's HIV
+#' through [impute_suppressed()]. Strata with no published state total, and
+#' strata with no row in `x`, are left out of its share, and so are states
+#' with no cases. CDC's HIV
 #' estimates are not assessed, because their county data cover only EHE
 #' counties. A stratum where the imputed counts exceed the state total
 #' offsets one where they fall short. The 25% is fixed.
@@ -99,7 +104,7 @@ no_county_cases <- function(x) {
     c(
       "!" = "Adding up {?this state's/these states'} county counts, or
              estimating smaller areas from them, leaves those cases out, so
-             the results are too low by about that share."
+             the results are too low by about that share for those strata."
     )
   )
   report
@@ -193,6 +198,8 @@ no_county_cases <- function(x) {
 # - Only strata with a published state total and a remainder are counted, so
 #   a state with no published total, and county data not yet imputed, are not
 #   assessed.
+# - The report has rows only for strata in the county data, so a stratum the
+#   caller left out is in neither sum, whatever CDC published for it.
 # - The remainder is summed with its sign, so a stratum where the imputed
 #   counts overshoot offsets one that falls short.
 # - CDC's HIV estimates are left out: their county data cover only EHE
@@ -282,8 +289,11 @@ no_county_cases <- function(x) {
   cli::cli_warn(
     c(
       "{n} state{?s} {?has/have} more than {threshold} of
-       {cli::qty(n)}{?its/their} cases in no county row.",
+       {cli::qty(n)}{?its/their} published state total in no county row of
+       {.arg x}.",
       rlang::set_names(lines, rep("*", length(lines))),
+      "i" = "Percentages are of the state totals CDC published for the strata
+             in {.arg x}.",
       with_qty(consequence),
       "i" = "This happens when a state's county counts are largely
              suppressed, or when {.arg x} lacks some of its counties.
