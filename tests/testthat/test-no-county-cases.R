@@ -105,6 +105,30 @@ test_that("a stratum missing from CDC's county table is withheld (#173)", {
   expect_equal(report$no_county_cases, c(NA, 232 - 111))
 })
 
+test_that("a county listed twice in CDC's county table counts once (#173)", {
+  # `x` has only 01001 (published). CDC's table lists 01003, the only
+  # suppressed county, twice: still one county, so the remainder is withheld.
+  # Control: CDC's table has two distinct counties without a count, so the
+  # remainder is reported.
+  full <- fake_county_atlas(suppressed = "01003")
+  county <- impute_suppressed(full[full$fips == "01001", ], method = "zero")
+
+  repeated <- rbind(full, full[full$fips == "01003", ])
+  local_fake_sources(county_totals = repeated)
+  report <- suppressMessages(no_county_cases(county))
+  expect_equal(
+    report$no_county_withheld,
+    rep("one county row without a published count", 2)
+  )
+
+  local_fake_sources(
+    county_totals = fake_county_atlas(suppressed = both_counties)
+  )
+  report <- without_unplaced_warning(suppressMessages(no_county_cases(county)))
+  expect_equal(report$no_county_withheld, c(NA_character_, NA_character_))
+  expect_equal(report$no_county_cases, c(32, 232) - c(11, 111))
+})
+
 test_that("a 'Data not available' row dropped from `x` still counts towards the one-row rule (#173)", {
   full <- fake_county_atlas()
   full$cases[full$fips == "01003"] <- NA

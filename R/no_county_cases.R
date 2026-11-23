@@ -231,10 +231,14 @@ no_county_cases <- function(x) {
   )])
 }
 
-# For each state stratum of CDC's county table, the number of county rows
-# without a count, keyed as .row_key(report, keys).
+# For each state stratum of CDC's county table, the number of counties with a
+# row without a count, keyed as .row_key(report, keys). Counties, not rows: a
+# county listed twice counts once, so a repeated row can't make one
+# unpublished county look like two. A county listed both with and without a
+# count counts as without.
 .unpublished_rows <- function(cdc, keys) {
   cdc <- data.frame(
+    fips = as.character(cdc$fips),
     state_fips = substr(as.character(cdc$fips), 1, 2),
     lapply(as.data.frame(cdc[.atlas_keys]), as.character),
     unpublished = is.na(cdc$cases)
@@ -242,7 +246,7 @@ no_county_cases <- function(x) {
   cdc$year <- as.numeric(cdc$year)
   counted <- cdc |>
     dplyr::summarize(
-      rows = sum(.data$unpublished),
+      rows = dplyr::n_distinct(.data$fips[.data$unpublished]),
       .by = dplyr::all_of(keys)
     )
   list(key = .row_key(counted, keys), rows = counted$rows)
