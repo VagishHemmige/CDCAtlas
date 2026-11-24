@@ -36,13 +36,13 @@
   ([\#151](https://github.com/VagishHemmige/CDCAtlas/issues/151)).
 - [`no_county_cases()`](https://vagishhemmige.github.io/CDCAtlas/reference/no_county_cases.md)
   doesn’t report the remainder of a state stratum with exactly one
-  county row without a published count (counting the counties in CDC’s
-  county table with a count in neither that table nor `x`), since it
-  could be that county’s count, nor where CDC’s county table has no rows
-  for the stratum: `published_cases`, `unpublished_cases` and
-  `no_county_cases` are `NA`, and a new column, `no_county_withheld`,
-  says why. CDC’s documentation doesn’t say that state totals include
-  cases with no county
+  county row without a published count (counting the counties with a
+  count in neither `x` nor CDC’s county table, over both tables and over
+  the counties CDC’s table lists), since it could be that county’s
+  count, nor where CDC’s county table has no rows for the stratum:
+  `published_cases`, `unpublished_cases` and `no_county_cases` are `NA`,
+  and a new column, `no_county_withheld`, says why. CDC’s documentation
+  doesn’t say that state totals include cases with no county
   ([\#173](https://github.com/VagishHemmige/CDCAtlas/issues/173)).
 - [`no_county_cases()`](https://vagishhemmige.github.io/CDCAtlas/reference/no_county_cases.md)
   warns once (class `"cdcatlas_state_unplaced_cases"`) when a state has
