@@ -202,21 +202,22 @@ no_county_cases <- function(x) {
   # is withheld if one county counts either over both tables or over the
   # counties CDC's table lists. So filtering a county out of `x`, dropping a
   # "Data not available" row, a status in `x` that differs from CDC's, or a
-  # county in one table only doesn't hide the one county. Where CDC's table has no rows for the stratum, how many counties
-  # lack a count is unknown, so it is withheld too. A gap of 0 before
-  # imputation (unpublished_cases) over several counties is reported: it says
-  # those counties had no cases, which identifies no one (maintainer, 22 Nov
-  # 2026).
+  # county in one table only doesn't hide the one county. Where CDC's table
+  # has no rows for the stratum, how many counties lack a count is unknown, so
+  # it is withheld too, with that reason even if `x` has one such county. A
+  # gap of 0 before imputation (unpublished_cases) over several counties is
+  # reported: it says those counties had no cases, which identifies no one
+  # (maintainer, 22 Nov 2026).
   hidden <- .hidden_counties(county, cdc, keys)
   report_key <- .row_key(report, keys)
   row <- match(report_key, hidden$key)
-  single <- hidden$all[row] %in% 1 | hidden$cdc[row] %in% 1
-  unknown <- !single & !report_key %in% hidden$cdc_key
+  unknown <- !report_key %in% hidden$cdc_key
+  single <- !unknown & (hidden$all[row] %in% 1 | hidden$cdc[row] %in% 1)
   withheld <- !is.na(state_cases) & (single | unknown)
   report$no_county_withheld <- dplyr::case_when(
     !withheld ~ NA_character_,
-    single ~ "one county row without a published count",
-    .default = "no CDC county rows to count unpublished counties"
+    unknown ~ "no CDC county rows to count unpublished counties",
+    .default = "one county row without a published count"
   )
   report[
     withheld,

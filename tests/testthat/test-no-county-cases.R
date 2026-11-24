@@ -103,6 +103,27 @@ test_that("a stratum missing from CDC's county table is withheld (#173)", {
     c("no CDC county rows to count unpublished counties", NA)
   )
   expect_equal(report$no_county_cases, c(NA, 232 - 111))
+
+  # With 01003 in `x` and without a count, diagnoses still has no CDC rows:
+  # the reason is still that CDC's table has none, not one county.
+  # Prevalence, where CDC's table lists 01003 without a count, is one county.
+  suppressed <- fake_county_atlas(suppressed = "01003")
+  local_fake_sources(
+    county_totals = suppressed[suppressed$indicator == "HIV prevalence", ]
+  )
+  report <- suppressMessages(no_county_cases(
+    impute_suppressed(suppressed, method = "zero")
+  ))
+  expect_equal(
+    report$no_county_withheld,
+    c(
+      "no CDC county rows to count unpublished counties",
+      "one county row without a published count"
+    )
+  )
+  for (column in c("published_cases", "unpublished_cases", "no_county_cases")) {
+    expect_equal(report[[column]], c(NA_real_, NA_real_), label = column)
+  }
 })
 
 test_that("a county listed twice in CDC's county table counts once (#173)", {
