@@ -117,12 +117,13 @@ the "About CDC AtlasPlus data" article.</p>
 <dd><p>The state total published by CDC.</p></dd>
 
 <dt>published_cases</dt>
-<dd><p>Sum of the published county counts in <code>x</code>.</p></dd>
+<dd><p>Sum of the published county counts in <code>x</code>.
+<code>NA</code> if the remainder is withheld (see <code>no_county_withheld</code>).</p></dd>
 
 <dt>unpublished_cases</dt>
 <dd><p><code>state_cases - published_cases</code>: cases in
 suppressed counties together with the remainder no county accounts
-for.</p></dd>
+for. <code>NA</code> if withheld.</p></dd>
 
 <dt>imputed_cases</dt>
 <dd><p>Sum of the counts <code><a href="impute_suppressed.html">impute_suppressed()</a></code> filled in;
@@ -133,6 +134,12 @@ for.</p></dd>
 negative if the imputed counts are too high, and is <code>NA</code> if <code>x</code> hasn't
 been imputed.</p></dd>
 
+<dt>no_county_withheld</dt>
+<dd><p>Why <code>published_cases</code>, <code>unpublished_cases</code>
+and <code>no_county_cases</code> are not reported: <code>"one county row without a published count"</code>, <code>"no CDC county rows to count unpublished counties"</code>, or <code>NA</code> otherwise. (Where CDC suppressed the state
+total, those columns are <code>NA</code> for that reason instead.) See the
+section below.</p></dd>
+
 
 </dl><p>Every column computed from <code>state_cases</code> is <code>NA</code> if CDC suppressed the
 state total.</p>
@@ -140,7 +147,8 @@ state total.</p>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Downloads the state data matching <code>x</code> (same diseases, years and
-stratification) from CDC AtlasPlus. The remainder also includes any county
+stratification) from CDC AtlasPlus, and CDC's county table for <code>x</code> when it
+isn't in the cache. The remainder also includes any county
 without a count in <code>x</code>: "Data not available" rows, counties removed by
 filtering <code>x</code>, and suppressed rows <code><a href="impute_suppressed.html">impute_suppressed()</a></code> couldn't estimate
 (marked <code>cases_source = "not estimated"</code>), which count as 0 imputed cases.
@@ -148,6 +156,31 @@ The report has a row only for state groups (state, indicator, year and
 stratum) with at least one row in <code>x</code>: if
 <code>impute_suppressed(not_available = "drop")</code> or filtering removed every row
 of a group, its state total is not reported.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="state-strata-with-one-county-row-without-a-published-count">State strata with one county row without a published count<a class="anchor" aria-label="anchor" href="#state-strata-with-one-county-row-without-a-published-count"></a></h2>
+
+
+<p>Where a state stratum has exactly one county row without a published count
+(suppressed, "Data not available", or with no count for another reason),
+the state total minus the published counts is that county's count plus
+any cases with no county. CDC's documentation doesn't say that state
+totals include cases with no county, so the figure could be that county's
+count exactly, and <code>no_county_cases()</code> doesn't report it.</p>
+<p>Counties are counted in CDC's county table for <code>x</code>, and a county counts
+only if neither that table nor <code>x</code> gives its count. So a county filtered
+out of <code>x</code>, or dropped by <code>impute_suppressed(not_available = "drop")</code>,
+still counts; a county with a count in one table but not the other
+doesn't, and nor does a county in <code>x</code> that CDC's table doesn't list.
+CDC's table comes from the cache when <code>x</code> was downloaded in this session;
+otherwise it is downloaded. If CDC's table has no rows for a stratum, how
+many counties lack a count can't be known, so that stratum's remainder
+isn't reported either.</p>
+<p>For such a stratum <code>published_cases</code>, <code>unpublished_cases</code> and
+<code>no_county_cases</code> are <code>NA</code> and <code>no_county_withheld</code> says why, and a
+message says how many strata this applies to. <code>state_cases</code> (CDC's
+published total) and <code>imputed_cases</code> (the modeled estimate) are still
+given.</p>
     </div>
     <div class="section level2">
     <h2 id="states-with-many-cases-in-no-county-row">States with many cases in no county row<a class="anchor" aria-label="anchor" href="#states-with-many-cases-in-no-county-row"></a></h2>

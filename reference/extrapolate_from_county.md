@@ -81,8 +81,10 @@ extrapolate_from_county(
     from the cache when `x` was downloaded in this session. Negative
     remainders are not spread, nor are remainders in a state with no
     allocated county in that stratum; the message says how many cases
-    could not be spread. Not available for CDC's HIV estimates (EHE
-    counties only).
+    could not be spread. A remainder
+    [`no_county_cases()`](https://vagishhemmige.github.io/CDCAtlas/reference/no_county_cases.md)
+    withholds (see its column `no_county_withheld`) is not spread
+    either. Not available for CDC's HIV estimates (EHE counties only).
 
   With either choice, a warning (class
   `"cdcatlas_state_unplaced_cases"`) names any state with more than 25%

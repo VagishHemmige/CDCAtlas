@@ -17,6 +17,11 @@
   any of those cases that reach areas are placed by assumption. No
   estimate changes
   ([\#164](https://github.com/VagishHemmige/CDCAtlas/issues/164)).
+- `extrapolate_from_county(no_county = "spread")` doesn’t spread a
+  remainder
+  [`no_county_cases()`](https://vagishhemmige.github.io/CDCAtlas/reference/no_county_cases.md)
+  withholds, and the message says how many state strata that applies to
+  ([\#173](https://github.com/VagishHemmige/CDCAtlas/issues/173)).
 - [`impute_suppressed()`](https://vagishhemmige.github.io/CDCAtlas/reference/impute_suppressed.md)
   says in a message how many suppressed rows `method = "state_rate"`
   filled in and how many of them had their value set by `cap` and by
@@ -29,6 +34,16 @@
   `cases_uncapped > cap` marks the rows whose value the cap set. `cases`
   is unchanged
   ([\#151](https://github.com/VagishHemmige/CDCAtlas/issues/151)).
+- [`no_county_cases()`](https://vagishhemmige.github.io/CDCAtlas/reference/no_county_cases.md)
+  doesn’t report the remainder of a state stratum with exactly one
+  county row without a published count (counting the counties in CDC’s
+  county table with a count in neither that table nor `x`), since it
+  could be that county’s count, nor where CDC’s county table has no rows
+  for the stratum: `published_cases`, `unpublished_cases` and
+  `no_county_cases` are `NA`, and a new column, `no_county_withheld`,
+  says why. CDC’s documentation doesn’t say that state totals include
+  cases with no county
+  ([\#173](https://github.com/VagishHemmige/CDCAtlas/issues/173)).
 - [`no_county_cases()`](https://vagishhemmige.github.io/CDCAtlas/reference/no_county_cases.md)
   warns once (class `"cdcatlas_state_unplaced_cases"`) when a state has
   more than 25% of its published state total in no county row of `x`

@@ -426,6 +426,12 @@ difference also includes any county left out of the data you pass in.
 default (<code>no_county = "report"</code>).
 <code>no_county = "spread"</code> shares it across the state’s counties;
 that treats it as cases with no county, which is an assumption.</p>
+<p>Where a state stratum has exactly one county without a published
+count, the difference is that county’s count plus any cases with no
+county. Since CDC’s documentation doesn’t say there are any, it could be
+that county’s count exactly, so <code><a href="../reference/no_county_cases.html">no_county_cases()</a></code> doesn’t
+report it: the column <code>no_county_withheld</code> says so, and
+<code>no_county = "spread"</code> doesn’t spread it.</p>
 <p>For the HIV estimates, the counties are EHE counties only, so the
 remainder can include people in the state’s other counties and isn’t
 necessarily cases with no county. <code><a href="../reference/no_county_cases.html">no_county_cases()</a></code> says

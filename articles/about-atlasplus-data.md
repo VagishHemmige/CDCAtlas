@@ -224,6 +224,14 @@ leaves the remainder out by default (`no_county = "report"`).
 `no_county = "spread"` shares it across the state’s counties; that
 treats it as cases with no county, which is an assumption.
 
+Where a state stratum has exactly one county without a published count,
+the difference is that county’s count plus any cases with no county.
+Since CDC’s documentation doesn’t say there are any, it could be that
+county’s count exactly, so
+[`no_county_cases()`](https://vagishhemmige.github.io/CDCAtlas/reference/no_county_cases.md)
+doesn’t report it: the column `no_county_withheld` says so, and
+`no_county = "spread"` doesn’t spread it.
+
 For the HIV estimates, the counties are EHE counties only, so the
 remainder can include people in the state’s other counties and isn’t
 necessarily cases with no county.

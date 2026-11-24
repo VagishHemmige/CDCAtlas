@@ -332,7 +332,7 @@ stop instead.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">hiv_tract</span>, <span class="st">"no_county_cases"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 12</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 13</span></span></span>
 <span><span class="co">#&gt;   state_fips state   indicator       year race_ethnicity sex   age   state_cases</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 01         Alabama HIV diagnoses   <span style="text-decoration: underline;">2</span>022 All races/eth… Both… Ages…         678</span></span>
@@ -341,8 +341,8 @@ stop instead.</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 02         Alaska  HIV prevalence  <span style="text-decoration: underline;">2</span>022 All races/eth… Both… Ages…         767</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 04         Arizona HIV diagnoses   <span style="text-decoration: underline;">2</span>022 All races/eth… Both… Ages…         849</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> 04         Arizona HIV prevalence  <span style="text-decoration: underline;">2</span>022 All races/eth… Both… Ages…       <span style="text-decoration: underline;">18</span>586</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 4 more variables: published_cases &lt;dbl&gt;, unpublished_cases &lt;dbl&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   imputed_cases &lt;dbl&gt;, no_county_cases &lt;dbl&gt;</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 5 more variables: published_cases &lt;dbl&gt;, unpublished_cases &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   imputed_cases &lt;dbl&gt;, no_county_cases &lt;dbl&gt;, no_county_withheld &lt;chr&gt;</span></span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="sex-stratified-extrapolation">Sex-stratified extrapolation<a class="anchor" aria-label="anchor" href="#sex-stratified-extrapolation"></a>
@@ -369,9 +369,11 @@ also be sex-specific.</p>
 <span><span class="co">#&gt; Fetching tract data by state and combining the result.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Cases in state totals with no county are not allocated to tracts:</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> HIV diagnoses 2022: 1,554</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> HIV prevalence 2022: 42,234</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> 57 state strata with a negative remainder (counted as 0)</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> HIV diagnoses 2022: 1,539</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> HIV prevalence 2022: 41,958</span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> 56 state strata with a negative remainder (counted as 0)</span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> 4 state strata whose remainder could be a single county's count or can't be</span></span>
+<span><span class="co">#&gt;   checked (not reported, and not in the totals above; see <span style="color: #00BB00;">no_county_withheld</span>)</span></span>
 <span><span class="co">#&gt;   See `attr(x, "no_county_cases")` for each state.</span></span>
 <span><span class="co">#&gt; Warning: 13 states have more than 25% of their published state total in no county row of</span></span>
 <span><span class="co">#&gt; `x`.</span></span>
@@ -380,6 +382,8 @@ also be sex-specific.</p>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> HIV prevalence 2022: New Hampshire (94%), Maine (93%), Idaho (81%), Alaska</span></span>
 <span><span class="co">#&gt;   (81%), Rhode Island (74%), and 5 more</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Percentages are of the state totals CDC published for the strata in `x`.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Strata whose remainder isn't reported (<span style="color: #00BB00;">no_county_withheld</span>) are left out of</span></span>
+<span><span class="co">#&gt;   both.</span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> County and tract estimates for these states leave those cases out, so they</span></span>
 <span><span class="co">#&gt;   are too low by about that share for those strata.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> This happens when a state's county counts are largely suppressed, or when `x`</span></span>
@@ -464,8 +468,10 @@ AtlasPlus age group.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Cases in state totals with no county are not allocated to tracts:</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> HIV diagnoses 2022: 347</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> HIV prevalence 2022: 35,823</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> 260 state strata with a negative remainder (counted as 0)</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> HIV prevalence 2022: 34,967</span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> 258 state strata with a negative remainder (counted as 0)</span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> 7 state strata whose remainder could be a single county's count or can't be</span></span>
+<span><span class="co">#&gt;   checked (not reported, and not in the totals above; see <span style="color: #00BB00;">no_county_withheld</span>)</span></span>
 <span><span class="co">#&gt;   See `attr(x, "no_county_cases")` for each state.</span></span>
 <span><span class="co">#&gt; Warning: 12 states have more than 25% of their published state total in no county row of</span></span>
 <span><span class="co">#&gt; `x`.</span></span>
@@ -473,6 +479,8 @@ AtlasPlus age group.</p>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> HIV prevalence 2022: New Hampshire (84%), Maine (81%), Rhode Island (72%),</span></span>
 <span><span class="co">#&gt;   Alaska (65%), Idaho (61%), and 5 more</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Percentages are of the state totals CDC published for the strata in `x`.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Strata whose remainder isn't reported (<span style="color: #00BB00;">no_county_withheld</span>) are left out of</span></span>
+<span><span class="co">#&gt;   both.</span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> County and tract estimates for these states leave those cases out, so they</span></span>
 <span><span class="co">#&gt;   are too low by about that share for those strata.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> This happens when a state's county counts are largely suppressed, or when `x`</span></span>
@@ -556,17 +564,21 @@ while the remaining groups are usually non-Hispanic race categories.</p>
 <span><span class="co">#&gt; Fetching tract data by state and combining the result.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Cases in state totals with no county are not allocated to tracts:</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> HIV diagnoses 2022: 495</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> HIV prevalence 2022: 34,627</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> HIV diagnoses 2022: 494</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> HIV prevalence 2022: 34,515</span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> 212 state strata with a negative remainder (counted as 0)</span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> 6 state strata whose remainder could be a single county's count or can't be</span></span>
+<span><span class="co">#&gt;   checked (not reported, and not in the totals above; see <span style="color: #00BB00;">no_county_withheld</span>)</span></span>
 <span><span class="co">#&gt;   See `attr(x, "no_county_cases")` for each state.</span></span>
 <span><span class="co">#&gt; Warning: 13 states have more than 25% of their published state total in no county row of</span></span>
 <span><span class="co">#&gt; `x`.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> HIV diagnoses 2022: Vermont (44%), Montana (39%), Wyoming (34%), and Puerto</span></span>
 <span><span class="co">#&gt;   Rico (26%)</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> HIV prevalence 2022: New Hampshire (88%), Maine (87%), Idaho (74%), Rhode</span></span>
-<span><span class="co">#&gt;   Island (73%), Alaska (69%), and 5 more</span></span>
+<span><span class="co">#&gt;   Island (72%), Alaska (69%), and 5 more</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Percentages are of the state totals CDC published for the strata in `x`.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Strata whose remainder isn't reported (<span style="color: #00BB00;">no_county_withheld</span>) are left out of</span></span>
+<span><span class="co">#&gt;   both.</span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> County and tract estimates for these states leave those cases out, so they</span></span>
 <span><span class="co">#&gt;   are too low by about that share for those strata.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> This happens when a state's county counts are largely suppressed, or when `x`</span></span>

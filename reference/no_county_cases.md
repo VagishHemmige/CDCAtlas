@@ -56,12 +56,13 @@ A tibble with one row per state, indicator, year and stratum:
 
 - published_cases:
 
-  Sum of the published county counts in `x`.
+  Sum of the published county counts in `x`. `NA` if the remainder is
+  withheld (see `no_county_withheld`).
 
 - unpublished_cases:
 
   `state_cases - published_cases`: cases in suppressed counties together
-  with the remainder no county accounts for.
+  with the remainder no county accounts for. `NA` if withheld.
 
 - imputed_cases:
 
@@ -74,21 +75,55 @@ A tibble with one row per state, indicator, year and stratum:
   `unpublished_cases - imputed_cases`. Can be negative if the imputed
   counts are too high, and is `NA` if `x` hasn't been imputed.
 
+- no_county_withheld:
+
+  Why `published_cases`, `unpublished_cases` and `no_county_cases` are
+  not reported: `"one county row without a published count"`,
+  `"no CDC county rows to count unpublished counties"`, or `NA`
+  otherwise. (Where CDC suppressed the state total, those columns are
+  `NA` for that reason instead.) See the section below.
+
 Every column computed from `state_cases` is `NA` if CDC suppressed the
 state total.
 
 ## Details
 
 Downloads the state data matching `x` (same diseases, years and
-stratification) from CDC AtlasPlus. The remainder also includes any
-county without a count in `x`: "Data not available" rows, counties
-removed by filtering `x`, and suppressed rows
+stratification) from CDC AtlasPlus, and CDC's county table for `x` when
+it isn't in the cache. The remainder also includes any county without a
+count in `x`: "Data not available" rows, counties removed by filtering
+`x`, and suppressed rows
 [`impute_suppressed()`](https://vagishhemmige.github.io/CDCAtlas/reference/impute_suppressed.md)
 couldn't estimate (marked `cases_source = "not estimated"`), which count
 as 0 imputed cases. The report has a row only for state groups (state,
 indicator, year and stratum) with at least one row in `x`: if
 `impute_suppressed(not_available = "drop")` or filtering removed every
 row of a group, its state total is not reported.
+
+## State strata with one county row without a published count
+
+Where a state stratum has exactly one county row without a published
+count (suppressed, "Data not available", or with no count for another
+reason), the state total minus the published counts is that county's
+count plus any cases with no county. CDC's documentation doesn't say
+that state totals include cases with no county, so the figure could be
+that county's count exactly, and `no_county_cases()` doesn't report it.
+
+Counties are counted in CDC's county table for `x`, and a county counts
+only if neither that table nor `x` gives its count. So a county filtered
+out of `x`, or dropped by `impute_suppressed(not_available = "drop")`,
+still counts; a county with a count in one table but not the other
+doesn't, and nor does a county in `x` that CDC's table doesn't list.
+CDC's table comes from the cache when `x` was downloaded in this
+session; otherwise it is downloaded. If CDC's table has no rows for a
+stratum, how many counties lack a count can't be known, so that
+stratum's remainder isn't reported either.
+
+For such a stratum `published_cases`, `unpublished_cases` and
+`no_county_cases` are `NA` and `no_county_withheld` says why, and a
+message says how many strata this applies to. `state_cases` (CDC's
+published total) and `imputed_cases` (the modeled estimate) are still
+given.
 
 ## States with many cases in no county row
 

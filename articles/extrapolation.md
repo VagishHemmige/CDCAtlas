@@ -287,7 +287,7 @@ Cases in state totals with no county are reported separately:
 
 attr(hiv_tract, "no_county_cases") |>
   head()
-#> # A tibble: 6 × 12
+#> # A tibble: 6 × 13
 #>   state_fips state   indicator       year race_ethnicity sex   age   state_cases
 #>   <chr>      <chr>   <chr>          <dbl> <chr>          <chr> <chr>       <dbl>
 #> 1 01         Alabama HIV diagnoses   2022 All races/eth… Both… Ages…         678
@@ -296,8 +296,8 @@ attr(hiv_tract, "no_county_cases") |>
 #> 4 02         Alaska  HIV prevalence  2022 All races/eth… Both… Ages…         767
 #> 5 04         Arizona HIV diagnoses   2022 All races/eth… Both… Ages…         849
 #> 6 04         Arizona HIV prevalence  2022 All races/eth… Both… Ages…       18586
-#> # ℹ 4 more variables: published_cases <dbl>, unpublished_cases <dbl>,
-#> #   imputed_cases <dbl>, no_county_cases <dbl>
+#> # ℹ 5 more variables: published_cases <dbl>, unpublished_cases <dbl>,
+#> #   imputed_cases <dbl>, no_county_cases <dbl>, no_county_withheld <chr>
 ```
 
 ## Sex-stratified extrapolation
@@ -326,9 +326,11 @@ hiv_tract_sex <- get_atlas(
 #> Fetching tract data by state and combining the result.
 #> 
 #> ℹ Cases in state totals with no county are not allocated to tracts:
-#> • HIV diagnoses 2022: 1,554
-#> • HIV prevalence 2022: 42,234
-#> ! 57 state strata with a negative remainder (counted as 0)
+#> • HIV diagnoses 2022: 1,539
+#> • HIV prevalence 2022: 41,958
+#> ! 56 state strata with a negative remainder (counted as 0)
+#> ! 4 state strata whose remainder could be a single county's count or can't be
+#>   checked (not reported, and not in the totals above; see no_county_withheld)
 #>   See `attr(x, "no_county_cases")` for each state.
 #> Warning: 13 states have more than 25% of their published state total in no county row of
 #> `x`.
@@ -337,6 +339,8 @@ hiv_tract_sex <- get_atlas(
 #> • HIV prevalence 2022: New Hampshire (94%), Maine (93%), Idaho (81%), Alaska
 #>   (81%), Rhode Island (74%), and 5 more
 #> ℹ Percentages are of the state totals CDC published for the strata in `x`.
+#> ℹ Strata whose remainder isn't reported (no_county_withheld) are left out of
+#>   both.
 #> ! County and tract estimates for these states leave those cases out, so they
 #>   are too low by about that share for those strata.
 #> ℹ This happens when a state's county counts are largely suppressed, or when `x`
@@ -434,8 +438,10 @@ hiv_tract_age <- get_atlas(
 #> 
 #> ℹ Cases in state totals with no county are not allocated to tracts:
 #> • HIV diagnoses 2022: 347
-#> • HIV prevalence 2022: 35,823
-#> ! 260 state strata with a negative remainder (counted as 0)
+#> • HIV prevalence 2022: 34,967
+#> ! 258 state strata with a negative remainder (counted as 0)
+#> ! 7 state strata whose remainder could be a single county's count or can't be
+#>   checked (not reported, and not in the totals above; see no_county_withheld)
 #>   See `attr(x, "no_county_cases")` for each state.
 #> Warning: 12 states have more than 25% of their published state total in no county row of
 #> `x`.
@@ -443,6 +449,8 @@ hiv_tract_age <- get_atlas(
 #> • HIV prevalence 2022: New Hampshire (84%), Maine (81%), Rhode Island (72%),
 #>   Alaska (65%), Idaho (61%), and 5 more
 #> ℹ Percentages are of the state totals CDC published for the strata in `x`.
+#> ℹ Strata whose remainder isn't reported (no_county_withheld) are left out of
+#>   both.
 #> ! County and tract estimates for these states leave those cases out, so they
 #>   are too low by about that share for those strata.
 #> ℹ This happens when a state's county counts are largely suppressed, or when `x`
@@ -536,17 +544,21 @@ hiv_tract_race <- get_atlas(
 #> Fetching tract data by state and combining the result.
 #> 
 #> ℹ Cases in state totals with no county are not allocated to tracts:
-#> • HIV diagnoses 2022: 495
-#> • HIV prevalence 2022: 34,627
+#> • HIV diagnoses 2022: 494
+#> • HIV prevalence 2022: 34,515
 #> ! 212 state strata with a negative remainder (counted as 0)
+#> ! 6 state strata whose remainder could be a single county's count or can't be
+#>   checked (not reported, and not in the totals above; see no_county_withheld)
 #>   See `attr(x, "no_county_cases")` for each state.
 #> Warning: 13 states have more than 25% of their published state total in no county row of
 #> `x`.
 #> • HIV diagnoses 2022: Vermont (44%), Montana (39%), Wyoming (34%), and Puerto
 #>   Rico (26%)
 #> • HIV prevalence 2022: New Hampshire (88%), Maine (87%), Idaho (74%), Rhode
-#>   Island (73%), Alaska (69%), and 5 more
+#>   Island (72%), Alaska (69%), and 5 more
 #> ℹ Percentages are of the state totals CDC published for the strata in `x`.
+#> ℹ Strata whose remainder isn't reported (no_county_withheld) are left out of
+#>   both.
 #> ! County and tract estimates for these states leave those cases out, so they
 #>   are too low by about that share for those strata.
 #> ℹ This happens when a state's county counts are largely suppressed, or when `x`

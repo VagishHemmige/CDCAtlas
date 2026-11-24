@@ -129,7 +129,8 @@ filter the result. Checking needs CDC's county table, which comes from
 the cache when <code>x</code> was downloaded in this session. Negative
 remainders are not spread, nor are remainders in a state with no
 allocated county in that stratum; the message says how many cases
-could not be spread. Not available for CDC's HIV estimates (EHE
+could not be spread. A remainder <code><a href="no_county_cases.html">no_county_cases()</a></code> withholds (see its
+column <code>no_county_withheld</code>) is not spread either. Not available for CDC's HIV estimates (EHE
 counties only).</p></li>
 </ul><p>With either choice, a warning (class <code>"cdcatlas_state_unplaced_cases"</code>)
 names any state with more than 25% of its published state total in no
