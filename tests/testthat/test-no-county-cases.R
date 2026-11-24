@@ -103,6 +103,27 @@ test_that("a stratum missing from CDC's county table is withheld (#173)", {
     c("no CDC county rows to count unpublished counties", NA)
   )
   expect_equal(report$no_county_cases, c(NA, 232 - 111))
+
+  # With 01003 in `x` and without a count, diagnoses still has no CDC rows:
+  # the reason is still that CDC's table has none, not one county.
+  # Prevalence, where CDC's table lists 01003 without a count, is one county.
+  suppressed <- fake_county_atlas(suppressed = "01003")
+  local_fake_sources(
+    county_totals = suppressed[suppressed$indicator == "HIV prevalence", ]
+  )
+  report <- suppressMessages(no_county_cases(
+    impute_suppressed(suppressed, method = "zero")
+  ))
+  expect_equal(
+    report$no_county_withheld,
+    c(
+      "no CDC county rows to count unpublished counties",
+      "one county row without a published count"
+    )
+  )
+  for (column in c("published_cases", "unpublished_cases", "no_county_cases")) {
+    expect_equal(report[[column]], c(NA_real_, NA_real_), label = column)
+  }
 })
 
 test_that("a county listed twice in CDC's county table counts once (#173)", {
@@ -173,6 +194,25 @@ test_that("a county only in `x` doesn't count as hidden (#173)", {
         label = paste(column, if (with_extra) "with 01005" else "without")
       )
     }
+  }
+})
+
+test_that("a county without a count that CDC's table doesn't list still withholds the remainder (#173)", {
+  # `x`: 01001 published, 01003 without a count. CDC's table lists 01001
+  # only, so it says nothing about 01003. 01003 is still the one county
+  # without a count, so the remainder is withheld.
+  x <- fake_county_atlas(suppressed = "01003")
+  local_fake_sources(county_totals = x[x$fips == "01001", ])
+
+  report <- suppressMessages(no_county_cases(
+    impute_suppressed(x, method = "zero")
+  ))
+  expect_equal(
+    report$no_county_withheld,
+    rep("one county row without a published count", 2)
+  )
+  for (column in c("published_cases", "unpublished_cases", "no_county_cases")) {
+    expect_equal(report[[column]], c(NA_real_, NA_real_), label = column)
   }
 })
 
