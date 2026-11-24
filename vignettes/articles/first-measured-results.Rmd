@@ -3,10 +3,10 @@ title: "First measured results (provisional)"
 ---
 
 > **Provisional.** These are first results from two automated runs of the
-> package's pipeline ([21 November 2026](https://github.com/VagishHemmige/CDCAtlas/actions/runs/44916253376) and
-> [22 November 2026 UTC](https://github.com/VagishHemmige/CDCAtlas/actions/runs/44974811287)) and one live test run
-> ([22 November 2026 UTC](https://github.com/VagishHemmige/CDCAtlas/actions/runs/45017608026)), on CDC AtlasPlus data as returned
-> on those dates. Unless a section says otherwise, they cover HIV prevalence
+> package's pipeline (21 November 2026 and 22 November 2026 UTC) and one live
+> test run
+> ([22 November 2026 UTC](https://github.com/VagishHemmige/CDCAtlas/actions/runs/45017608026)),
+> on CDC AtlasPlus data as returned on those dates. Unless a section says otherwise, they cover HIV prevalence
 > (people living with diagnosed HIV), ages 13 and older, for 2017, 2022 and
 > 2024, with default settings. They have not been independently checked. The
 > defaults they describe may change. Fuller articles with figures will replace
