@@ -220,6 +220,13 @@ get_atlas <- function(
         stratify_by
       ))
     }
+    # impute_suppressed(fit_to = "county_total") fits HIV county data by sex
+    # or age to the unstratified county totals
+    # (.fetch_county_unstratified()); refresh those too.
+    one_way <- length(stratify_by) == 1 && stratify_by %in% c("sex", "age")
+    if (geography == "county" && identical(disease, "hiv") && one_way) {
+      .forget_atlas_requests(.build_payloads("hiv", "county", year, NULL))
+    }
   }
   out <- .request_atlas_all(payloads)
   .warn_missing_indicators(out, disease, year)

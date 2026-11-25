@@ -219,6 +219,80 @@ test_that("refreshing one year refreshes that year of saved multi-year state tot
   expect_equal(calls$n, downloads + 1)
 })
 
+fake_county_rows <- function(fips, years, stratify_by = "sex") {
+  strata <- if (stratify_by == "sex") {
+    data.frame(sex = c("Male", "Female"), age = "Ages 13 years and older")
+  } else {
+    data.frame(sex = "Both sexes", age = c("13-24", "25-34"))
+  }
+  grid <- expand.grid(fips = fips, year = years, row = 1:2)
+  data.frame(
+    indicator = "HIV prevalence",
+    year = grid$year,
+    fips = grid$fips,
+    race_ethnicity = "All races/ethnicities",
+    strata[grid$row, ]
+  )
+}
+
+test_that("county totals for fitting: one request per state and year, shared", {
+  calls <- local_request_cache()
+  local_mocked_bindings(.label_atlas_columns = function(df) df)
+
+  by_sex <- fake_county_rows(c("01001", "01003", "02013"), c(2017, 2022))
+  suppressMessages(.fetch_county_unstratified(by_sex))
+  expect_equal(calls$n, 4)
+
+  by_age <- fake_county_rows(c("01001", "02013"), c(2017, 2022), "age")
+  suppressMessages(.fetch_county_unstratified(by_age))
+  expect_equal(calls$n, 4)
+})
+
+test_that("county totals for fitting are the unstratified county download", {
+  calls <- local_request_cache()
+  local_mocked_bindings(.label_atlas_columns = function(df) df)
+
+  .request_atlas_all(unname(.build_payloads(
+    "hiv",
+    "county",
+    2022,
+    states = "01"
+  )))
+  .fetch_county_unstratified(fake_county_rows("01001", 2022))
+  expect_equal(calls$n, 1)
+})
+
+test_that("get_atlas(refresh = TRUE) by sex or age refreshes the county totals", {
+  for (stratify_by in c("sex", "age")) {
+    calls <- local_request_cache()
+    local_mocked_bindings(.label_atlas_columns = function(df) df)
+    x <- fake_county_rows(c("01001", "02013"), 2022)
+    suppressMessages(.fetch_county_unstratified(x))
+    expect_equal(calls$n, 2)
+
+    suppressMessages(
+      get_atlas("hiv", "county", 2022, stratify_by = stratify_by, refresh = TRUE)
+    )
+    downloads <- calls$n
+    suppressMessages(.fetch_county_unstratified(x))
+    expect_equal(calls$n, downloads + 2)
+  }
+})
+
+test_that("get_atlas(refresh = TRUE) by race leaves the county totals alone", {
+  calls <- local_request_cache()
+  local_mocked_bindings(.label_atlas_columns = function(df) df)
+  x <- fake_county_rows("01001", 2022)
+  .fetch_county_unstratified(x)
+
+  suppressMessages(
+    get_atlas("hiv", "county", 2022, stratify_by = "race", refresh = TRUE)
+  )
+  downloads <- calls$n
+  .fetch_county_unstratified(x)
+  expect_equal(calls$n, downloads)
+})
+
 test_that("get_atlas(refresh = TRUE) for states leaves county downloads alone", {
   calls <- local_request_cache()
   local_mocked_bindings(.label_atlas_columns = function(df) df)
