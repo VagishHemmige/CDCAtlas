@@ -925,7 +925,8 @@ test_that("the message counts only rows that were estimated (#164)", {
 test_that("fit_to = 'county_total' fits suppressed strata to the county total", {
   local_fake_sources(
     state = fake_state_atlas(stratify_by = "sex"),
-    county_unstratified = fake_county_unstratified())
+    county_unstratified = fake_county_unstratified()
+  )
   county <- fake_county_atlas(stratify_by = "sex", suppressed = "01003")
 
   expect_snapshot(out <- impute_suppressed(county, fit_to = "county_total"))
@@ -953,7 +954,10 @@ test_that("fit_to = 'county_total' fits suppressed strata to the county total", 
     "fitted to county total"
   )
   expect_equal(out$fit_reason[out$fips == "01001"], rep(NA_character_, 4))
-  expect_equal(out$cases[out$fips == "01001"], county$cases[county$fips == "01001"])
+  expect_equal(
+    out$cases[out$fips == "01001"],
+    county$cases[county$fips == "01001"]
+  )
 })
 
 test_that("fit_to = 'none' (the default) downloads no county totals", {
@@ -994,7 +998,8 @@ test_that("race is never fitted and needs no download", {
 test_that("a filtered age download is not fitted, with a warning", {
   local_fake_sources(
     state = fake_state_atlas(stratify_by = "age"),
-    county_unstratified = fake_county_unstratified())
+    county_unstratified = fake_county_unstratified()
+  )
   county <- fake_county_atlas(stratify_by = "age", suppressed = "01003")
   county <- county[county$age != "65+", ]
 
@@ -1013,7 +1018,8 @@ test_that("a filtered age download is not fitted, with a warning", {
 test_that("eligibility is decided before rows are dropped or nothing is suppressed", {
   local_fake_sources(
     state = fake_state_atlas(stratify_by = "sex"),
-    county_unstratified = fake_county_unstratified())
+    county_unstratified = fake_county_unstratified()
+  )
   county <- fake_county_atlas(stratify_by = "sex")
   county$cases[county$fips == "01003" & county$sex == "Male"] <- NA
   county$data_status[county$fips == "01003" & county$sex == "Male"] <-
@@ -1024,8 +1030,63 @@ test_that("eligibility is decided before rows are dropped or nothing is suppress
     class = "cdcatlas_unfittable_county_strata"
   )
   rows <- is.na(out$cases)
-  expect_equal(unique(out$fit_reason[rows]), "strata incomplete or inconsistent")
+  expect_equal(
+    unique(out$fit_reason[rows]),
+    "strata incomplete or inconsistent"
+  )
   expect_equal(out$fit_reason[!rows], rep(NA_character_, 6))
+
+  # Dropping leaves only published rows, but the group is still judged on
+  # the rows as given.
+  expect_warning(
+    out <- suppressMessages(
+      impute_suppressed(county, fit_to = "county_total", not_available = "drop")
+    ),
+    class = "cdcatlas_unfittable_county_strata"
+  )
+  expect_equal(out$fit_reason, rep(NA_character_, 6))
+})
+
+test_that("eligibility survives `not_available = \"drop\"`, in row order", {
+  # 01001's Male rows are not available and its Female rows suppressed; both
+  # of 01003's are suppressed. 01001 is judged with its dropped rows, so it is
+  # not fitted and keeps the state rate. 01003 is fitted.
+  local_fake_sources(
+    state = fake_state_atlas(stratify_by = "sex"),
+    county_unstratified = fake_county_unstratified()
+  )
+  county <- fake_county_atlas(stratify_by = "sex", suppressed = both_counties)
+  dropped <- county$fips == "01001" & county$sex == "Male"
+  county$data_status[dropped] <- "Data not available"
+
+  expect_snapshot(
+    out <- impute_suppressed(
+      county,
+      fit_to = "county_total",
+      not_available = "drop"
+    )
+  )
+  expect_equal(out$fips, county$fips[!dropped])
+  expect_equal(out$sex, county$sex[!dropped])
+  kept <- out$fips == "01001"
+  expect_equal(
+    out$fit_reason[kept],
+    rep("strata incomplete or inconsistent", 2)
+  )
+  expect_equal(out$cases_source[kept], rep("state_rate", 2))
+  # Female's state-rate estimates: 34 / 20 for diagnoses, and prevalence's
+  # 234 / 20 capped at 4.
+  expect_equal(out$cases[kept], c(34 / 20, 4))
+  expect_equal(unique(out$cases_source[!kept]), "county_fit")
+  expect_equal(sum(out$cases[!kept & out$indicator == "HIV diagnoses"]), 43)
+})
+
+test_that("fitting a table with every count published downloads nothing", {
+  local_fake_sources(state = fake_state_atlas(stratify_by = "sex"))
+  county <- fake_county_atlas(stratify_by = "sex")
+  out <- impute_suppressed(county, fit_to = "county_total")
+  expect_equal(out$cases, county$cases)
+  expect_equal(out$fit_reason, rep(NA_character_, 8))
 })
 
 test_that("county counts above the state total are reported, not adjusted", {

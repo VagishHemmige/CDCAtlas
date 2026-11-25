@@ -421,9 +421,11 @@ impute_suppressed <- function(
 # `state` the state totals already downloaded for the state rate. Fitted
 # rows get `cases_source = "county_fit"`; every row without a published
 # count gets a `fit_reason`. Race strata are never fitted and need no
-# download. Does nothing when `fit_by` is NULL (`fit_to = "none"`).
+# download. Does nothing when `fit_by` is NULL (`fit_to = "none"`), or when
+# every count in `original` is published: there is nothing to fit, so nothing
+# to download.
 .fit_to_county_totals <- function(x, original, row_id, fit_by, state = NULL) {
-  if (is.null(fit_by)) {
+  if (is.null(fit_by) || !anyNA(original$cases)) {
     return(x)
   }
   seed <- rep(NA_real_, nrow(original))

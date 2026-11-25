@@ -270,6 +270,31 @@ test_that("county totals for fitting ask only for the state-years in `x`", {
   )
 })
 
+test_that("the stratified county table asks only for the state-years in `x`", {
+  # A request for a state-year not in `x` could fail and take a finished fit
+  # with it, so the stub rejects anything else.
+  local_request_cache()
+  local_mocked_bindings(.label_atlas_columns = function(df) df)
+  wanted <- c(
+    unname(.build_payloads("hiv", "county", 2017, "sex", states = "01")),
+    unname(.build_payloads("hiv", "county", 2022, "sex", states = "02"))
+  )
+  asked <- list()
+  local_mocked_bindings(.request_atlas = function(payload) {
+    if (!list(payload) %in% wanted) {
+      stop("Unexpected request.")
+    }
+    asked[[length(asked) + 1]] <<- payload
+    data.frame(cases = 1, fips = "01")
+  })
+  x <- rbind(
+    fake_county_rows("01001", 2017),
+    fake_county_rows("02013", 2022)
+  )
+  .fetch_county_totals(x)
+  expect_equal(asked, wanted)
+})
+
 test_that("county totals for fitting are the unstratified county download", {
   calls <- local_request_cache()
   local_mocked_bindings(.label_atlas_columns = function(df) df)

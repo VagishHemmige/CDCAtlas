@@ -298,6 +298,26 @@
       * The cap of 4 set the value of 2 rows (100%): the estimate was higher.
         cases_uncapped holds the estimates before the cap and floor.
 
+# eligibility survives `not_available = "drop"`, in row order
+
+    Code
+      out <- impute_suppressed(county, fit_to = "county_total", not_available = "drop")
+    Message
+      i Dropped 2 rows marked "Data not available" with no count.
+        Their cases are still in the state totals, and `no_county_cases()` counts them in the remainder for any state group that still has rows.
+    Condition
+      Warning:
+      In 2 groups of county, indicator and year, the strata are incomplete or inconsistent, so they were not fitted.
+      i Check that each requested stratum appears once, the other columns match the requested population (HIV, ages 13 and over), and each count agrees with its data status.
+    Message
+      i Fitted 2 county groups (county, indicator and year) to the county's published total.
+      i 2 groups with unpublished strata were not fitted and keep the state-rate estimate:
+      * strata incomplete or inconsistent: 2
+        fit_reason says why for each row.
+      i 2 suppressed rows were filled in from state rates.
+      * The cap of 4 set the value of 1 row (50%): the estimate was higher.
+        cases_uncapped holds the estimates before the cap and floor.
+
 # county counts above the state total are reported, not adjusted
 
     Code
