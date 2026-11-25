@@ -340,6 +340,23 @@
   .request_atlas_all(unname(payloads))
 }
 
+# CDC's unstratified HIV county table for the years and states in `x`: the
+# published county totals that impute_suppressed(fit_to = "county_total")
+# fits sex and age strata to (#179). Requested unstratified whatever the
+# stratification of `x`, unlike .fetch_county_totals(). One request per state
+# and year present in `x`, not every state in every year: an HIV payload
+# carries both indicators, and sex and age share it, as does an unstratified
+# get_atlas() download of the same counties.
+.fetch_county_unstratified <- function(x) {
+  years <- as.numeric(as.character(x$year))
+  states <- substr(as.character(x$fips), 1, 2)
+  payloads <- lapply(sort(unique(years)), function(year) {
+    in_year <- unique(states[years == year])
+    unname(.build_payloads("hiv", "county", year, NULL, states = in_year))
+  })
+  .request_atlas_all(unlist(payloads, recursive = FALSE))
+}
+
 # The state rows matching county data `x`: same diseases, years and
 # stratification.
 .fetch_state_totals <- function(x) {
