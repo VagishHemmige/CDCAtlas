@@ -248,6 +248,28 @@ test_that("county totals for fitting: one request per state and year, shared", {
   expect_equal(calls$n, 4)
 })
 
+test_that("county totals for fitting ask only for the state-years in `x`", {
+  local_request_cache()
+  local_mocked_bindings(.label_atlas_columns = function(df) df)
+  asked <- list()
+  local_mocked_bindings(.request_atlas = function(payload) {
+    asked[[length(asked) + 1]] <<- payload
+    data.frame(cases = 1, fips = "01")
+  })
+  x <- rbind(
+    fake_county_rows("01001", 2017),
+    fake_county_rows("02013", 2022)
+  )
+  .fetch_county_unstratified(x)
+  expect_equal(
+    asked,
+    c(
+      unname(.build_payloads("hiv", "county", 2017, states = "01")),
+      unname(.build_payloads("hiv", "county", 2022, states = "02"))
+    )
+  )
+})
+
 test_that("county totals for fitting are the unstratified county download", {
   calls <- local_request_cache()
   local_mocked_bindings(.label_atlas_columns = function(df) df)
@@ -271,12 +293,38 @@ test_that("get_atlas(refresh = TRUE) by sex or age refreshes the county totals",
     expect_equal(calls$n, 2)
 
     suppressMessages(
-      get_atlas("hiv", "county", 2022, stratify_by = stratify_by, refresh = TRUE)
+      get_atlas(
+        "hiv",
+        "county",
+        2022,
+        stratify_by = stratify_by,
+        refresh = TRUE
+      )
     )
     downloads <- calls$n
     suppressMessages(.fetch_county_unstratified(x))
     expect_equal(calls$n, downloads + 2)
   }
+})
+
+test_that("refreshing a named `disease` also refreshes the county totals", {
+  calls <- local_request_cache()
+  local_mocked_bindings(.label_atlas_columns = function(df) df)
+  x <- fake_county_rows("01001", 2022)
+  .fetch_county_unstratified(x)
+
+  suppressMessages(
+    get_atlas(
+      c(selected = "hiv"),
+      "county",
+      2022,
+      stratify_by = "sex",
+      refresh = TRUE
+    )
+  )
+  downloads <- calls$n
+  .fetch_county_unstratified(x)
+  expect_equal(calls$n, downloads + 1)
 })
 
 test_that("get_atlas(refresh = TRUE) by race leaves the county totals alone", {
