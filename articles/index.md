@@ -14,3 +14,5 @@
 
 - [About CDC AtlasPlus
   data](https://vagishhemmige.github.io/CDCAtlas/articles/about-atlasplus-data.md):
+- [First measured results
+  (provisional)](https://vagishhemmige.github.io/CDCAtlas/articles/first-measured-results.md):
