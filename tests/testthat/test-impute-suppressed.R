@@ -1035,6 +1035,16 @@ test_that("eligibility is decided before rows are dropped or nothing is suppress
     "strata incomplete or inconsistent"
   )
   expect_equal(out$fit_reason[!rows], rep(NA_character_, 6))
+
+  # Dropping leaves only published rows, but the group is still judged on
+  # the rows as given.
+  expect_warning(
+    out <- suppressMessages(
+      impute_suppressed(county, fit_to = "county_total", not_available = "drop")
+    ),
+    class = "cdcatlas_unfittable_county_strata"
+  )
+  expect_equal(out$fit_reason, rep(NA_character_, 6))
 })
 
 test_that("eligibility survives `not_available = \"drop\"`, in row order", {
