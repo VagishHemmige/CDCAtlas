@@ -166,7 +166,10 @@ test_that("a suppressed county total keeps the fallback", {
 test_that("incomplete strata are not fitted, even with two positive seeds", {
   # A filtered age download: two suppressed rows and one age band missing.
   x <- fit_rows(c(10, NA, NA, 40, 50), "age", labels = .fit_strata("age")[-6])
-  out <- .fit_county_total(x, c(NA, 2, 3, NA, NA), fit_total(150), "age")
+  expect_warning(
+    out <- .fit_county_total(x, c(NA, 2, 3, NA, NA), fit_total(150), "age"),
+    class = "cdcatlas_unfittable_county_strata"
+  )
   expect_equal(out$cases, rep(NA_real_, 5))
   expect_equal(
     out$fit_reason[2:3],
@@ -175,13 +178,19 @@ test_that("incomplete strata are not fitted, even with two positive seeds", {
 
   # A label that isn't one of the requested strata.
   x <- fit_rows(c(NA, NA), labels = c("Male", "Unknown"))
-  out <- .fit_county_total(x, c(2, 6), fit_total(10), "sex")
+  expect_warning(
+    out <- .fit_county_total(x, c(2, 6), fit_total(10), "sex"),
+    class = "cdcatlas_unfittable_county_strata"
+  )
   expect_equal(out$fit_reason, rep("strata incomplete or inconsistent", 2))
 
   # Sex strata outside HIV's age universe.
   x <- fit_rows(c(NA, NA))
   x$age <- "All age groups"
-  out <- .fit_county_total(x, c(2, 6), fit_total(10), "sex")
+  expect_warning(
+    out <- .fit_county_total(x, c(2, 6), fit_total(10), "sex"),
+    class = "cdcatlas_unfittable_county_strata"
+  )
   expect_equal(out$fit_reason, rep("strata incomplete or inconsistent", 2))
 })
 
@@ -192,22 +201,56 @@ test_that("contradictory or unexplained cells make the strata inconsistent", {
     "age",
     status = c("Data suppressed", rep("Data suppressed", 2), rep("x", 3))
   )
-  out <- .fit_county_total(x, c(NA, 2, 3, NA, NA, NA), fit_total(150), "age")
+  expect_warning(
+    out <- .fit_county_total(x, c(NA, 2, 3, NA, NA, NA), fit_total(150), "age"),
+    class = "cdcatlas_unfittable_county_strata"
+  )
   expect_equal(out$fit_reason[2:3], rep("strata incomplete or inconsistent", 2))
 
   # A cell with no count that isn't marked suppressed.
   x <- fit_rows(
     c(10, NA, NA, NA, 40, 50),
     "age",
-    status = c("x", "Data suppressed", "Data suppressed", "Data not available",
-               "x", "x")
+    status = c(
+      "x",
+      "Data suppressed",
+      "Data suppressed",
+      "Data not available",
+      "x",
+      "x"
+    )
   )
-  out <- .fit_county_total(x, c(NA, 2, 3, NA, NA, NA), fit_total(150), "age")
+  expect_warning(
+    out <- .fit_county_total(x, c(NA, 2, 3, NA, NA, NA), fit_total(150), "age"),
+    class = "cdcatlas_unfittable_county_strata"
+  )
   expect_equal(out$cases, rep(NA_real_, 6))
   expect_equal(
     out$fit_reason[2:4],
     rep("strata incomplete or inconsistent", 3)
   )
+})
+
+test_that("the incomplete-strata warning gives counts only", {
+  x <- rbind(
+    fit_rows(c(10, NA, NA, 40, 50), "age", labels = .fit_strata("age")[-6]),
+    fit_rows(c(NA, NA), "age", labels = .fit_strata("age")[1:2], fips = "01003")
+  )
+  totals <- rbind(fit_total(150), fit_total(10, fips = "01003"))
+  seed <- c(NA, 2, 3, NA, NA, 1, 1)
+  expect_snapshot(out <- .fit_county_total(x, seed, totals, "age"))
+})
+
+test_that("a count marked \"Data not available\" counts as published", {
+  # Connecticut's 2017 planning regions have counts with this status.
+  x <- fit_rows(
+    c(10, NA, NA, 30, 40, 50),
+    "age",
+    status = c("Data not available", rep("Data suppressed", 2), rep("x", 3))
+  )
+  out <- .fit_county_total(x, c(NA, 1, 3, NA, NA, NA), fit_total(138), "age")
+  expect_equal(out$cases, c(NA, 2, 6, NA, NA, NA))
+  expect_equal(out$fit_reason[1], NA_character_)
 })
 
 test_that("structural reasons win over the residual", {
@@ -218,8 +261,12 @@ test_that("structural reasons win over the residual", {
 
   # Incomplete strata and a negative residual: no residual warning.
   x <- fit_rows(c(10, NA, NA, 40, 50), "age", labels = .fit_strata("age")[-6])
-  expect_no_warning(
-    out <- .fit_county_total(x, c(NA, 2, 3, NA, NA), fit_total(50), "age")
+  expect_warning(
+    expect_no_warning(
+      out <- .fit_county_total(x, c(NA, 2, 3, NA, NA), fit_total(50), "age"),
+      class = "cdcatlas_negative_county_residual"
+    ),
+    class = "cdcatlas_unfittable_county_strata"
   )
   expect_equal(out$fit_reason[2], "strata incomplete or inconsistent")
 

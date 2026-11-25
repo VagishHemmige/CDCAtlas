@@ -62,8 +62,9 @@
 # `cases`, the fitted count on fitted rows and NA elsewhere, and
 # `fit_reason`, NA on rows with a published count and otherwise
 # `.fit_done` or the first of `.fit_reasons` that applies to the row's
-# county, indicator and year. Warns, with counts of groups only, when
-# published strata add up to more than the county's total.
+# county, indicator and year. Warns, with counts of groups only, when the
+# strata are incomplete or inconsistent and when published strata add up to
+# more than the county's total.
 .fit_county_total <- function(x, seed, totals, stratify_by) {
   n <- nrow(x)
   out <- data.frame(
@@ -108,6 +109,7 @@
 
   group <- .row_key(x, group_cols)
   negative <- 0L
+  unfittable <- 0L
   for (rows in split(seq_len(n), group)) {
     if (!any(needs_reason[rows])) {
       next
@@ -137,6 +139,7 @@
         all(fixed_ok[rows])
       consistent <- !any(has_count & marked) && !any(!has_count & !marked)
       if (!complete || !consistent) {
+        unfittable <- unfittable + 1L
         reason <- .fit_reasons[[4]]
       }
     }
@@ -167,6 +170,18 @@
     }
   }
 
+  if (unfittable > 0) {
+    cli::cli_warn(
+      c(
+        "In {unfittable} group{?s} of county, indicator and year, the strata
+         are incomplete or inconsistent, so {?it was/they were} not fitted.",
+        "i" = "A requested stratum is missing, or a cell has a count but is
+               marked {.val Data suppressed}, or a cell has no count and isn't
+               marked {.val Data suppressed}."
+      ),
+      class = "cdcatlas_unfittable_county_strata"
+    )
+  }
   if (negative > 0) {
     cli::cli_warn(
       c(
