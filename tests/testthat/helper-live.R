@@ -1083,3 +1083,36 @@ unplaced_warning_names <- function(warning, entry, state) {
   this <- entries[startsWith(entries, paste0(entry, ":"))]
   length(this) == 1 && grepl(paste0(state, " ("), this, fixed = TRUE)
 }
+
+# impute_suppressed(fit_to = "county_total") on real data (#179), sharing the
+# county downloads the other live tests make: the unstratified county table
+# the fit uses is exactly the unstratified get_atlas() county download (the
+# same payloads, tested offline), and CDC's county table for the state check
+# is the stratified download itself. So no county request is added; the
+# state totals are one small request per year and stratification, kept for
+# the run. Returns the imputed rows, the county data and totals they came
+# from, and every warning's text.
+live_fit <- function(year, stratify_by) {
+  county <- live_county(year, stratify_by)
+  totals <- live_county(year)
+  state <- live_state(year, stratify_by)
+  state$state_fips <- as.character(state$fips)
+  local_mocked_bindings(
+    .fetch_county_unstratified = function(x) totals,
+    .fetch_county_totals = function(x) county,
+    .fetch_state_totals = function(x) state
+  )
+  imputed <- NULL
+  warnings <- capture_warnings(
+    imputed <- suppressMessages(
+      impute_suppressed(county, fit_to = "county_total")
+    )
+  )
+  list(
+    county = county,
+    totals = totals,
+    state = state,
+    imputed = imputed,
+    warnings = cli::ansi_strip(warnings)
+  )
+}
