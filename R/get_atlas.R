@@ -96,7 +96,9 @@
 #'   copy is less than 30 days old, and save the new copy. For county data
 #'   this also drops the saved state totals that [impute_suppressed()],
 #'   [no_county_cases()] and [extrapolate_from_county()] use with them, so
-#'   those are downloaded again too. Default `FALSE`.
+#'   those are downloaded again too, and, for HIV by sex or age, the saved
+#'   unstratified county data that `impute_suppressed(fit_to =
+#'   "county_total")` fits to. Default `FALSE`.
 #'
 #' @return A tibble with the following columns:
 #' \describe{

@@ -254,12 +254,21 @@ local_fake_sources <- function(
   state = fake_state_atlas(),
   acs = fake_acs(),
   county_totals = NULL,
+  county_unstratified = NULL,
   env = parent.frame()
 ) {
   local_mocked_bindings(
     .request_atlas = function(payload) fake_state_response(state, payload),
     .label_atlas_columns = function(df) df,
     .fetch_county_totals = function(x) county_totals %||% as_downloaded(x),
+    # The unstratified county totals for fit_to = "county_total" (#179). A
+    # test that doesn't supply them expects no such download.
+    .fetch_county_unstratified = function(x) {
+      if (is.null(county_unstratified)) {
+        stop("Unexpected download of unstratified county totals.")
+      }
+      county_unstratified
+    },
     .check_census_ready = function(call) invisible(),
     .get_acs_areas = function(variables, year, states, to) {
       if (to == "block group") {
@@ -268,6 +277,32 @@ local_fake_sources <- function(
       tibble::as_tibble(acs[acs$variable %in% variables, ])
     },
     .env = env
+  )
+}
+
+# CDC's unstratified HIV county rows for the made-up counties, 2022: `cases`
+# gives each county's total for HIV diagnoses and HIV prevalence, in that
+# order; NA is suppressed.
+fake_county_unstratified <- function(
+  cases = list("01001" = c(23, 223), "01003" = c(43, 243))
+) {
+  grid <- expand.grid(
+    indicator = c("HIV diagnoses", "HIV prevalence"),
+    fips = names(cases),
+    stringsAsFactors = FALSE
+  )
+  total <- unlist(cases, use.names = FALSE)
+  data.frame(
+    indicator = grid$indicator,
+    year = 2022,
+    geography = paste("County", grid$fips),
+    data_status = ifelse(is.na(total), "Data suppressed", "Not Suppressed"),
+    race_ethnicity = "All races/ethnicities",
+    sex = "Both sexes",
+    age = "Ages 13 years and older",
+    cases = total,
+    population = 50000,
+    fips = grid$fips
   )
 }
 

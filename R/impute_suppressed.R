@@ -66,11 +66,35 @@
 #'     state has in an indicator, year and stratum, that state's remainder is
 #'     no longer reported by [no_county_cases()] or spread by
 #'     [extrapolate_from_county()], so this warns and names them.
+#' @param fit_to Whether suppressed strata are fitted to each county's
+#'   published total:
+#'   * `"none"` (default): no fitting; each suppressed row keeps its `method`
+#'     estimate.
+#'   * `"county_total"`: for HIV diagnoses and HIV prevalence stratified by
+#'     sex or age, the suppressed cells of each county, indicator and year
+#'     share the county's published total, less its published cells, in
+#'     proportion to their state-rate estimates before the cap. Needs
+#'     `method = "state_rate"`. Race strata are never fitted, since HIV has no
+#'     row for unknown race, so a county's race cells needn't add up to its
+#'     total.
 #'
-#' @return `x` with suppressed counts filled in and two new columns,
-#'   `cases_source` and `cases_uncapped`. `cases_source` is:
+#'   A county is fitted only when two or more of its cells are suppressed, at
+#'   least two have a positive estimate, its total is published, every
+#'   requested stratum is present and the total is larger than the published
+#'   cells; otherwise its rows keep the `method` estimate and `fit_reason`
+#'   says why. Fitted counts add up to the county's total but are modeled:
+#'   each one can be far from CDC's hidden count, and CDC's rule for which
+#'   counts it suppresses is not used to place them. They are fractions, and
+#'   the cap and floor don't apply to them. The fit matches each county's own
+#'   total, never the state's; a warning reports how many state strata then
+#'   add up to more than the state total.
+#'
+#' @return `x` with suppressed counts filled in and three new columns,
+#'   `cases_source`, `cases_uncapped` and `fit_reason`. `cases_source` is:
 #'   * `"published"`: CDC's count.
 #'   * `"state_rate"` or `"zero"`: filled in by `method`.
+#'   * `"county_fit"`: fitted to the county's published total
+#'     (`fit_to = "county_total"`).
 #'   * `"not estimated"`: `"state_rate"` couldn't estimate it (`NA`, or 0
 #'     with `unestimated = "zero"`), or it had no count and wasn't marked
 #'     "Data suppressed" (always `NA`).
@@ -78,11 +102,12 @@
 #'
 #'   `cases_uncapped` is, for rows filled in by `"state_rate"`, the estimate
 #'   before `cap` and `floor` were applied: the state rate times the county
-#'   population used (CDC's or ACS). It is a modeled number, not CDC's hidden
-#'   count and not a way to recover it. It is `NA` for every other row:
-#'   published counts, rows filled in by `"zero"`, and rows marked
-#'   `"not estimated"` or `"not available"`. `cases` is the value to use;
-#'   `cases_uncapped` shows what decided it:
+#'   population used (CDC's or ACS). On `"county_fit"` rows it is the same
+#'   estimate, the share each fitted cell was given. It is a modeled number,
+#'   not CDC's hidden count and not a way to recover it. It is `NA` for every
+#'   other row: published counts, rows filled in by `"zero"`, and rows marked
+#'   `"not estimated"` or `"not available"`. On `"state_rate"` rows `cases`
+#'   is the value to use; `cases_uncapped` shows what decided it:
 #'   * `cases_uncapped > cap`: the cap set `cases`.
 #'   * `cases_uncapped < floor`: the floor set `cases`.
 #'   * Otherwise `cases` equals `cases_uncapped`. An estimate exactly equal
@@ -97,6 +122,17 @@
 #'   `method = "zero"`. A high percentage for the cap means most estimates
 #'   are the cap itself rather than the state rate.
 #'
+#'   `fit_reason` is `NA` on rows with a published count, and everywhere with
+#'   `fit_to = "none"`. With `fit_to = "county_total"`, every other row has
+#'   `"fitted to county total"` or the first reason that applies to its
+#'   county, indicator and year: `"race not fitted"`, `"county total not
+#'   available"`, `"county total suppressed"`, `"strata incomplete or
+#'   inconsistent"`, `"one suppressed cell"`, `"a suppressed cell has no
+#'   seed"`, `"fewer than two positive seeds"` or `"published total not usable
+#'   for fitting"` (the total is no larger than the published cells). A
+#'   message counts the county groups fitted and not fitted, by reason, and
+#'   the cap and floor message counts only rows filled in by the state rate.
+#'
 #'   `data_status` is unchanged, so suppressed rows can still be identified.
 #'   `cap`, `floor`, `population` and `unestimated` apply only to
 #'   `"state_rate"`. [no_county_cases()] and [extrapolate_from_county()] use
@@ -105,7 +141,11 @@
 #' @details
 #' `"state_rate"` downloads the state data matching `x` (same diseases, years
 #' and stratification) from CDC AtlasPlus, and with `population = "acs"` the
-#' tract populations from the Census.
+#' tract populations from the Census. `fit_to = "county_total"` by sex or
+#' age also downloads CDC's unstratified county data for the states and
+#' years in `x` (one request per state and year, saved and reused), and CDC's
+#' county data matching `x` for the state check, which is usually already
+#' saved from [get_atlas()].
 #'
 #' @seealso [no_county_cases()] for cases in state totals that no county
 #'   accounts for; [extrapolate_from_county()] for the next step; the article
@@ -120,6 +160,13 @@
 #' # How many filled-in rows did the cap (4 by default) decide?
 #' filled <- county[county$cases_source == "state_rate", ]
 #' table(filled$indicator, capped = filled$cases_uncapped > 4)
+#'
+#' # Fit suppressed sex strata to each county's published total
+#' county_fit <- impute_suppressed(
+#'   get_atlas("hiv", "county", 2022, stratify_by = "sex"),
+#'   fit_to = "county_total"
+#' )
+#' table(county_fit$fit_reason, useNA = "ifany")
 #'
 #' # Sensitivity analysis: suppressed counties have no cases
 #' county_zero <- impute_suppressed(
@@ -136,7 +183,8 @@ impute_suppressed <- function(
   floor = 0,
   population = c("cdc", "acs"),
   unestimated = c("na", "zero"),
-  not_available = c("keep", "drop")
+  not_available = c("keep", "drop"),
+  fit_to = c("none", "county_total")
 ) {
   call <- rlang::current_env()
   .check_county_data(x, arg = "x", call = call)
@@ -159,10 +207,21 @@ impute_suppressed <- function(
       call = call
     )
   }
+  if ("fit_reason" %in% names(x)) {
+    cli::cli_abort(
+      c(
+        "{.arg x} already has a {.field fit_reason} column.",
+        "i" = "{.fn impute_suppressed} adds a column of that name. Rename or
+               remove yours first."
+      ),
+      call = call
+    )
+  }
   method <- rlang::arg_match(method)
   population <- rlang::arg_match(population)
   unestimated <- rlang::arg_match(unestimated)
   not_available <- rlang::arg_match(not_available)
+  fit_to <- rlang::arg_match(fit_to)
   .check_count_limit(cap, "cap", call)
   .check_count_limit(floor, "floor", call)
   if (floor > cap) {
@@ -171,11 +230,19 @@ impute_suppressed <- function(
       call = call
     )
   }
+  # Which county strata can be fitted is decided from the rows as given,
+  # before any are dropped or the function returns early (#179).
+  fit_by <- if (fit_to == "county_total") {
+    .check_fit_to(x, method, call)
+  }
+  original <- x
+  row_id <- seq_len(nrow(x))
 
   unavailable <- is.na(x$cases) &
     as.character(x$data_status) %in% "Data not available"
   if (any(unavailable) && not_available == "drop") {
     .warn_dropped_groups(x, unavailable)
+    row_id <- row_id[!unavailable]
     x <- x[!unavailable, , drop = FALSE]
     cli::cli_inform(c(
       "i" = "Dropped {sum(unavailable)} row{?s} marked {.val Data not
@@ -199,6 +266,9 @@ impute_suppressed <- function(
   # filled in that way. Shows whether a limit decided `cases` (#151).
   # Full length, not a scalar: `x` has no rows when every row was dropped.
   x$cases_uncapped <- rep(NA_real_, nrow(x))
+  # Why a row without a published count was or wasn't fitted; NA everywhere
+  # unless `fit_to = "county_total"`.
+  x$fit_reason <- rep(NA_character_, nrow(x))
   if (any(unexplained)) {
     statuses <- unique(as.character(x$data_status[unexplained]))
     statuses[is.na(statuses)] <- "none"
@@ -211,7 +281,7 @@ impute_suppressed <- function(
     ))
   }
   if (!any(suppressed)) {
-    return(x)
+    return(.fit_to_county_totals(x, original, row_id, fit_by))
   }
 
   if (method == "zero") {
@@ -281,9 +351,166 @@ impute_suppressed <- function(
       "i" = "They are marked {.code cases_source = \"not estimated\"}."
     ))
   }
-  .inform_limits(x$cases_uncapped, cap, floor)
+  x <- .fit_to_county_totals(x, original, row_id, fit_by, state)
+  # Fitted rows keep their seed in `cases_uncapped`, but the cap and floor
+  # didn't apply to them: count only the rows the state rate filled in.
+  .inform_limits(
+    x$cases_uncapped[x$cases_source %in% "state_rate"],
+    cap,
+    floor
+  )
 
   x
+}
+
+# Checks for `fit_to = "county_total"`; returns the stratification variable.
+# The fit is for HIV diagnoses and prevalence stratified one way: CDC's HIV
+# estimates cover only EHE counties, and other diseases haven't been checked
+# against their county totals (#179).
+.check_fit_to <- function(x, method, call) {
+  if (method != "state_rate") {
+    cli::cli_abort(
+      c(
+        "{.code fit_to = \"county_total\"} needs {.code method =
+         \"state_rate\"}.",
+        "i" = "The fit shares each county's residual in proportion to the
+               state-rate estimates."
+      ),
+      call = call
+    )
+  }
+  stratify_by <- .atlas_stratify_by(x)
+  if (length(stratify_by) == 0) {
+    cli::cli_abort(
+      c(
+        "{.code fit_to = \"county_total\"} needs data stratified by sex,
+         age or race.",
+        "i" = "Unstratified county counts are themselves the county totals."
+      ),
+      call = call
+    )
+  }
+  if (length(stratify_by) > 1) {
+    cli::cli_abort(
+      c(
+        "{.code fit_to = \"county_total\"} needs data stratified by one
+         variable.",
+        "x" = "{.arg x} is stratified by {.val {stratify_by}}."
+      ),
+      call = call
+    )
+  }
+  indicators <- unique(as.character(x$indicator))
+  other <- setdiff(indicators, c("HIV diagnoses", "HIV prevalence"))
+  if (length(other) > 0) {
+    cli::cli_abort(
+      c(
+        "{.code fit_to = \"county_total\"} works only for HIV diagnoses and
+         HIV prevalence.",
+        "x" = "{.arg x} also has {.val {other}}."
+      ),
+      call = call
+    )
+  }
+  stratify_by
+}
+
+# Fit HIV county strata to the published county totals (#179): `x` is the
+# imputed data, `original` the rows as given (eligibility is decided on
+# them), `row_id` the row of `original` each row of `x` came from, and
+# `state` the state totals already downloaded for the state rate. Fitted
+# rows get `cases_source = "county_fit"`; every row without a published
+# count gets a `fit_reason`. Race strata are never fitted and need no
+# download. Does nothing when `fit_by` is NULL (`fit_to = "none"`).
+.fit_to_county_totals <- function(x, original, row_id, fit_by, state = NULL) {
+  if (is.null(fit_by)) {
+    return(x)
+  }
+  seed <- rep(NA_real_, nrow(original))
+  seed[row_id] <- x$cases_uncapped
+  totals <- if (fit_by == "race") {
+    original[0, , drop = FALSE]
+  } else {
+    .fetch_county_unstratified(original)
+  }
+  fit <- .fit_county_total(original, seed, totals, fit_by)
+  .inform_fit(original, fit$fit_reason)
+  fit <- fit[row_id, , drop = FALSE]
+  fitted <- fit$fit_reason %in% .fit_done
+  x$cases[fitted] <- fit$cases[fitted]
+  x$cases_source[fitted] <- "county_fit"
+  x$fit_reason <- fit$fit_reason
+  if (any(fitted) && !is.null(state)) {
+    .warn_fit_exceeds_state(x, original, state)
+  }
+  x
+}
+
+# Message counting county groups (county, indicator and year) fitted and not
+# fitted, by reason: each group once, whatever its number of strata.
+.inform_fit <- function(original, reason) {
+  groups <- data.frame(
+    key = .row_key(original, c("fips", "indicator", "year")),
+    reason = reason
+  )
+  groups <- unique(groups[!is.na(groups$reason), , drop = FALSE])
+  if (nrow(groups) == 0) {
+    return(invisible())
+  }
+  fitted <- sum(groups$reason == .fit_done)
+  skipped <- groups$reason[groups$reason != .fit_done]
+  counts <- table(factor(skipped, levels = .fit_reasons))
+  counts <- counts[counts > 0]
+  # paste0() on no reasons would give one empty bullet, not none.
+  bullets <- if (length(counts) > 0) {
+    rlang::set_names(
+      paste0(names(counts), ": ", as.integer(counts)),
+      rep("*", length(counts))
+    )
+  }
+  cli::cli_inform(c(
+    "i" = "Fitted {fitted} county group{?s} (county, indicator and year) to
+           the county's published total.",
+    "i" = if (length(skipped) > 0) {
+      "{length(skipped)} group{?s} with unpublished strata {?was/were} not
+       fitted and {?keeps/keep} the state-rate estimate:"
+    },
+    bullets,
+    " " = "{.field fit_reason} says why for each row."
+  ))
+}
+
+# Fitting matches each county's own total, never the state's. Report, as a
+# count of state strata only, where the county counts now add up to more
+# than the state total. Strata whose remainder no_county_cases() withholds
+# (one county without a published count) are left out, since whether they
+# exceed it would bound that county's count (#173, #179).
+.warn_fit_exceeds_state <- function(x, original, state) {
+  keys <- c("state_fips", .atlas_keys)
+  report <- .no_county_cases(x, state, .fetch_county_totals(original))
+  in_x <- data.frame(
+    state_fips = substr(as.character(x$fips), 1, 2),
+    lapply(as.data.frame(x[.atlas_keys]), as.character)
+  )
+  in_x$year <- as.numeric(in_x$year)
+  fitted_keys <- .row_key(in_x[x$cases_source %in% "county_fit", ], keys)
+  report_keys <- .row_key(report, keys)
+  over <- report_keys %in%
+    fitted_keys &
+    !is.na(report$no_county_cases) &
+    report$no_county_cases < -1e-8 * pmax(1, report$state_cases)
+  if (!any(over)) {
+    return(invisible())
+  }
+  cli::cli_warn(
+    c(
+      "In {sum(over)} state strat{?um/a}, county counts after fitting add up
+       to more than the state's published total.",
+      "i" = "They are reported, not adjusted: the fit matches each county's
+             own total only."
+    ),
+    class = "cdcatlas_fit_exceeds_state"
+  )
 }
 
 # Message saying how many rows "state_rate" filled in and how many of them
