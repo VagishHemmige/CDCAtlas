@@ -226,7 +226,8 @@ get_atlas <- function(
     # or age to the unstratified county totals
     # (.fetch_county_unstratified()); refresh those too.
     one_way <- length(stratify_by) == 1 && stratify_by %in% c("sex", "age")
-    if (geography == "county" && identical(disease, "hiv") && one_way) {
+    is_hiv <- identical(unname(disease), "hiv")
+    if (geography == "county" && is_hiv && one_way) {
       .forget_atlas_requests(.build_payloads("hiv", "county", year, NULL))
     }
   }
