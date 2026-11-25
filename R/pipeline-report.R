@@ -10,6 +10,11 @@
 #' never presented as CDC's. Nothing here estimates a suppressed count: where
 #' public data cannot show a quantity, the row has `value = NA` and a `note`.
 #'
+#' Rows fitted to county totals (`cases_source = "county_fit"`) count as
+#' modelled and estimated, but not towards the cap and floor, which didn't
+#' apply to them. `county_groups_by_fit_reason` counts each county group
+#' (county, indicator and year) once, by its `fit_reason`.
+#'
 #' The cap and floor are counted from the estimate before limits (state rate
 #' times county population): the `cases_uncapped` column [impute_suppressed()]
 #' records, whichever population it used. For input with no such column the
@@ -50,7 +55,9 @@
 #'       `"allocation"`, `"denominators"` or `"geography"`.}
 #'     \item{measure, category}{What is counted, and the level of a breakdown
 #'       (a data status, source, reason, allocation rule or statistic).}
-#'     \item{unit}{`"county rows"`, `"state strata"`, `"area rows"`,
+#'     \item{unit}{`"county rows"`, `"county groups"` (a county, indicator
+#'       and year, counted once whatever its strata), `"state strata"`,
+#'       `"area rows"`,
 #'       `"areas"`, `"cases"`, `"people"` or `"proportion"`.}
 #'     \item{basis}{`"count"` (rows), `"published"` (CDC's counts),
 #'       `"modelled"` (imputed or allocated cases), `"acs"` (ACS populations)
@@ -560,7 +567,7 @@
   sources <- sort(unique(source))
   suppressed <- is.na(county$cases) &
     as.character(county$data_status) %in% "Data suppressed"
-  estimated <- source %in% c("state_rate", "zero")
+  estimated <- source %in% c("state_rate", "zero", "county_fit")
 
   no_count_note <- "Rows without a count: their cases are unknown and are inside the state remainder."
   cases_by_source <- vapply(
@@ -645,6 +652,7 @@
       denominator = "state_cases: CDC's state totals, in state strata with a published total",
       note = share_note
     ),
+    .report_fit_groups(imputed),
     .report_rows(
       step,
       "county_rows_not_estimated",
@@ -653,6 +661,32 @@
       "count",
       category = reasons
     )
+  )
+}
+
+# County groups (county, indicator and year) by `fit_reason`, each counted
+# once however many of its strata are in the slice (#179). Nothing when
+# fitting wasn't requested.
+.report_fit_groups <- function(imputed) {
+  if (!"fit_reason" %in% names(imputed)) {
+    return(NULL)
+  }
+  has_reason <- !is.na(imputed$fit_reason)
+  if (!any(has_reason)) {
+    return(NULL)
+  }
+  groups <- unique(data.frame(
+    fips = as.character(imputed$fips[has_reason]),
+    reason = imputed$fit_reason[has_reason]
+  ))
+  reasons <- intersect(c(.fit_done, .fit_reasons), groups$reason)
+  .report_rows(
+    "imputation",
+    "county_groups_by_fit_reason",
+    .report_sum_by(rep(1, nrow(groups)), groups$reason, reasons),
+    "county groups",
+    "count",
+    category = reasons
   )
 }
 

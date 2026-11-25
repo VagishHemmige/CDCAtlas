@@ -172,7 +172,11 @@ area is in.}
 \item{indicator, race_ethnicity, sex, age, data_status}{From \code{x}.}
 \item{county_cases, cases_source, county_population_atlas}{The county's
 count, where it came from (see \code{\link[=impute_suppressed]{impute_suppressed()}}) and CDC's
-county population.}
+county population. For rows fitted to the county's total
+(\code{cases_source = "county_fit"}), \code{county_cases} is the fitted count;
+cases spread with \code{no_county = "spread"} are added only in
+\code{county_cases_allocated}, so the areas can add up to more than the
+county's published total.}
 \item{county_cases_spread}{Cases with no county added to this county
 (\code{no_county = "spread"}); 0 otherwise.}
 \item{county_cases_unknown}{Cases of unknown race or age added to this
