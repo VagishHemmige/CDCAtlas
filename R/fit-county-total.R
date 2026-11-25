@@ -175,9 +175,9 @@
       c(
         "In {unfittable} group{?s} of county, indicator and year, the strata
          are incomplete or inconsistent, so {?it was/they were} not fitted.",
-        "i" = "A requested stratum is missing, or a cell has a count but is
-               marked {.val Data suppressed}, or a cell has no count and isn't
-               marked {.val Data suppressed}."
+        "i" = "Check that each requested stratum appears once, the other
+               columns match the requested population (HIV, ages 13 and
+               over), and each count agrees with its data status."
       ),
       class = "cdcatlas_unfittable_county_strata"
     )
