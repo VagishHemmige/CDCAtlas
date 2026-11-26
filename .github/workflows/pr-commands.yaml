@@ -5,25 +5,8 @@
 # DESCRIPTION's RoxygenNote with the current roxygen2, committed to the PR branch.
 # Only the repository owner or members can trigger it. It runs the PR's code,
 # so use it only on PRs you trust.
-# GitHub runs comment-triggered workflows from the default branch, so these
-# work only once they are on master.
-#
-# Comment exactly `/format` on an open pull request to run Air on the R files
-# it adds or changes (renamed files included), and commit the result to its
-# branch. Nothing is pushed if the pull request has closed or its branch has
-# moved meanwhile. Other files are left alone, even if Air would change them.
-# Same owner-or-member rule. Air only formats the PR's code, never runs it.
-# Pull requests from forks are skipped with a notice: this job pushes only to
-# branches in this repository.
-#
-# Whole changed files are formatted, so the commit can also change lines
-# outside the PR's diff, which format-suggest.yaml doesn't comment on.
-#
-# GitHub usually doesn't start workflows from a push made with GITHUB_TOKEN
-# (https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow),
-# so the checks may not rerun on the formatting commit until the next push.
-# Whether they, and the ChatGPT review, run on it is still to be checked on
-# the first use.
+# GitHub runs comment-triggered workflows from the default branch, so this
+# works only after it is merged to master.
 on:
   issue_comment:
     types: [created]
@@ -69,83 +52,3 @@ jobs:
       - uses: r-lib/actions/pr-push@v2
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-
-  format:
-    if: ${{ github.event.issue.pull_request && github.event.issue.state == 'open' && (github.event.comment.author_association == 'MEMBER' || github.event.comment.author_association == 'OWNER') && github.event.comment.body == '/format' }}
-    name: format
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: read
-    steps:
-      - name: Find the pull request's branches
-        id: pr
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-          NUMBER: ${{ github.event.issue.number }}
-        run: |
-          gh api "repos/$REPO/pulls/$NUMBER" --jq '
-            "same_repo=\(.head.repo.full_name == .base.repo.full_name)",
-            "open=\(.state == "open")",
-            "head_ref=\(.head.ref)",
-            "head_sha=\(.head.sha)",
-            "base_ref=\(.base.ref)"
-          ' >> "$GITHUB_OUTPUT"
-
-      - name: Skip pull requests from forks
-        if: steps.pr.outputs.same_repo != 'true'
-        run: echo "::notice::/format pushes only to branches in this repository, so it does nothing on a pull request from a fork."
-
-      - name: Skip closed pull requests
-        if: steps.pr.outputs.same_repo == 'true' && steps.pr.outputs.open != 'true'
-        run: echo "::notice::The pull request closed before /format ran, so nothing was changed."
-
-      - uses: actions/checkout@v7
-        if: steps.pr.outputs.same_repo == 'true' && steps.pr.outputs.open == 'true'
-        with:
-          ref: ${{ steps.pr.outputs.head_sha }}
-          fetch-depth: 0
-
-      - name: Install
-        if: steps.pr.outputs.same_repo == 'true' && steps.pr.outputs.open == 'true'
-        uses: posit-dev/setup-air@v1
-
-      # Only the R files the pull request adds or changes, against its merge
-      # base, are formatted and committed (AGENTS.md: touched files only).
-      - name: Format and commit
-        if: steps.pr.outputs.same_repo == 'true' && steps.pr.outputs.open == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-          NUMBER: ${{ github.event.issue.number }}
-          HEAD_REF: ${{ steps.pr.outputs.head_ref }}
-          HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
-          BASE_REF: ${{ steps.pr.outputs.base_ref }}
-        run: |
-          files="$RUNNER_TEMP/changed"
-          base=$(git merge-base "origin/$BASE_REF" HEAD)
-          git diff -z --name-only --no-renames --diff-filter=AM "$base" HEAD -- '*.R' '*.r' > "$files"
-          if [ ! -s "$files" ]; then
-            echo "This pull request changes no R files."
-            exit 0
-          fi
-          while IFS= read -r -d '' f; do air format "./$f"; done < "$files"
-          while IFS= read -r -d '' f; do git add -- "./$f"; done < "$files"
-          if git diff --cached --quiet; then
-            echo "Already formatted."
-            exit 0
-          fi
-          git config --local user.name "$GITHUB_ACTOR"
-          git config --local user.email "$GITHUB_ACTOR@users.noreply.github.com"
-          git commit -m "Format with Air"
-          # Push only if the pull request is still open and its branch still
-          # points where it did when the job started: the lease fails if the
-          # branch moved or was deleted, so nothing is overwritten or
-          # recreated.
-          now=$(gh api "repos/$REPO/pulls/$NUMBER" --jq '"\(.state) \(.head.sha)"')
-          if [ "$now" != "open $HEAD_SHA" ]; then
-            echo "::warning::The pull request closed or its branch moved while /format ran, so nothing was pushed. Comment /format again if needed."
-            exit 0
-          fi
-          git push --force-with-lease="refs/heads/$HEAD_REF:$HEAD_SHA" origin "HEAD:refs/heads/$HEAD_REF"
