@@ -88,9 +88,9 @@ payload to the AtlasPlus data endpoint and parses the response into a tidy
 tibble.
 }
 \details{
-The function supports multiple diseases, geographic levels, year ranges,
-and optional stratification. Stratified queries expand results into all
-requested combinations (e.g., age by race). When possible, numeric fields
+Each call requests one disease at one geographic level, for one or more
+years, with optional stratification. Stratified queries expand results into
+all requested combinations (e.g., age by race). When possible, numeric fields
 are returned as \code{double} and identifiers as character.
 
 \code{get_atlas()} only downloads. For census tract or block group estimates,
