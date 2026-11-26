@@ -139,6 +139,13 @@
 #'   `cases` and ignore `cases_uncapped`.
 #'
 #' @details
+#' Filled-in counts are estimates, not whole numbers, and are not rounded:
+#' `"state_rate"` can give 1.6 cases, for example. Each stratum is filled in,
+#' capped and floored on its own, from the state rate in that stratum, so a
+#' county's filled-in strata need not add up to its filled-in unstratified
+#' count. With the default cap of 4, two suppressed sex strata can add up to
+#' 8 while the same county's unstratified estimate is at most 4.
+#'
 #' `"state_rate"` downloads the state data matching `x` (same diseases, years
 #' and stratification) from CDC AtlasPlus, and with `population = "acs"` the
 #' tract populations from the Census. `fit_to = "county_total"` by sex or
