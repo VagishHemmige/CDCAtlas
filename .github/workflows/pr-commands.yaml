@@ -5,8 +5,15 @@
 # DESCRIPTION's RoxygenNote with the current roxygen2, committed to the PR branch.
 # Only the repository owner or members can trigger it. It runs the PR's code,
 # so use it only on PRs you trust.
-# GitHub runs comment-triggered workflows from the default branch, so this
-# works only after it is merged to master.
+# GitHub runs comment-triggered workflows from the default branch, so these
+# work only once they are on master.
+#
+# Comment `/format` to run Air on the PR and commit the result to its branch,
+# the same changes format-suggest.yaml suggests. Same owner-or-member rule.
+# Air only formats the PR's code, never runs it.
+#
+# A commit pushed with GITHUB_TOKEN doesn't start other workflows, so checks
+# and reviews run again only on the next push.
 on:
   issue_comment:
     types: [created]
@@ -48,6 +55,38 @@ jobs:
           git config --local user.email "$GITHUB_ACTOR@users.noreply.github.com"
           git add man/\* NAMESPACE DESCRIPTION
           git commit -m 'Document' || echo "Documentation already up to date"
+
+      - uses: r-lib/actions/pr-push@v2
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+  format:
+    if: ${{ github.event.issue.pull_request && (github.event.comment.author_association == 'MEMBER' || github.event.comment.author_association == 'OWNER') && startsWith(github.event.comment.body, '/format') }}
+    name: format
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: r-lib/actions/pr-fetch@v2
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install
+        uses: posit-dev/setup-air@v1
+
+      - name: Format
+        run: air format .
+
+      - name: Commit
+        run: |
+          git config --local user.name "$GITHUB_ACTOR"
+          git config --local user.email "$GITHUB_ACTOR@users.noreply.github.com"
+          git add -u
+          git commit -m 'Format with Air' || echo "Already formatted"
 
       - uses: r-lib/actions/pr-push@v2
         with:
