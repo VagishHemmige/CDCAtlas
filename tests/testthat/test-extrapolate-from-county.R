@@ -65,6 +65,38 @@ test_that("tract estimates are county count x tract share of the stratum", {
   expect_equal(unique(one$county_population_acs), sum(one$area_population_acs))
 })
 
+test_that("unstratified area rates equal the county rate on the ACS denominator", {
+  tracts <- run_extrapolation(NULL)
+  tracts <- tracts[tracts$county_fips == "01001", ]
+  for (indicator in unique(tracts$indicator)) {
+    one <- tracts[tracts$indicator == indicator, ]
+    expect_equal(unique(one$allocation), "stratum population")
+    county_rate <- unique(one$county_cases_allocated) /
+      unique(one$county_population_acs)
+
+    # Every area has the county's rate on the sum of its areas' ACS
+    # populations, not CDC's county population (50,000 here).
+    expect_equal(
+      one$area_cases / one$area_population_acs,
+      rep(county_rate, nrow(one)),
+      label = indicator
+    )
+    expect_false(isTRUE(all.equal(
+      county_rate,
+      unique(one$county_cases) / unique(one$county_population_atlas)
+    )))
+  }
+})
+
+test_that("ACS margins of error are not carried into the output", {
+  acs <- fake_acs()
+  acs$moe <- 99
+  tracts <- run_extrapolation("sex", acs = acs)
+
+  expect_equal(grep("moe|margin", names(tracts), value = TRUE), character(0))
+  expect_equal(tracts, run_extrapolation("sex"))
+})
+
 test_that("there is no area_noncases column (#117)", {
   # Population minus cases means people without the condition only for
   # prevalence; for diagnoses, infections and Knowledge of Status it doesn't.
@@ -245,6 +277,23 @@ test_that("race denominators use B03002, scaled to the tract's 13+ share", {
   ])
 
   expect_equal(got, expected)
+})
+
+test_that("every race group in a tract is scaled by the same 13+ share", {
+  # B03002 has no ages, so each race group gets the tract's share of
+  # residents aged 13 and older: the same age structure for every race.
+  tracts <- run_extrapolation("race")
+  pop <- fake_acs_tract("01001000100")
+  races <- .acs_race_variables()
+  one <- tracts[
+    tracts$geoid == "01001000100" & tracts$indicator == "HIV prevalence",
+  ]
+  ratio <- one$area_population_acs /
+    pop[races$variable[match(one$race_ethnicity, races$race_ethnicity)]]
+
+  expect_equal(nrow(one), nrow(races))
+  expect_equal(unname(ratio), rep(unname(ratio[1]), nrow(one)))
+  expect_lt(ratio[[1]], 1)
 })
 
 test_that("race denominators aren't scaled for all ages", {

@@ -7,7 +7,17 @@
 #' Run it on county data that has been through [impute_suppressed()].
 #'
 #' The estimates are modelled, not observed: they assume the same rate in every
-#' area of a county within a stratum.
+#' area of a county within a stratum. Where a county stratum is shared by its
+#' own population (`allocation = "stratum population"`), each area's rate,
+#' `area_cases / area_population_acs`, is the county's rate on the ACS
+#' denominator, `county_cases_allocated / county_population_acs`, so the
+#' pattern across a county's areas comes only from their populations, not from
+#' any data on where cases are. Where cases cluster in some areas, the
+#' estimates flatten the differences, moving cases from areas with high rates
+#' to areas with low ones. The county's rate on the ACS denominator can differ
+#' from CDC's county rate, whose denominator is CDC's county population. ACS
+#' margins of error are not carried into the output, and no uncertainty is
+#' given for the estimates.
 #'
 #' For Knowledge of Status, `county_cases` is the number of people with HIV
 #' who know their status, and it is shared across areas by their residents,
@@ -83,7 +93,9 @@
 #'   * `"B03002"` (default): Hispanic or Latino origin by race. Its groups
 #'     match AtlasPlus exactly (Hispanic, and non-Hispanic for each race), but
 #'     it has no ages, so for ages 13 and older each area's populations are
-#'     scaled by the area's share of residents aged 13 and older.
+#'     scaled by the area's share of residents aged 13 and older. This
+#'     assumes every race group in an area has the same age structure as the
+#'     area's whole population.
 #'   * `"B01001"`: the sex-by-age tables for each race (B01001B to B01001I),
 #'     which give ages 13 and older directly. Only White (B01001H) and
 #'     Hispanic (B01001I) match AtlasPlus; the other groups include Hispanic
@@ -96,6 +108,10 @@
 #'     proportion to their counts, within each indicator and year, then
 #'     across areas as usual. A county with no cases of known race keeps its
 #'     unknown cases unallocated.
+#'
+#'   AtlasPlus has no "Unknown" race group for HIV or CDC's HIV estimates, so
+#'   [get_atlas()] doesn't request one and `unknown_race` has nothing to act
+#'   on for them.
 #' @param unknown_age Cases CDC reports with age "Unknown" (chlamydia,
 #'   gonorrhea and syphilis), when `x` is stratified by age:
 #'   * `"report"` (default): left out, with a message, and listed in
