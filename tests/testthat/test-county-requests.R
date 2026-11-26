@@ -458,6 +458,20 @@ network_timeout <- function(body) {
   stop("Timeout was reached: Operation timed out")
 }
 no_host <- function(body) stop("Could not resolve host: gis.cdc.gov")
+# curl 6.0.0 and later class their errors by libcurl error code; the message
+# below deliberately lacks "Timeout was reached".
+curl_timeout <- function(body) {
+  rlang::abort(
+    "Operation timed out after 120000 milliseconds",
+    class = c("curl_error_operation_timedout", "curl_error")
+  )
+}
+curl_no_host <- function(body) {
+  rlang::abort(
+    "Could not resolve host: gis.cdc.gov",
+    class = c("curl_error_couldnt_resolve_host", "curl_error")
+  )
+}
 
 # Replace CDC with `outcomes`, one per request (the last one repeats), and
 # record the requests made and the waits between them.
@@ -511,8 +525,15 @@ test_that("a network timeout is retried", {
   expect_equal(calls$waits, c(10, 30))
 })
 
+test_that("a timeout classed by curl is retried, whatever its message", {
+  calls <- local_cdc_outcomes(list(curl_timeout, cdc_ok))
+  suppressMessages(get_atlas("hiv", "state", 2017))
+  expect_equal(calls$n, 2)
+  expect_equal(calls$waits, 10)
+})
+
 test_that("other failures are not retried", {
-  for (outcome in list(cdc_not_found, no_host)) {
+  for (outcome in list(cdc_not_found, no_host, curl_no_host)) {
     calls <- local_cdc_outcomes(list(outcome, cdc_ok))
     expect_error(get_atlas("hiv", "state", 2017))
     expect_equal(calls$n, 1)
