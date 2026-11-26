@@ -531,6 +531,47 @@ test_that("cases_uncapped is computed in each stratum and state on its own", {
   expect_equal(two$cases, c(1.6, 4, 4, 4))
 })
 
+test_that("filled-in counts are fractions, not rounded to whole numbers", {
+  local_fake_sources()
+  out <- impute_suppressed(fake_county_atlas(suppressed = "01003"))
+  filled <- out$cases[out$cases_source == "state_rate"]
+
+  # Diagnoses: 32 per 1e6 times 50,000 = 1.6, under the cap of 4.
+  # Prevalence: 11.6, capped at 4.
+  expect_equal(filled, c(1.6, 4))
+  expect_false(filled[1] == round(filled[1]))
+})
+
+test_that("each stratum is capped on its own, so strata needn't add up to the unstratified estimate", {
+  # One suppressed county whose two sex strata have half its population each,
+  # and a state rate of 240 per million in every stratum: before the cap the
+  # strata (6 + 6) add up to the unstratified estimate (12).
+  at_rate <- function(state) {
+    state$cases <- 240
+    state
+  }
+  county_by_sex <- fake_county_atlas("sex", suppressed = "01003")
+  county_by_sex$population[county_by_sex$fips == "01003"] <- 25000
+  prevalence_01003 <- function(out) {
+    out[out$fips == "01003" & out$indicator == "HIV prevalence", ]
+  }
+
+  local_fake_sources(state = at_rate(fake_state_atlas()))
+  total <- prevalence_01003(impute_suppressed(
+    fake_county_atlas(suppressed = "01003")
+  ))
+  local_fake_sources(state = at_rate(fake_state_atlas(stratify_by = "sex")))
+  by_sex <- prevalence_01003(impute_suppressed(county_by_sex))
+
+  expect_equal(total$cases_uncapped, 12)
+  expect_equal(by_sex$cases_uncapped, c(6, 6))
+  expect_equal(sum(by_sex$cases_uncapped), total$cases_uncapped)
+
+  # Each is capped at 4 on its own: 4 + 4 by sex against 4 unstratified.
+  expect_equal(total$cases, 4)
+  expect_equal(by_sex$cases, c(4, 4))
+})
+
 test_that("cases_uncapped uses the ACS population with population = 'acs'", {
   local_fake_sources(state = fake_state_atlas(stratify_by = "sex"))
   county <- fake_county_atlas("sex", suppressed = "01003")
