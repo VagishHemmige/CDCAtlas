@@ -67,7 +67,9 @@ get_atlas(
   [`no_county_cases()`](https://vagishhemmige.github.io/CDCAtlas/reference/no_county_cases.md)
   and
   [`extrapolate_from_county()`](https://vagishhemmige.github.io/CDCAtlas/reference/extrapolate_from_county.md)
-  use with them, so those are downloaded again too. Default `FALSE`.
+  use with them, so those are downloaded again too, and, for HIV by sex
+  or age, the saved unstratified county data that
+  `impute_suppressed(fit_to = "county_total")` fits to. Default `FALSE`.
 
 ## Value
 

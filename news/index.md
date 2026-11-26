@@ -22,6 +22,20 @@
   [`no_county_cases()`](https://vagishhemmige.github.io/CDCAtlas/reference/no_county_cases.md)
   withholds, and the message says how many state strata that applies to
   ([\#173](https://github.com/VagishHemmige/CDCAtlas/issues/173)).
+- `get_atlas(refresh = TRUE)` for HIV county data by sex or age also
+  drops the saved unstratified county data that
+  `impute_suppressed(fit_to = "county_total")` fits to
+  ([\#179](https://github.com/VagishHemmige/CDCAtlas/issues/179)).
+- [`impute_suppressed()`](https://vagishhemmige.github.io/CDCAtlas/reference/impute_suppressed.md)
+  gains `fit_to`. With `fit_to = "county_total"`, suppressed HIV
+  diagnoses and prevalence strata by sex or age share each county’s
+  published total, less its published cells, in proportion to their
+  state-rate estimates, when two or more cells are suppressed. Fitted
+  rows get `cases_source = "county_fit"`; a new column, `fit_reason`,
+  always present, says why each unpublished row was or wasn’t fitted.
+  The default, `"none"`, changes no estimate
+  ([\#164](https://github.com/VagishHemmige/CDCAtlas/issues/164),
+  [\#179](https://github.com/VagishHemmige/CDCAtlas/issues/179)).
 - [`impute_suppressed()`](https://vagishhemmige.github.io/CDCAtlas/reference/impute_suppressed.md)
   says in a message how many suppressed rows `method = "state_rate"`
   filled in and how many of them had their value set by `cap` and by

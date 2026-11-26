@@ -115,7 +115,8 @@ supported. Use <code><a href="impute_suppressed.html">impute_suppressed()</a></c
 copy is less than 30 days old, and save the new copy. For county data
 this also drops the saved state totals that <code><a href="impute_suppressed.html">impute_suppressed()</a></code>,
 <code><a href="no_county_cases.html">no_county_cases()</a></code> and <code><a href="extrapolate_from_county.html">extrapolate_from_county()</a></code> use with them, so
-those are downloaded again too. Default <code>FALSE</code>.</p></dd>
+those are downloaded again too, and, for HIV by sex or age, the saved
+unstratified county data that <code>impute_suppressed(fit_to = "county_total")</code> fits to. Default <code>FALSE</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

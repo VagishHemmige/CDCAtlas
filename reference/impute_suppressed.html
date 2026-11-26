@@ -101,7 +101,8 @@ cases" or a code this version doesn't know, is not filled in: it stays
 <span>  floor <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  population <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"cdc"</span>, <span class="st">"acs"</span><span class="op">)</span>,</span>
 <span>  unestimated <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"na"</span>, <span class="st">"zero"</span><span class="op">)</span>,</span>
-<span>  not_available <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"keep"</span>, <span class="st">"drop"</span><span class="op">)</span></span>
+<span>  not_available <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"keep"</span>, <span class="st">"drop"</span><span class="op">)</span>,</span>
+<span>  fit_to <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"county_total"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -172,23 +173,49 @@ no longer reported by <code><a href="no_county_cases.html">no_county_cases()</a>
 <code><a href="extrapolate_from_county.html">extrapolate_from_county()</a></code>, so this warns and names them.</p></li>
 </ul></dd>
 
+
+<dt id="arg-fit-to">fit_to<a class="anchor" aria-label="anchor" href="#arg-fit-to"></a></dt>
+<dd><p>Whether suppressed strata are fitted to each county's
+published total:</p><ul><li><p><code>"none"</code> (default): no fitting; each suppressed row keeps its <code>method</code>
+estimate.</p></li>
+<li><p><code>"county_total"</code>: for HIV diagnoses and HIV prevalence stratified by
+sex or age, the suppressed cells of each county, indicator and year
+share the county's published total, less its published cells, in
+proportion to their state-rate estimates before the cap. Needs
+<code>method = "state_rate"</code>. Race strata are never fitted, since HIV has no
+row for unknown race, so a county's race cells needn't add up to its
+total.</p></li>
+</ul><p>A county is fitted only when two or more of its cells are suppressed, at
+least two have a positive estimate, its total is published, every
+requested stratum is present and the total is larger than the published
+cells; otherwise its rows keep the <code>method</code> estimate and <code>fit_reason</code>
+says why. Fitted counts add up to the county's total but are modeled:
+each one can be far from CDC's hidden count, and CDC's rule for which
+counts it suppresses is not used to place them. They are fractions, and
+the cap and floor don't apply to them. The fit matches each county's own
+total, never the state's; a warning reports how many state strata then
+add up to more than the state total.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p><code>x</code> with suppressed counts filled in and two new columns,
-<code>cases_source</code> and <code>cases_uncapped</code>. <code>cases_source</code> is:</p><ul><li><p><code>"published"</code>: CDC's count.</p></li>
+    <p><code>x</code> with suppressed counts filled in and three new columns,
+<code>cases_source</code>, <code>cases_uncapped</code> and <code>fit_reason</code>. <code>cases_source</code> is:</p><ul><li><p><code>"published"</code>: CDC's count.</p></li>
 <li><p><code>"state_rate"</code> or <code>"zero"</code>: filled in by <code>method</code>.</p></li>
+<li><p><code>"county_fit"</code>: fitted to the county's published total
+(<code>fit_to = "county_total"</code>).</p></li>
 <li><p><code>"not estimated"</code>: <code>"state_rate"</code> couldn't estimate it (<code>NA</code>, or 0
 with <code>unestimated = "zero"</code>), or it had no count and wasn't marked
 "Data suppressed" (always <code>NA</code>).</p></li>
 <li><p><code>"not available"</code>: kept with <code>not_available = "keep"</code>; <code>NA</code>.</p></li>
 </ul><p><code>cases_uncapped</code> is, for rows filled in by <code>"state_rate"</code>, the estimate
 before <code>cap</code> and <code>floor</code> were applied: the state rate times the county
-population used (CDC's or ACS). It is a modeled number, not CDC's hidden
-count and not a way to recover it. It is <code>NA</code> for every other row:
-published counts, rows filled in by <code>"zero"</code>, and rows marked
-<code>"not estimated"</code> or <code>"not available"</code>. <code>cases</code> is the value to use;
-<code>cases_uncapped</code> shows what decided it:</p><ul><li><p><code>cases_uncapped &gt; cap</code>: the cap set <code>cases</code>.</p></li>
+population used (CDC's or ACS). On <code>"county_fit"</code> rows it is the same
+estimate, the share each fitted cell was given. It is a modeled number,
+not CDC's hidden count and not a way to recover it. It is <code>NA</code> for every
+other row: published counts, rows filled in by <code>"zero"</code>, and rows marked
+<code>"not estimated"</code> or <code>"not available"</code>. On <code>"state_rate"</code> rows <code>cases</code>
+is the value to use; <code>cases_uncapped</code> shows what decided it:</p><ul><li><p><code>cases_uncapped &gt; cap</code>: the cap set <code>cases</code>.</p></li>
 <li><p><code>cases_uncapped &lt; floor</code>: the floor set <code>cases</code>.</p></li>
 <li><p>Otherwise <code>cases</code> equals <code>cases_uncapped</code>. An estimate exactly equal
 to <code>cap</code> or <code>floor</code> was not changed by it.</p></li>
@@ -200,6 +227,12 @@ A limit that can't set anything (<code>cap = Inf</code>, <code>floor = 0</code>)
 mentioned, and there is no message when no row was estimated or with
 <code>method = "zero"</code>. A high percentage for the cap means most estimates
 are the cap itself rather than the state rate.</p>
+<p><code>fit_reason</code> is <code>NA</code> on rows with a published count, and everywhere with
+<code>fit_to = "none"</code>. With <code>fit_to = "county_total"</code>, every other row has
+<code>"fitted to county total"</code> or the first reason that applies to its
+county, indicator and year: <code>"race not fitted"</code>, <code>"county total not available"</code>, <code>"county total suppressed"</code>, <code>"strata incomplete or inconsistent"</code>, <code>"one suppressed cell"</code>, <code>"a suppressed cell has no seed"</code>, <code>"fewer than two positive seeds"</code> or <code>"published total not usable for fitting"</code> (the total is no larger than the published cells). A
+message counts the county groups fitted and not fitted, by reason, and
+the cap and floor message counts only rows filled in by the state rate.</p>
 <p><code>data_status</code> is unchanged, so suppressed rows can still be identified.
 <code>cap</code>, <code>floor</code>, <code>population</code> and <code>unestimated</code> apply only to
 <code>"state_rate"</code>. <code><a href="no_county_cases.html">no_county_cases()</a></code> and <code><a href="extrapolate_from_county.html">extrapolate_from_county()</a></code> use
@@ -209,7 +242,11 @@ are the cap itself rather than the state rate.</p>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p><code>"state_rate"</code> downloads the state data matching <code>x</code> (same diseases, years
 and stratification) from CDC AtlasPlus, and with <code>population = "acs"</code> the
-tract populations from the Census.</p>
+tract populations from the Census. <code>fit_to = "county_total"</code> by sex or
+age also downloads CDC's unstratified county data for the states and
+years in <code>x</code> (one request per state and year, saved and reused), and CDC's
+county data matching <code>x</code> for the state check, which is usually already
+saved from <code><a href="get_atlas.html">get_atlas()</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -228,6 +265,13 @@ for CDC's suppression rules.</p></div>
 <span class="r-in"><span><span class="co"># How many filled-in rows did the cap (4 by default) decide?</span></span></span>
 <span class="r-in"><span><span class="va">filled</span> <span class="op">&lt;-</span> <span class="va">county</span><span class="op">[</span><span class="va">county</span><span class="op">$</span><span class="va">cases_source</span> <span class="op">==</span> <span class="st">"state_rate"</span>, <span class="op">]</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">filled</span><span class="op">$</span><span class="va">indicator</span>, capped <span class="op">=</span> <span class="va">filled</span><span class="op">$</span><span class="va">cases_uncapped</span> <span class="op">&gt;</span> <span class="fl">4</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Fit suppressed sex strata to each county's published total</span></span></span>
+<span class="r-in"><span><span class="va">county_fit</span> <span class="op">&lt;-</span> <span class="fu">impute_suppressed</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="get_atlas.html">get_atlas</a></span><span class="op">(</span><span class="st">"hiv"</span>, <span class="st">"county"</span>, <span class="fl">2022</span>, stratify_by <span class="op">=</span> <span class="st">"sex"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  fit_to <span class="op">=</span> <span class="st">"county_total"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">county_fit</span><span class="op">$</span><span class="va">fit_reason</span>, useNA <span class="op">=</span> <span class="st">"ifany"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Sensitivity analysis: suppressed counties have no cases</span></span></span>
 <span class="r-in"><span><span class="va">county_zero</span> <span class="op">&lt;-</span> <span class="fu">impute_suppressed</span><span class="op">(</span></span></span>
