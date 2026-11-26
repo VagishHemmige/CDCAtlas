@@ -72,8 +72,17 @@ test_that("unstratified area rates equal the county rate on the ACS denominator"
   acs$estimate[acs$GEOID == "01001000100"] <- 0
   tracts <- run_extrapolation(NULL, acs = acs)
   tracts <- tracts[tracts$county_fips == "01001", ]
+  expect_setequal(
+    as.character(unique(tracts$indicator)),
+    c("HIV diagnoses", "HIV prevalence")
+  )
   for (indicator in unique(tracts$indicator)) {
     one <- tracts[tracts$indicator == indicator, ]
+    expect_equal(
+      sort(one$geoid),
+      c("01001000100", "01001000200", "01001000300"),
+      label = indicator
+    )
     expect_equal(unique(one$allocation), "stratum population")
     empty <- one$area_population_acs == 0
     expect_equal(one$geoid[empty], "01001000100", label = indicator)
