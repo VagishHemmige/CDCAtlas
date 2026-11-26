@@ -93,6 +93,7 @@ A county keeps the state-rate estimate, with the reason in `fit_reason`, when:
   others;
 - its own total is suppressed or missing;
 - a stratum is missing, or a count disagrees with its data status;
+- a suppressed cell has no state-rate estimate (no rate or no population);
 - fewer than two of its suppressed cells have a positive estimate; or
 - the total is no larger than its published cells.
 
