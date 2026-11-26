@@ -43,6 +43,26 @@ test_that("years up to the latest one in the code table are accepted", {
   expect_contains(ids, .latest_atlas_year() - 1478)
 })
 
+test_that("one call can request several years of one disease", {
+  payloads <- NULL
+  local_mocked_bindings(
+    .request_atlas_all = function(p) {
+      payloads <<- p
+      fake_county_atlas()
+    },
+    .warn_missing_indicators = function(...) invisible()
+  )
+  get_atlas("hiv", "state", c(2017, 2022))
+  # Every year code in each payload, so an unrequested year would show.
+  all_year_codes <- varvals$id[varvals$vtid == 2]
+  year_codes <- lapply(payloads, function(p) {
+    ids <- as.numeric(strsplit(p$VariableIDs, ",")[[1]])
+    intersect(ids, all_year_codes)
+  })
+  expect_equal(lengths(year_codes), c(1, 1))
+  expect_equal(sort(unlist(year_codes)), c(2017, 2022) - 1478)
+})
+
 test_that("years outside the code table are refused, naming the range", {
   local_mocked_bindings(.latest_atlas_year = function() 2025)
   local_mocked_bindings(.request_atlas_all = function(p) stop("CDC was called"))
