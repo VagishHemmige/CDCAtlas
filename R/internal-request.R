@@ -8,7 +8,7 @@
 #' Requires the internal `varvals` lookup table for factor labeling.
 #' Implements rate limiting and user-agent headers for API politeness.
 #'
-#' @keywords internal
+#' @noRd
 
 .request_atlas_internal <- function(payload) {
   #Url for CDC Atlas
@@ -362,7 +362,7 @@
 #' Internal rate limiter
 #'
 #' Uses ratelimitr to ensure we don't overwhelm AtlasPlus.
-#' @keywords internal
+#' @noRd
 client_rate <- ratelimitr::limit_rate(
   function() Sys.sleep(0),
   ratelimitr::rate(n = 5, period = 1) # max 5 requests per second
