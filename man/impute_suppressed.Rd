@@ -174,12 +174,16 @@ cases" or a code this version doesn't know, is not filled in: it stays
 }
 }
 \details{
-Filled-in counts are estimates, not whole numbers, and are not rounded:
-\code{"state_rate"} can give 1.6 cases, for example. Each stratum is filled in,
-capped and floored on its own, from the state rate in that stratum, so a
-county's filled-in strata need not add up to its filled-in unstratified
-count. With the default cap of 4, two suppressed sex strata can add up to
-8 while the same county's unstratified estimate is at most 4.
+Filled-in counts are not rounded, so they can be fractions: \code{"state_rate"}
+can give 1.6 cases, for example. With \code{"state_rate"} and
+\code{fit_to = "none"}, each stratum is filled in, capped and floored on its own,
+from the state rate in that stratum, so a county's filled-in strata need
+not add up to its filled-in unstratified count. With the default cap of 4,
+a county whose unstratified count and both sex counts are suppressed can
+have sex estimates adding up to 8 against an unstratified estimate of 4,
+even when the estimates before the cap agree. Rows fitted with
+\code{fit_to = "county_total"} share the county's published total instead, and
+the cap doesn't apply to them.
 
 \code{"state_rate"} downloads the state data matching \code{x} (same diseases, years
 and stratification) from CDC AtlasPlus, and with \code{population = "acs"} the

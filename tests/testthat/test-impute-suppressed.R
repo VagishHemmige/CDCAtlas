@@ -543,23 +543,33 @@ test_that("filled-in counts are fractions, not rounded to whole numbers", {
 })
 
 test_that("each stratum is capped on its own, so strata needn't add up to the unstratified estimate", {
-  prevalence_01003 <- function(out) {
-    out$cases[out$fips == "01003" & out$indicator == "HIV prevalence"]
+  # One suppressed county whose two sex strata have half its population each,
+  # and a state rate of 240 per million in every stratum: before the cap the
+  # strata (6 + 6) add up to the unstratified estimate (12).
+  at_rate <- function(state) {
+    state$cases <- 240
+    state
   }
-  local_fake_sources()
+  county_by_sex <- fake_county_atlas("sex", suppressed = "01003")
+  county_by_sex$population[county_by_sex$fips == "01003"] <- 25000
+  prevalence_01003 <- function(out) {
+    out[out$fips == "01003" & out$indicator == "HIV prevalence", ]
+  }
+
+  local_fake_sources(state = at_rate(fake_state_atlas()))
   total <- prevalence_01003(impute_suppressed(
     fake_county_atlas(suppressed = "01003")
   ))
-  local_fake_sources(state = fake_state_atlas(stratify_by = "sex"))
-  by_sex <- prevalence_01003(impute_suppressed(
-    fake_county_atlas("sex", suppressed = "01003")
-  ))
+  local_fake_sources(state = at_rate(fake_state_atlas(stratify_by = "sex")))
+  by_sex <- prevalence_01003(impute_suppressed(county_by_sex))
 
-  # Uncapped: 11.6 unstratified; 11.6 male and 11.7 female. Each is capped at
-  # 4 on its own, so the two sexes add up to 8 against 4 unstratified.
-  expect_equal(total, 4)
-  expect_equal(by_sex, c(4, 4))
-  expect_equal(sum(by_sex), 2 * total)
+  expect_equal(total$cases_uncapped, 12)
+  expect_equal(by_sex$cases_uncapped, c(6, 6))
+  expect_equal(sum(by_sex$cases_uncapped), total$cases_uncapped)
+
+  # Each is capped at 4 on its own: 4 + 4 by sex against 4 unstratified.
+  expect_equal(total$cases, 4)
+  expect_equal(by_sex$cases, c(4, 4))
 })
 
 test_that("cases_uncapped uses the ACS population with population = 'acs'", {
