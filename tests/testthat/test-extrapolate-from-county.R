@@ -1555,3 +1555,55 @@ test_that("no_county = 'spread' still warns, and says the cases are placed by as
   # Spreading is unchanged: the tracts hold the whole state total.
   expect_equal(sum(tracts$area_cases), 100)
 })
+
+test_that("fitted counts and spread cases are kept apart in the allocation", {
+  # Both counties suppressed and fitted to their published totals; the state
+  # also has 300 cases with no county in every stratum. "spread" adds the
+  # state's remainder after fitting, kept apart from the fitted counts.
+  local_fake_sources(
+    state = fake_state_atlas(no_county = 300, stratify_by = "sex"),
+    county_unstratified = fake_county_unstratified()
+  )
+  county <- fake_county_atlas(stratify_by = "sex", suppressed = both_counties)
+  imputed <- suppressMessages(impute_suppressed(
+    county,
+    fit_to = "county_total"
+  ))
+  expect_equal(unique(imputed$cases_source), "county_fit")
+
+  areas <- suppressMessages(suppressWarnings(
+    extrapolate_from_county(imputed, no_county = "spread")
+  ))
+  by_county <- unique(areas[c(
+    "county_fips",
+    "indicator",
+    "sex",
+    "county_cases",
+    "county_cases_spread",
+    "county_cases_allocated"
+  )])
+  fitted <- imputed$cases[match(
+    paste(by_county$county_fips, by_county$indicator, by_county$sex),
+    paste(imputed$fips, imputed$indicator, imputed$sex)
+  )]
+  expect_equal(by_county$county_cases, fitted)
+  expect_equal(
+    by_county$county_cases_allocated,
+    by_county$county_cases + by_county$county_cases_spread
+  )
+  spread <- stats::aggregate(
+    county_cases_spread ~ indicator + sex,
+    data = by_county,
+    FUN = sum
+  )
+  remainder <- suppressMessages(suppressWarnings(no_county_cases(imputed)))
+  expect_equal(
+    spread$county_cases_spread,
+    remainder$no_county_cases[match(
+      paste(spread$indicator, spread$sex),
+      paste(remainder$indicator, remainder$sex)
+    )]
+  )
+  sums <- county_vs_areas(areas)
+  expect_equal(sums$area_cases_sum, sums$county_cases)
+})

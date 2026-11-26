@@ -173,3 +173,44 @@ report_two_states <- function(
   detail <- .pipeline_report(data$county, imputed, areas, by_state = TRUE)
   detail[detail$indicator == "HIV prevalence", ]
 }
+
+# The same counties' unstratified totals, for fit_to = "county_total"
+# (#179). HIV prevalence: 01003's total of 13 is shared by its seeds 10 and
+# 0.5 (13 * 10 / 10.5 = 12.381 and 0.619); 01005's 14 by 4 and 3 (8 and 6);
+# 01007 has one suppressed cell, so it isn't fitted. HIV diagnoses: 2 + 1.
+report_unstratified <- function() {
+  prevalence <- c(70, 13, 14, 9, 9, 9)
+  data.frame(
+    indicator = rep(c("HIV prevalence", "HIV diagnoses"), each = 6),
+    year = 2022,
+    geography = paste("County", report_counties),
+    data_status = "Not Suppressed",
+    race_ethnicity = "All races/ethnicities",
+    sex = "Both sexes",
+    age = "Ages 13 years and older",
+    cases = c(prevalence, rep(3, 6)),
+    population = 50000,
+    fips = report_counties
+  )
+}
+
+# The pipeline on the made-up data, fitted to county totals.
+report_fit_fixture <- function(env = parent.frame()) {
+  local_fake_sources(
+    state = report_state_atlas(),
+    acs = report_acs(),
+    county_unstratified = report_unstratified(),
+    env = env
+  )
+  county <- report_county_atlas()
+  suppressMessages(suppressWarnings({
+    imputed <- impute_suppressed(
+      county,
+      cap = 4,
+      floor = 1,
+      fit_to = "county_total"
+    )
+    areas <- extrapolate_from_county(imputed)
+  }))
+  list(county = county, imputed = imputed, areas = areas)
+}

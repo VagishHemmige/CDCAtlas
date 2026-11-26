@@ -125,6 +125,110 @@ test_that("the cap and the floor are counted only where they changed the estimat
   expect_equal(report_value(report, "cases_added_by_floor"), 0.5)
 })
 
+test_that("fitted rows count as modelled, and not towards the cap and floor", {
+  run <- report_fit_fixture()
+  report <- .pipeline_report(
+    run$county,
+    run$imputed,
+    run$areas,
+    cap = 4,
+    floor = 1
+  )
+
+  groups <- function(reason, group = "sum of groups") {
+    report_value(report, "county_groups_by_fit_reason", reason, group = group)
+  }
+  expect_equal(groups("fitted to county total"), 2)
+  expect_equal(groups("one suppressed cell"), 1)
+  expect_equal(groups("fitted to county total", "Male"), 2)
+  expect_equal(groups("one suppressed cell", "Male"), 1)
+  expect_equal(groups("fitted to county total", "Female"), 2)
+  expect_length(groups("one suppressed cell", "Female"), 0)
+  expect_equal(report_value(report, "county_rows_by_source", "county_fit"), 4)
+  expect_equal(report_value(report, "suppressed_rows_estimated"), 4)
+  expect_equal(report_value(report, "cases_by_source", "county_fit"), 13 + 14)
+  expect_equal(
+    report_value(report, "cases_by_source", "county_fit", group = "Male"),
+    13 * 10 / 10.5 + 8
+  )
+  fitted <- report[
+    report$measure == "cases_by_source" &
+      report$category %in% "county_fit",
+  ]
+  expect_setequal(fitted$basis, "modelled")
+  # 01003's Male seed of 10 is above the cap, and its Female seed of 0.5 below
+  # the floor, but neither limit applied to a fitted row.
+  expect_equal(report_value(report, "suppressed_rows_raw_above_cap"), 0)
+  expect_equal(report_value(report, "suppressed_rows_raw_below_floor"), 0)
+
+  default <- report_fixture()
+  default_report <- .pipeline_report(
+    default$county,
+    default$imputed,
+    default$areas,
+    cap = 4,
+    floor = 1
+  )
+  expect_length(
+    report_value(
+      default_report,
+      "county_groups_by_fit_reason",
+      "fitted to county total"
+    ),
+    0
+  )
+})
+
+test_that("fit reasons are counted only for groups with a retained row", {
+  # 01001's Male rows are dropped as not available; its Female rows are
+  # published. impute_suppressed() judges 01001 on the rows as given ("strata
+  # incomplete or inconsistent"), but no retained row carries that reason, so
+  # the report doesn't count it. 01003 is fitted.
+  local_fake_sources(
+    state = fake_state_atlas(stratify_by = "sex"),
+    county_unstratified = fake_county_unstratified()
+  )
+  county <- fake_county_atlas(stratify_by = "sex", suppressed = "01003")
+  dropped <- county$fips == "01001" & county$sex == "Male"
+  county$cases[dropped] <- NA
+  county$data_status[dropped] <- "Data not available"
+  imputed <- NULL
+  expect_message(
+    suppressWarnings(
+      imputed <- impute_suppressed(
+        county,
+        fit_to = "county_total",
+        not_available = "drop"
+      )
+    ),
+    "strata incomplete or inconsistent: 2"
+  )
+  areas <- suppressMessages(suppressWarnings(extrapolate_from_county(imputed)))
+  report <- .pipeline_report(county, imputed, areas, cap = 4, floor = 1)
+
+  groups <- function(reason) {
+    report_value(report, "county_groups_by_fit_reason", reason)
+  }
+  expect_equal(groups("fitted to county total"), 1)
+  expect_length(groups("strata incomplete or inconsistent"), 0)
+})
+
+test_that("fractional fitted counts are allocated exactly to the areas", {
+  run <- report_fit_fixture()
+  sums <- county_vs_areas(run$areas)
+  fitted <- sums$county_fips %in%
+    c("01003", "01005") &
+    sums$indicator == "HIV prevalence"
+  expect_equal(
+    sums$area_cases_sum[fitted],
+    sums$county_cases[fitted]
+  )
+  male_01003 <- sums$county_fips == "01003" &
+    sums$indicator == "HIV prevalence" &
+    sums$sex == "Male"
+  expect_equal(sums$area_cases_sum[male_01003], 13 * 10 / 10.5)
+})
+
 test_that("case mass is reported by source, and the imputed share of the state total", {
   run <- report_fixture()
   report <- .pipeline_report(
