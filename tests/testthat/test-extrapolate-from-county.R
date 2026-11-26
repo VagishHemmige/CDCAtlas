@@ -1565,7 +1565,10 @@ test_that("fitted counts and spread cases are kept apart in the allocation", {
     county_unstratified = fake_county_unstratified()
   )
   county <- fake_county_atlas(stratify_by = "sex", suppressed = both_counties)
-  imputed <- suppressMessages(impute_suppressed(county, fit_to = "county_total"))
+  imputed <- suppressMessages(impute_suppressed(
+    county,
+    fit_to = "county_total"
+  ))
   expect_equal(unique(imputed$cases_source), "county_fit")
 
   areas <- suppressMessages(suppressWarnings(

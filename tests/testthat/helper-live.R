@@ -1091,7 +1091,7 @@ unplaced_warning_names <- function(warning, entry, state) {
 # is the stratified download itself. So no county request is added; the
 # state totals are one small request per year and stratification, kept for
 # the run. Returns the imputed rows, the county data and totals they came
-# from, and every warning's text.
+# from, and the warnings as condition objects.
 live_fit <- function(year, stratify_by) {
   county <- live_county(year, stratify_by)
   totals <- live_county(year)
@@ -1102,17 +1102,55 @@ live_fit <- function(year, stratify_by) {
     .fetch_county_totals = function(x) county,
     .fetch_state_totals = function(x) state
   )
-  imputed <- NULL
-  warnings <- capture_warnings(
-    imputed <- suppressMessages(
-      impute_suppressed(county, fit_to = "county_total")
-    )
-  )
+  run <- live_collect(impute_suppressed(county, fit_to = "county_total"))
   list(
     county = county,
     totals = totals,
     state = state,
-    imputed = imputed,
-    warnings = cli::ansi_strip(warnings)
+    imputed = run$value,
+    warnings = run$warnings
   )
+}
+
+# The value of `code` and the warnings it raised, as condition objects, with
+# the warnings muffled and messages suppressed.
+live_collect <- function(code) {
+  warnings <- list()
+  value <- withCallingHandlers(
+    suppressMessages(code),
+    warning = function(w) {
+      warnings[[length(warnings) + 1]] <<- w
+      invokeRestart("muffleWarning")
+    }
+  )
+  list(value = value, warnings = warnings)
+}
+
+# Warnings counted by class, for the live logs. Never their text, which can
+# name counties (#179). A warning with no class of its own is "unclassified".
+live_warning_counts <- function(warnings) {
+  if (length(warnings) == 0) {
+    return("none")
+  }
+  generic <- c("rlang_warning", "simpleWarning", "warning", "condition")
+  classes <- vapply(
+    warnings,
+    function(w) {
+      own <- setdiff(class(w), generic)
+      if (length(own) == 0) "unclassified" else own[[1]]
+    },
+    character(1)
+  )
+  counts <- table(classes)
+  paste(names(counts), as.integer(counts), sep = ": ", collapse = "; ")
+}
+
+# How many values of `x` and `y` differ, with NA on either side counted as a
+# difference. A count, so a failing check prints no county's values (#179).
+live_mismatches <- function(x, y, tolerance = 1e-8) {
+  stopifnot(length(x) == length(y))
+  differ <- is.na(x) | is.na(y)
+  ok <- !differ
+  differ[ok] <- abs(x[ok] - y[ok]) > tolerance * pmax(1, abs(y[ok]))
+  sum(differ)
 }

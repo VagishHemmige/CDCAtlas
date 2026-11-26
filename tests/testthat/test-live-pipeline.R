@@ -850,9 +850,9 @@ test_that("2022 block group estimates add up to county counts, by sex", {
 # Fitting to county totals (#179) ------------------------------------------------
 # impute_suppressed(fit_to = "county_total") on real data, 2017 and 2022, by
 # sex and by age, using the county downloads above (no new county request).
-# Checks what the fit guarantees whatever CDC returns, and prints aggregate
-# counts (fitted groups by reason, warnings) so the log records what was
-# covered. Never prints counties or residuals.
+# Checks what the fit guarantees whatever CDC returns, and logs aggregate
+# counts only: county groups by reason, and warnings by class. Comparisons
+# are counts of mismatches, so even a failure prints no county's values.
 
 for (year in c(2017, 2022)) {
   for (strat in c("sex", "age")) {
@@ -860,57 +860,75 @@ for (year in c(2017, 2022)) {
       year <- year
       strat <- strat
       label <- paste(year, "by", strat)
-      test_that(paste("fitting to county totals keeps its guarantees,", label), {
-        run <- live_fit(year, strat)
-        imputed <- run$imputed
-        key <- paste(imputed$fips, imputed$indicator, imputed$year)
+      test_that(
+        paste("fitting to county totals keeps its guarantees,", label),
+        {
+          run <- live_fit(year, strat)
+          imputed <- run$imputed
+          key <- paste(imputed$fips, imputed$indicator, imputed$year)
 
-        groups <- unique(data.frame(
-          key = key,
-          indicator = as.character(imputed$indicator),
-          reason = imputed$fit_reason
-        )[!is.na(imputed$fit_reason), ])
-        counts <- table(groups$indicator, groups$reason)
-        message(
-          "Fit, HIV ", label, " (", Sys.getenv("GITHUB_SHA", "local"),
-          ", retrieved ", format(Sys.Date()), "): county groups by reason\n",
-          paste(utils::capture.output(print(counts)), collapse = "\n"),
-          "\nWarnings: ",
-          if (length(run$warnings) == 0) "none" else
-            paste(run$warnings, collapse = "\n")
-        )
+          groups <- unique(data.frame(
+            key = key,
+            indicator = as.character(imputed$indicator),
+            reason = imputed$fit_reason
+          )[!is.na(imputed$fit_reason), ])
+          counts <- table(groups$indicator, groups$reason)
+          message(
+            "Fit, HIV ",
+            label,
+            " (",
+            Sys.getenv("GITHUB_SHA", "local"),
+            ", retrieved ",
+            format(Sys.Date()),
+            "): county groups by reason\n",
+            paste(utils::capture.output(print(counts)), collapse = "\n"),
+            "\nWarnings by class: ",
+            live_warning_counts(run$warnings)
+          )
 
-        # Not vacuous: each indicator returned has fitted groups.
-        for (indicator in unique(as.character(imputed$indicator))) {
-          fitted <- groups$reason == "fitted to county total" &
-            groups$indicator == indicator
-          expect_gt(sum(fitted), 0, label = paste(indicator, label))
+          # Both HIV indicators are released for these years, and each has
+          # fitted groups, so the checks below aren't vacuous.
+          expect_setequal(
+            unique(as.character(imputed$indicator)),
+            c("HIV diagnoses", "HIV prevalence")
+          )
+          expect_equal(unique(as.numeric(as.character(imputed$year))), year)
+          for (indicator in c("HIV diagnoses", "HIV prevalence")) {
+            fitted <- groups$reason == "fitted to county total" &
+              groups$indicator == indicator
+            expect_gt(sum(fitted), 0, label = paste(indicator, label))
+          }
+
+          # Published counts unchanged; every unpublished row has a reason.
+          published <- !is.na(run$county$cases)
+          expect_equal(
+            live_mismatches(
+              imputed$cases[published],
+              run$county$cases[published]
+            ),
+            0
+          )
+          expect_equal(sum(is.na(imputed$fit_reason) & !published), 0)
+          expect_equal(
+            sum(imputed$cases_source == "county_fit"),
+            sum(imputed$fit_reason %in% "fitted to county total")
+          )
+
+          # A fitted group has two or more suppressed cells, and its cells
+          # add up to the county's published total.
+          fit_rows <- imputed$cases_source == "county_fit"
+          fit_keys <- unique(key[fit_rows])
+          cells <- table(key[fit_rows])
+          expect_equal(sum(cells < 2), 0)
+          sums <- as.numeric(tapply(imputed$cases, key, sum)[fit_keys])
+          totals <- run$totals
+          total <- totals$cases[match(
+            fit_keys,
+            paste(totals$fips, totals$indicator, totals$year)
+          )]
+          expect_equal(live_mismatches(sums, as.numeric(total)), 0)
         }
-
-        # Published counts unchanged; every unpublished row has a reason.
-        published <- !is.na(run$county$cases)
-        expect_equal(imputed$cases[published], run$county$cases[published],
-          ignore_attr = TRUE)
-        expect_equal(sum(is.na(imputed$fit_reason) & !published), 0)
-        expect_equal(
-          sum(imputed$cases_source == "county_fit"),
-          sum(imputed$fit_reason %in% "fitted to county total")
-        )
-
-        # A fitted group has two or more suppressed cells, and its cells add
-        # up to the county's published total.
-        fit_rows <- imputed$cases_source == "county_fit"
-        fit_keys <- unique(key[fit_rows])
-        cells <- table(key[fit_rows])
-        expect_equal(sum(cells < 2), 0)
-        sums <- as.numeric(tapply(imputed$cases, key, sum)[fit_keys])
-        totals <- run$totals
-        total <- totals$cases[match(
-          fit_keys,
-          paste(totals$fips, totals$indicator, totals$year)
-        )]
-        expect_equal(sums, as.numeric(total), tolerance = 1e-8)
-      })
+      )
     })
   }
 }
@@ -920,11 +938,14 @@ test_that("fitted counts reach the tracts, with spread cases kept apart, 2022 by
   run <- live_fit(2022, "sex")
   imputed <- run$imputed
   # Three states with fitted rows, to keep the Census downloads small.
-  states <- sort(unique(substr(
-    imputed$fips[imputed$cases_source == "county_fit"],
-    1,
-    2
-  )))[1:3]
+  states <- utils::head(
+    sort(unique(substr(
+      imputed$fips[imputed$cases_source == "county_fit"],
+      1,
+      2
+    ))),
+    3
+  )
   imputed <- imputed[substr(imputed$fips, 1, 2) %in% states, ]
   county <- run$county
   state <- run$state
@@ -932,25 +953,27 @@ test_that("fitted counts reach the tracts, with spread cases kept apart, 2022 by
     .fetch_county_totals = function(x) county,
     .fetch_state_totals = function(x) state
   )
-  areas <- NULL
-  warnings <- capture_warnings(
-    areas <- suppressMessages(
-      extrapolate_from_county(imputed, no_county = "spread")
-    )
-  )
+  result <- live_collect(extrapolate_from_county(imputed, no_county = "spread"))
+  areas <- result$value
+  fitted <- areas[areas$cases_source == "county_fit", ]
+  spread <- unique(fitted[fitted$county_cases_spread > 0, county_groups])
   message(
     "Fit then spread, HIV 2022 by sex, states ",
     paste(states, collapse = ", "),
-    ": warnings: ",
-    if (length(warnings) == 0) "none" else
-      paste(cli::ansi_strip(warnings), collapse = "\n")
+    ": fitted county strata receiving spread cases: ",
+    nrow(spread),
+    "; warnings by class: ",
+    live_warning_counts(result$warnings)
   )
-  fitted <- areas[areas$cases_source == "county_fit", ]
   expect_gt(nrow(fitted), 0)
   expect_equal(
-    fitted$county_cases_allocated,
-    fitted$county_cases + fitted$county_cases_spread +
-      fitted$county_cases_unknown
+    live_mismatches(
+      fitted$county_cases_allocated,
+      fitted$county_cases +
+        fitted$county_cases_spread +
+        fitted$county_cases_unknown
+    ),
+    0
   )
   check <- areas |>
     dplyr::summarize(
@@ -958,5 +981,13 @@ test_that("fitted counts reach the tracts, with spread cases kept apart, 2022 by
       area_cases_sum = sum(area_cases),
       .by = dplyr::all_of(county_groups)
     )
-  expect_equal(check$area_cases_sum, check$county_cases, tolerance = 1e-6)
+  expect_equal(
+    live_mismatches(check$area_cases_sum, check$county_cases, 1e-6),
+    0
+  )
+  # The checks above also pass when nothing was spread; say so rather than
+  # report a pass for a path the data didn't exercise.
+  if (nrow(spread) == 0) {
+    skip("No fitted county stratum received spread cases in these states.")
+  }
 })

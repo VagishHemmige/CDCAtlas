@@ -13,7 +13,10 @@
 #' Rows fitted to county totals (`cases_source = "county_fit"`) count as
 #' modelled and estimated, but not towards the cap and floor, which didn't
 #' apply to them. `county_groups_by_fit_reason` counts each county group
-#' (county, indicator and year) once, by its `fit_reason`.
+#' (county, indicator and year) once, by its `fit_reason`, among groups with a
+#' row in the imputed data that has one. A group whose only unpublished rows
+#' were dropped with `not_available = "drop"` is not counted, though
+#' [impute_suppressed()]'s message counts it.
 #'
 #' The cap and floor are counted from the estimate before limits (state rate
 #' times county population): the `cases_uncapped` column [impute_suppressed()]
@@ -665,8 +668,9 @@
 }
 
 # County groups (county, indicator and year) by `fit_reason`, each counted
-# once however many of its strata are in the slice (#179). Nothing when
-# fitting wasn't requested.
+# once however many of its strata are in the slice (#179). Only groups with
+# a retained row that has a reason: rows dropped before imputing aren't
+# here. Nothing when fitting wasn't requested.
 .report_fit_groups <- function(imputed) {
   if (!"fit_reason" %in% names(imputed)) {
     return(NULL)

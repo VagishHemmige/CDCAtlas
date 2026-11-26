@@ -74,10 +74,11 @@ counts. That is why `cap = 4` is a default, not a hard limit.
 
 ### Fitting strata to county totals
 
-By sex or age, a suppressed cell often hides more than 1 to 4 cases, because
-a second, larger cell is suppressed to protect the first. The cap then removes
-cases, and without it the estimates can overshoot. CDC usually still publishes
-the county's unstratified total. With `fit_to = "county_total"`,
+By sex or age, a suppressed cell can hide more than 1 to 4 cases: CDC's rules
+can also withhold larger counts. Capping the state-rate estimates can then
+leave a county's strata adding up to less than its total, and without the cap
+they can add up to more. CDC usually still publishes the county's unstratified
+total. With `fit_to = "county_total"`,
 `impute_suppressed()` shares that total, less the county's published cells,
 among its suppressed cells in proportion to their state-rate estimates. This
 works for HIV diagnoses and HIV prevalence by sex or age.

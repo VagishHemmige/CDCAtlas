@@ -151,8 +151,10 @@ test_that("fitted rows count as modelled, and not towards the cap and floor", {
     report_value(report, "cases_by_source", "county_fit", group = "Male"),
     13 * 10 / 10.5 + 8
   )
-  fitted <- report[report$measure == "cases_by_source" &
-    report$category %in% "county_fit", ]
+  fitted <- report[
+    report$measure == "cases_by_source" &
+      report$category %in% "county_fit",
+  ]
   expect_setequal(fitted$basis, "modelled")
   # 01003's Male seed of 10 is above the cap, and its Female seed of 0.5 below
   # the floor, but neither limit applied to a fitted row.
@@ -177,10 +179,45 @@ test_that("fitted rows count as modelled, and not towards the cap and floor", {
   )
 })
 
+test_that("fit reasons are counted only for groups with a retained row", {
+  # 01001's Male rows are dropped as not available; its Female rows are
+  # published. impute_suppressed() judges 01001 on the rows as given ("strata
+  # incomplete or inconsistent"), but no retained row carries that reason, so
+  # the report doesn't count it. 01003 is fitted.
+  local_fake_sources(
+    state = fake_state_atlas(stratify_by = "sex"),
+    county_unstratified = fake_county_unstratified()
+  )
+  county <- fake_county_atlas(stratify_by = "sex", suppressed = "01003")
+  dropped <- county$fips == "01001" & county$sex == "Male"
+  county$cases[dropped] <- NA
+  county$data_status[dropped] <- "Data not available"
+  imputed <- NULL
+  expect_message(
+    suppressWarnings(
+      imputed <- impute_suppressed(
+        county,
+        fit_to = "county_total",
+        not_available = "drop"
+      )
+    ),
+    "strata incomplete or inconsistent: 2"
+  )
+  areas <- suppressMessages(suppressWarnings(extrapolate_from_county(imputed)))
+  report <- .pipeline_report(county, imputed, areas, cap = 4, floor = 1)
+
+  groups <- function(reason) {
+    report_value(report, "county_groups_by_fit_reason", reason)
+  }
+  expect_equal(groups("fitted to county total"), 1)
+  expect_length(groups("strata incomplete or inconsistent"), 0)
+})
+
 test_that("fractional fitted counts are allocated exactly to the areas", {
   run <- report_fit_fixture()
   sums <- county_vs_areas(run$areas)
-  fitted <- sums$county_fips %in% c("01003", "01005") &
+  fitted <- sums$county_fips %in%
+    c("01003", "01005") &
     sums$indicator == "HIV prevalence"
   expect_equal(
     sums$area_cases_sum[fitted],
