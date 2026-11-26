@@ -4,7 +4,18 @@ census tracts or block groups, in proportion to each area's population in
 the same stratum, from the American Community Survey (ACS) 5-year estimates.
 Run it on county data that has been through impute_suppressed().
 The estimates are modelled, not observed: they assume the same rate in every
-area of a county within a stratum.
+area of a county within a stratum. Where a county stratum is shared by its
+own population (allocation = &quot;stratum population&quot;), every area with
+population in the stratum has the same rate, area_cases / area_population_acs, equal to county_cases_allocated / county_population_acs, and an area with none gets no cases. So the pattern
+across a county's areas comes only from their populations, not from any
+data on where cases are. Where cases cluster in some areas, the estimates
+flatten the differences, moving cases from areas with high rates to areas
+with low ones. For indicators counted per resident (not Knowledge of
+Status), this rate can differ from CDC's county rate: CDC's denominator is
+its own county population, and county_cases_allocated also includes any
+cases added by no_county = &quot;spread&quot; or by sharing out unknown race or
+age. ACS margins of error are not carried into the output, and no
+uncertainty is given for the estimates.
 For Knowledge of Status, county_cases is the number of people with HIV
 who know their status, and it is shared across areas by their residents,
 as if people with HIV lived in each area in proportion to its population.
@@ -15,7 +26,18 @@ census tracts or block groups, in proportion to each area's population in
 the same stratum, from the American Community Survey (ACS) 5-year estimates.
 Run it on county data that has been through impute_suppressed().
 The estimates are modelled, not observed: they assume the same rate in every
-area of a county within a stratum.
+area of a county within a stratum. Where a county stratum is shared by its
+own population (allocation = &quot;stratum population&quot;), every area with
+population in the stratum has the same rate, area_cases / area_population_acs, equal to county_cases_allocated / county_population_acs, and an area with none gets no cases. So the pattern
+across a county's areas comes only from their populations, not from any
+data on where cases are. Where cases cluster in some areas, the estimates
+flatten the differences, moving cases from areas with high rates to areas
+with low ones. For indicators counted per resident (not Knowledge of
+Status), this rate can differ from CDC's county rate: CDC's denominator is
+its own county population, and county_cases_allocated also includes any
+cases added by no_county = &quot;spread&quot; or by sharing out unknown race or
+age. ACS margins of error are not carried into the output, and no
+uncertainty is given for the estimates.
 For Knowledge of Status, county_cases is the number of people with HIV
 who know their status, and it is shared across areas by their residents,
 as if people with HIV lived in each area in proportion to its population.
@@ -68,7 +90,18 @@ census tracts or block groups, in proportion to each area's population in
 the same stratum, from the American Community Survey (ACS) 5-year estimates.
 Run it on county data that has been through <code><a href="impute_suppressed.html">impute_suppressed()</a></code>.</p>
 <p>The estimates are modelled, not observed: they assume the same rate in every
-area of a county within a stratum.</p>
+area of a county within a stratum. Where a county stratum is shared by its
+own population (<code>allocation = "stratum population"</code>), every area with
+population in the stratum has the same rate, <code>area_cases / area_population_acs</code>, equal to <code>county_cases_allocated / county_population_acs</code>, and an area with none gets no cases. So the pattern
+across a county's areas comes only from their populations, not from any
+data on where cases are. Where cases cluster in some areas, the estimates
+flatten the differences, moving cases from areas with high rates to areas
+with low ones. For indicators counted per resident (not Knowledge of
+Status), this rate can differ from CDC's county rate: CDC's denominator is
+its own county population, and <code>county_cases_allocated</code> also includes any
+cases added by <code>no_county = "spread"</code> or by sharing out unknown race or
+age. ACS margins of error are not carried into the output, and no
+uncertainty is given for the estimates.</p>
 <p>For Knowledge of Status, <code>county_cases</code> is the number of people with HIV
 who know their status, and it is shared across areas by their residents,
 as if people with HIV lived in each area in proportion to its population.
@@ -176,7 +209,9 @@ cover all ages.</p></dd>
 stratified by race:</p><ul><li><p><code>"B03002"</code> (default): Hispanic or Latino origin by race. Its groups
 match AtlasPlus exactly (Hispanic, and non-Hispanic for each race), but
 it has no ages, so for ages 13 and older each area's populations are
-scaled by the area's share of residents aged 13 and older.</p></li>
+scaled by the area's share of residents aged 13 and older. This
+assumes every race group in an area has the same age structure as the
+area's whole population.</p></li>
 <li><p><code>"B01001"</code>: the sex-by-age tables for each race (B01001B to B01001I),
 which give ages 13 and older directly. Only White (B01001H) and
 Hispanic (B01001I) match AtlasPlus; the other groups include Hispanic
@@ -192,7 +227,9 @@ stratified by race:</p><ul><li><p><code>"report"</code> (default): left out, wit
 proportion to their counts, within each indicator and year, then
 across areas as usual. A county with no cases of known race keeps its
 unknown cases unallocated.</p></li>
-</ul></dd>
+</ul><p>AtlasPlus has no "Unknown" race group for HIV or CDC's HIV estimates, so
+<code><a href="get_atlas.html">get_atlas()</a></code> doesn't request one and <code>unknown_race</code> has nothing to act
+on for them.</p></dd>
 
 
 <dt id="arg-unknown-age">unknown_age<a class="anchor" aria-label="anchor" href="#arg-unknown-age"></a></dt>
