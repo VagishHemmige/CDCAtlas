@@ -1279,3 +1279,43 @@ test_that("unplaced_warning_names() looks for the state in one indicator's entry
   )
   expect_true(unplaced_warning_names(wrapped, "HIV prevalence 2022", "Alaska"))
 })
+
+# The fit's live checks log counts only (#179): a county or area named in a
+# download warning or an error must not reach the log.
+
+test_that("live_collect() keeps a replayed download warning's text out of the log", {
+  local_fresh_live_cache()
+  local_mocked_bindings(get_atlas = function(...) {
+    warning("Sentinel County 987654")
+    data.frame(fips = "01001")
+  })
+  suppressWarnings(live_county(1999))
+
+  log <- capture_messages(capture_warnings(
+    run <- live_collect(live_county(1999), "downloading")
+  ))
+  expect_length(log, 0)
+  expect_length(run$warnings, 1)
+  counts <- live_warning_counts(run$warnings)
+  expect_equal(counts, "unclassified: 1")
+})
+
+test_that("live_collect() fails with the stage and class only", {
+  sentinel <- function() {
+    cli::cli_abort(
+      "Duplicate rows for area {.val 987654}.",
+      class = "cdcatlas_sentinel_error"
+    )
+  }
+  error <- expect_error(
+    live_collect(sentinel(), "allocating"),
+    class = "cdcatlas_live_redacted_error"
+  )
+  expect_equal(
+    conditionMessage(error),
+    "Live check failed while allocating (cdcatlas_sentinel_error); details are left out of the log."
+  )
+  expect_null(error$call)
+  expect_null(error$parent)
+  expect_no_match(paste(format(error), collapse = "\n"), "987654")
+})

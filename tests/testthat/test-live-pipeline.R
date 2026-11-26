@@ -953,7 +953,10 @@ test_that("fitted counts reach the tracts, with spread cases kept apart, 2022 by
     .fetch_county_totals = function(x) county,
     .fetch_state_totals = function(x) state
   )
-  result <- live_collect(extrapolate_from_county(imputed, no_county = "spread"))
+  result <- live_collect(
+    extrapolate_from_county(imputed, no_county = "spread"),
+    "allocating HIV 2022 by sex"
+  )
   areas <- result$value
   fitted <- areas[areas$cases_source == "county_fit", ]
   spread <- unique(fitted[fitted$county_cases_spread > 0, county_groups])

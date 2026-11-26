@@ -1090,58 +1090,102 @@ unplaced_warning_names <- function(warning, entry, state) {
 # same payloads, tested offline), and CDC's county table for the state check
 # is the stratified download itself. So no county request is added; the
 # state totals are one small request per year and stratification, kept for
-# the run. Returns the imputed rows, the county data and totals they came
-# from, and the warnings as condition objects.
+# the run. Downloads and the fit both run through live_collect(), so their
+# warnings and errors reach the log as classes only. Returns the imputed
+# rows, the county data and totals they came from, and the warnings as
+# condition objects.
 live_fit <- function(year, stratify_by) {
-  county <- live_county(year, stratify_by)
-  totals <- live_county(year)
-  state <- live_state(year, stratify_by)
-  state$state_fips <- as.character(state$fips)
+  label <- paste("HIV", year, "by", stratify_by)
+  inputs <- live_collect(
+    {
+      state <- live_state(year, stratify_by)
+      state$state_fips <- as.character(state$fips)
+      list(
+        county = live_county(year, stratify_by),
+        totals = live_county(year),
+        state = state
+      )
+    },
+    paste("downloading", label)
+  )
+  county <- inputs$value$county
+  totals <- inputs$value$totals
+  state <- inputs$value$state
   local_mocked_bindings(
     .fetch_county_unstratified = function(x) totals,
     .fetch_county_totals = function(x) county,
     .fetch_state_totals = function(x) state
   )
-  run <- live_collect(impute_suppressed(county, fit_to = "county_total"))
+  fit <- live_collect(
+    impute_suppressed(county, fit_to = "county_total"),
+    paste("fitting", label)
+  )
   list(
     county = county,
     totals = totals,
     state = state,
-    imputed = run$value,
-    warnings = run$warnings
+    imputed = fit$value,
+    warnings = c(inputs$warnings, fit$warnings)
   )
 }
 
 # The value of `code` and the warnings it raised, as condition objects, with
-# the warnings muffled and messages suppressed.
-live_collect <- function(code) {
+# the warnings muffled and messages suppressed. An error stops with only
+# `stage` and the error's class: its message, call and parent can name
+# counties or areas, so they are left out of the log (#179).
+live_collect <- function(code, stage) {
   warnings <- list()
-  value <- withCallingHandlers(
-    suppressMessages(code),
-    warning = function(w) {
-      warnings[[length(warnings) + 1]] <<- w
-      invokeRestart("muffleWarning")
-    }
+  value <- tryCatch(
+    withCallingHandlers(
+      suppressMessages(code),
+      warning = function(w) {
+        warnings[[length(warnings) + 1]] <<- w
+        invokeRestart("muffleWarning")
+      }
+    ),
+    error = function(e) e
   )
+  if (inherits(value, "error")) {
+    stop(structure(
+      class = c("cdcatlas_live_redacted_error", "error", "condition"),
+      list(
+        message = paste0(
+          "Live check failed while ",
+          stage,
+          " (",
+          live_condition_class(value),
+          "); details are left out of the log."
+        ),
+        call = NULL
+      )
+    ))
+  }
   list(value = value, warnings = warnings)
 }
 
+# A condition's own class, without the generic ones; "unclassified" if it has
+# none.
+live_condition_class <- function(condition) {
+  generic <- c(
+    "rlang_warning",
+    "rlang_error",
+    "simpleWarning",
+    "simpleError",
+    "warning",
+    "error",
+    "condition"
+  )
+  own <- setdiff(class(condition), generic)
+  if (length(own) == 0) "unclassified" else own[[1]]
+}
+
 # Warnings counted by class, for the live logs. Never their text, which can
-# name counties (#179). A warning with no class of its own is "unclassified".
+# name counties (#179).
 live_warning_counts <- function(warnings) {
   if (length(warnings) == 0) {
     return("none")
   }
-  generic <- c("rlang_warning", "simpleWarning", "warning", "condition")
-  classes <- vapply(
-    warnings,
-    function(w) {
-      own <- setdiff(class(w), generic)
-      if (length(own) == 0) "unclassified" else own[[1]]
-    },
-    character(1)
-  )
-  counts <- table(classes)
+  counts <- table(vapply(warnings, live_condition_class, character(1)))
   paste(names(counts), as.integer(counts), sep = ": ", collapse = "; ")
 }
 
