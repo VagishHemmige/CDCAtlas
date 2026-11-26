@@ -11,7 +11,8 @@ impute_suppressed(
   floor = 0,
   population = c("cdc", "acs"),
   unestimated = c("na", "zero"),
-  not_available = c("keep", "drop")
+  not_available = c("keep", "drop"),
+  fit_to = c("none", "county_total")
 )
 }
 \arguments{
@@ -75,13 +76,40 @@ state has in an indicator, year and stratum, that state's remainder is
 no longer reported by \code{\link[=no_county_cases]{no_county_cases()}} or spread by
 \code{\link[=extrapolate_from_county]{extrapolate_from_county()}}, so this warns and names them.
 }}
+
+\item{fit_to}{Whether suppressed strata are fitted to each county's
+published total:
+\itemize{
+\item \code{"none"} (default): no fitting; each suppressed row keeps its \code{method}
+estimate.
+\item \code{"county_total"}: for HIV diagnoses and HIV prevalence stratified by
+sex or age, the suppressed cells of each county, indicator and year
+share the county's published total, less its published cells, in
+proportion to their state-rate estimates before the cap. Needs
+\code{method = "state_rate"}. Race strata are never fitted, since HIV has no
+row for unknown race, so a county's race cells needn't add up to its
+total.
+}
+
+A county is fitted only when two or more of its cells are suppressed, at
+least two have a positive estimate, its total is published, every
+requested stratum is present and the total is larger than the published
+cells; otherwise its rows keep the \code{method} estimate and \code{fit_reason}
+says why. Fitted counts add up to the county's total but are modeled:
+each one can be far from CDC's hidden count, and CDC's rule for which
+counts it suppresses is not used to place them. They are fractions, and
+the cap and floor don't apply to them. The fit matches each county's own
+total, never the state's; a warning reports how many state strata then
+add up to more than the state total.}
 }
 \value{
-\code{x} with suppressed counts filled in and two new columns,
-\code{cases_source} and \code{cases_uncapped}. \code{cases_source} is:
+\code{x} with suppressed counts filled in and three new columns,
+\code{cases_source}, \code{cases_uncapped} and \code{fit_reason}. \code{cases_source} is:
 \itemize{
 \item \code{"published"}: CDC's count.
 \item \code{"state_rate"} or \code{"zero"}: filled in by \code{method}.
+\item \code{"county_fit"}: fitted to the county's published total
+(\code{fit_to = "county_total"}).
 \item \code{"not estimated"}: \code{"state_rate"} couldn't estimate it (\code{NA}, or 0
 with \code{unestimated = "zero"}), or it had no count and wasn't marked
 "Data suppressed" (always \code{NA}).
@@ -90,11 +118,12 @@ with \code{unestimated = "zero"}), or it had no count and wasn't marked
 
 \code{cases_uncapped} is, for rows filled in by \code{"state_rate"}, the estimate
 before \code{cap} and \code{floor} were applied: the state rate times the county
-population used (CDC's or ACS). It is a modeled number, not CDC's hidden
-count and not a way to recover it. It is \code{NA} for every other row:
-published counts, rows filled in by \code{"zero"}, and rows marked
-\code{"not estimated"} or \code{"not available"}. \code{cases} is the value to use;
-\code{cases_uncapped} shows what decided it:
+population used (CDC's or ACS). On \code{"county_fit"} rows it is the same
+estimate, the share each fitted cell was given. It is a modeled number,
+not CDC's hidden count and not a way to recover it. It is \code{NA} for every
+other row: published counts, rows filled in by \code{"zero"}, and rows marked
+\code{"not estimated"} or \code{"not available"}. On \code{"state_rate"} rows \code{cases}
+is the value to use; \code{cases_uncapped} shows what decided it:
 \itemize{
 \item \code{cases_uncapped > cap}: the cap set \code{cases}.
 \item \code{cases_uncapped < floor}: the floor set \code{cases}.
@@ -110,6 +139,13 @@ A limit that can't set anything (\code{cap = Inf}, \code{floor = 0}) is not
 mentioned, and there is no message when no row was estimated or with
 \code{method = "zero"}. A high percentage for the cap means most estimates
 are the cap itself rather than the state rate.
+
+\code{fit_reason} is \code{NA} on rows with a published count, and everywhere with
+\code{fit_to = "none"}. With \code{fit_to = "county_total"}, every other row has
+\code{"fitted to county total"} or the first reason that applies to its
+county, indicator and year: \code{"race not fitted"}, \code{"county total not available"}, \code{"county total suppressed"}, \code{"strata incomplete or inconsistent"}, \code{"one suppressed cell"}, \code{"a suppressed cell has no seed"}, \code{"fewer than two positive seeds"} or \code{"published total not usable for fitting"} (the total is no larger than the published cells). A
+message counts the county groups fitted and not fitted, by reason, and
+the cap and floor message counts only rows filled in by the state rate.
 
 \code{data_status} is unchanged, so suppressed rows can still be identified.
 \code{cap}, \code{floor}, \code{population} and \code{unestimated} apply only to
@@ -140,7 +176,11 @@ cases" or a code this version doesn't know, is not filled in: it stays
 \details{
 \code{"state_rate"} downloads the state data matching \code{x} (same diseases, years
 and stratification) from CDC AtlasPlus, and with \code{population = "acs"} the
-tract populations from the Census.
+tract populations from the Census. \code{fit_to = "county_total"} by sex or
+age also downloads CDC's unstratified county data for the states and
+years in \code{x} (one request per state and year, saved and reused), and CDC's
+county data matching \code{x} for the state check, which is usually already
+saved from \code{\link[=get_atlas]{get_atlas()}}.
 }
 \examples{
 \dontrun{
@@ -150,6 +190,13 @@ county <- impute_suppressed(county)
 # How many filled-in rows did the cap (4 by default) decide?
 filled <- county[county$cases_source == "state_rate", ]
 table(filled$indicator, capped = filled$cases_uncapped > 4)
+
+# Fit suppressed sex strata to each county's published total
+county_fit <- impute_suppressed(
+  get_atlas("hiv", "county", 2022, stratify_by = "sex"),
+  fit_to = "county_total"
+)
+table(county_fit$fit_reason, useNA = "ifany")
 
 # Sensitivity analysis: suppressed counties have no cases
 county_zero <- impute_suppressed(

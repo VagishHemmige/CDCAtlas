@@ -43,7 +43,8 @@ supported. Use \code{\link[=impute_suppressed]{impute_suppressed()}} and then \c
 copy is less than 30 days old, and save the new copy. For county data
 this also drops the saved state totals that \code{\link[=impute_suppressed]{impute_suppressed()}},
 \code{\link[=no_county_cases]{no_county_cases()}} and \code{\link[=extrapolate_from_county]{extrapolate_from_county()}} use with them, so
-those are downloaded again too. Default \code{FALSE}.}
+those are downloaded again too, and, for HIV by sex or age, the saved
+unstratified county data that \code{impute_suppressed(fit_to = "county_total")} fits to. Default \code{FALSE}.}
 }
 \value{
 A tibble with the following columns:

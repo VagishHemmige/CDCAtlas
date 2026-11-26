@@ -277,3 +277,99 @@
     Message
       i 2 suppressed rows were filled in from state rates.
 
+# fit_to = 'county_total' fits suppressed strata to the county total
+
+    Code
+      out <- impute_suppressed(county, fit_to = "county_total")
+    Message
+      i Fitted 2 county groups (county, indicator and year) to the county's published total.
+        fit_reason says why for each row.
+
+# unfitted groups keep the state-rate estimate, and only they count for the cap
+
+    Code
+      out <- impute_suppressed(county, fit_to = "county_total")
+    Message
+      i Fitted 1 county group (county, indicator and year) to the county's published total.
+      i 1 group with unpublished strata was not fitted and keeps the state-rate estimate:
+      * county total suppressed: 1
+        fit_reason says why for each row.
+      i 2 suppressed rows were filled in from state rates.
+      * The cap of 4 set the value of 2 rows (100%): the estimate was higher.
+        cases_uncapped holds the estimates before the cap and floor.
+
+# eligibility survives `not_available = "drop"`, in row order
+
+    Code
+      out <- impute_suppressed(county, fit_to = "county_total", not_available = "drop")
+    Message
+      i Dropped 2 rows marked "Data not available" with no count.
+        Their cases are still in the state totals, and `no_county_cases()` counts them in the remainder for any state group that still has rows.
+    Condition
+      Warning:
+      In 2 groups of county, indicator and year, the strata are incomplete or inconsistent, so they were not fitted.
+      i Check that each requested stratum appears once, the other columns match the requested population (HIV, ages 13 and over), and each count agrees with its data status.
+    Message
+      i Fitted 2 county groups (county, indicator and year) to the county's published total.
+      i 2 groups with unpublished strata were not fitted and keep the state-rate estimate:
+      * strata incomplete or inconsistent: 2
+        fit_reason says why for each row.
+      i 2 suppressed rows were filled in from state rates.
+      * The cap of 4 set the value of 1 row (50%): the estimate was higher.
+        cases_uncapped holds the estimates before the cap and floor.
+
+# county counts above the state total are reported, not adjusted
+
+    Code
+      out <- suppressMessages(impute_suppressed(county, fit_to = "county_total"))
+    Condition
+      Warning:
+      In 4 state strata, county counts after fitting add up to more than the state's published total.
+      i They are reported, not adjusted: the fit matches each county's own total only.
+
+# fit_to is checked before anything is downloaded
+
+    Code
+      impute_suppressed(by_sex, fit_to = "county")
+    Condition
+      Error in `impute_suppressed()`:
+      ! `fit_to` must be one of "none" or "county_total", not "county".
+      i Did you mean "county_total"?
+    Code
+      impute_suppressed(by_sex, method = "zero", fit_to = "county_total")
+    Condition
+      Error in `impute_suppressed()`:
+      ! `fit_to = "county_total"` needs `method = "state_rate"`.
+      i The fit shares each county's residual in proportion to the state-rate estimates.
+    Code
+      impute_suppressed(fake_county_atlas(suppressed = "01003"), fit_to = "county_total")
+    Condition
+      Error in `impute_suppressed()`:
+      ! `fit_to = "county_total"` needs data stratified by sex, age or race.
+      i Unstratified county counts are themselves the county totals.
+    Code
+      impute_suppressed(fake_county_atlas(stratify_by = "sex", indicators = "Chlamydia",
+        suppressed = "01003"), fit_to = "county_total")
+    Condition
+      Error in `impute_suppressed()`:
+      ! `fit_to = "county_total"` works only for HIV diagnoses and HIV prevalence.
+      x `x` also has "Chlamydia".
+
+---
+
+    Code
+      impute_suppressed(two_way, fit_to = "county_total")
+    Condition
+      Error in `impute_suppressed()`:
+      ! `fit_to = "county_total"` needs data stratified by one variable.
+      x `x` is stratified by "sex" and "age".
+
+---
+
+    Code
+      impute_suppressed(with_column)
+    Condition
+      Error in `impute_suppressed()`:
+      ! `x` already has a fit_reason column.
+      i `impute_suppressed()` adds a column of that name. Rename or remove yours first.
+
