@@ -8,12 +8,20 @@
 # GitHub runs comment-triggered workflows from the default branch, so these
 # work only once they are on master.
 #
-# Comment `/format` to run Air on the PR and commit the result to its branch,
-# the same changes format-suggest.yaml suggests. Same owner-or-member rule.
-# Air only formats the PR's code, never runs it.
+# Comment exactly `/format` on an open pull request to run Air on the R files
+# it adds or changes, and commit the result to its branch. Other files are
+# left alone, even if Air would change them. Same owner-or-member rule. Air
+# only formats the PR's code, never runs it. Pull requests from forks are
+# skipped with a notice: this job pushes only to branches in this repository.
 #
-# A commit pushed with GITHUB_TOKEN doesn't start other workflows, so checks
-# and reviews run again only on the next push.
+# Whole changed files are formatted, so the commit can also change lines
+# outside the PR's diff, which format-suggest.yaml doesn't comment on.
+#
+# GitHub usually doesn't start workflows from a push made with GITHUB_TOKEN
+# (https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow),
+# so the checks may not rerun on the formatting commit until the next push.
+# Whether they, and the ChatGPT review, run on it is still to be checked on
+# the first use.
 on:
   issue_comment:
     types: [created]
@@ -61,33 +69,62 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
   format:
-    if: ${{ github.event.issue.pull_request && (github.event.comment.author_association == 'MEMBER' || github.event.comment.author_association == 'OWNER') && startsWith(github.event.comment.body, '/format') }}
+    if: ${{ github.event.issue.pull_request && github.event.issue.state == 'open' && (github.event.comment.author_association == 'MEMBER' || github.event.comment.author_association == 'OWNER') && github.event.comment.body == '/format' }}
     name: format
     runs-on: ubuntu-latest
-    env:
-      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
     permissions:
       contents: write
+      pull-requests: read
     steps:
-      - uses: actions/checkout@v7
+      - name: Find the pull request's branches
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.issue.number }}
+        run: |
+          gh api "repos/$REPO/pulls/$NUMBER" --jq '
+            "same_repo=\(.head.repo.full_name == .base.repo.full_name)",
+            "head_ref=\(.head.ref)",
+            "base_ref=\(.base.ref)"
+          ' >> "$GITHUB_OUTPUT"
 
-      - uses: r-lib/actions/pr-fetch@v2
+      - name: Skip pull requests from forks
+        if: steps.pr.outputs.same_repo != 'true'
+        run: echo "::notice::/format pushes only to branches in this repository, so it does nothing on a pull request from a fork."
+
+      - uses: actions/checkout@v7
+        if: steps.pr.outputs.same_repo == 'true'
         with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ steps.pr.outputs.head_ref }}
+          fetch-depth: 0
 
       - name: Install
+        if: steps.pr.outputs.same_repo == 'true'
         uses: posit-dev/setup-air@v1
 
-      - name: Format
-        run: air format .
-
-      - name: Commit
+      # Only the R files the pull request adds or changes, against its merge
+      # base, are formatted and committed (AGENTS.md: touched files only).
+      - name: Format and commit
+        if: steps.pr.outputs.same_repo == 'true'
+        env:
+          HEAD_REF: ${{ steps.pr.outputs.head_ref }}
+          BASE_REF: ${{ steps.pr.outputs.base_ref }}
         run: |
+          files="$RUNNER_TEMP/changed"
+          base=$(git merge-base "origin/$BASE_REF" HEAD)
+          git diff -z --name-only --diff-filter=AM "$base" HEAD -- '*.R' '*.r' > "$files"
+          if [ ! -s "$files" ]; then
+            echo "This pull request changes no R files."
+            exit 0
+          fi
+          while IFS= read -r -d '' f; do air format "./$f"; done < "$files"
+          while IFS= read -r -d '' f; do git add -- "./$f"; done < "$files"
+          if git diff --cached --quiet; then
+            echo "Already formatted."
+            exit 0
+          fi
           git config --local user.name "$GITHUB_ACTOR"
           git config --local user.email "$GITHUB_ACTOR@users.noreply.github.com"
-          git add -u
-          git commit -m 'Format with Air' || echo "Already formatted"
-
-      - uses: r-lib/actions/pr-push@v2
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          git commit -m "Format with Air"
+          git push origin "HEAD:refs/heads/$HEAD_REF"
