@@ -147,8 +147,9 @@
 #' a county whose unstratified count and both sex counts are suppressed can
 #' have sex estimates adding up to 8 against an unstratified estimate of 4,
 #' even when the estimates before the cap agree. Rows fitted with
-#' `fit_to = "county_total"` share the county's published total instead, and
-#' the cap doesn't apply to them.
+#' `fit_to = "county_total"` instead share what is left of the county's
+#' published total after its published cells, and the cap doesn't apply to
+#' them.
 #'
 #' `"state_rate"` downloads the state data matching `x` (same diseases, years
 #' and stratification) from CDC AtlasPlus, and with `population = "acs"` the

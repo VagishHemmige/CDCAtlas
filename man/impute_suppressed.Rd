@@ -182,8 +182,9 @@ not add up to its filled-in unstratified count. With the default cap of 4,
 a county whose unstratified count and both sex counts are suppressed can
 have sex estimates adding up to 8 against an unstratified estimate of 4,
 even when the estimates before the cap agree. Rows fitted with
-\code{fit_to = "county_total"} share the county's published total instead, and
-the cap doesn't apply to them.
+\code{fit_to = "county_total"} instead share what is left of the county's
+published total after its published cells, and the cap doesn't apply to
+them.
 
 \code{"state_rate"} downloads the state data matching \code{x} (same diseases, years
 and stratification) from CDC AtlasPlus, and with \code{population = "acs"} the
