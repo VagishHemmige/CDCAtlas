@@ -237,7 +237,11 @@ below for the one tract that is in two counties):
 
   The county's count, where it came from (see
   [`impute_suppressed()`](https://vagishhemmige.github.io/CDCAtlas/reference/impute_suppressed.md))
-  and CDC's county population.
+  and CDC's county population. For rows fitted to the county's total
+  (`cases_source = "county_fit"`), `county_cases` is the fitted count;
+  cases spread with `no_county = "spread"` are added only in
+  `county_cases_allocated`, so the areas can add up to more than the
+  county's published total.
 
 - county_cases_spread:
 

@@ -186,6 +186,44 @@ condition is not reportable or the data are unavailable.</li>
 hide larger counts. That is why <code>cap = 4</code> is a default, not a
 hard limit.</p>
 </div>
+<div class="section level3">
+<h3 id="fitting-strata-to-county-totals">Fitting strata to county totals<a class="anchor" aria-label="anchor" href="#fitting-strata-to-county-totals"></a>
+</h3>
+<p>By sex or age, a suppressed cell can hide more than 1 to 4 cases:
+CDC’s rules can also withhold larger counts. Capping the state-rate
+estimates can then leave a county’s strata adding up to less than its
+total, and without the cap they can add up to more. CDC usually still
+publishes the county’s unstratified total. With
+<code>fit_to = "county_total"</code>, <code><a href="../reference/impute_suppressed.html">impute_suppressed()</a></code>
+shares that total, less the county’s published cells, among its
+suppressed cells in proportion to their state-rate estimates. This works
+for HIV diagnoses and HIV prevalence by sex or age.</p>
+<p>This is estimation, not recovery. With two or more suppressed cells,
+the total fixes only their sum; the split comes from the state rates.
+Fitted counts add up to the county’s total, but any one of them can be
+far from CDC’s hidden count. CDC’s suppression rule is not used to place
+them.</p>
+<p>A county keeps the state-rate estimate, with the reason in
+<code>fit_reason</code>, when:</p>
+<ul>
+<li>only one cell is suppressed, since its count would follow exactly
+from the others;</li>
+<li>its own total is suppressed or missing;</li>
+<li>a stratum is missing, or a count disagrees with its data
+status;</li>
+<li>a suppressed cell has no state-rate estimate (no rate or no
+population);</li>
+<li>fewer than two of its suppressed cells have a positive estimate;
+or</li>
+<li>the total is no larger than its published cells.</li>
+</ul>
+<p>Race is not fitted. HIV has no row for unknown race, so a county’s
+race cells needn’t add up to its total. The fit matches each county’s
+own total, not the state’s; a warning says how many state strata then
+add up to more than the state total. The default is
+<code>fit_to = "none"</code>, because the fit has not yet been checked
+against published counts.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="provisional-data-and-cautions">Provisional data and cautions<a class="anchor" aria-label="anchor" href="#provisional-data-and-cautions"></a>

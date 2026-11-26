@@ -254,7 +254,11 @@ area is in.</p></dd>
 <dt>county_cases, cases_source, county_population_atlas</dt>
 <dd><p>The county's
 count, where it came from (see <code><a href="impute_suppressed.html">impute_suppressed()</a></code>) and CDC's
-county population.</p></dd>
+county population. For rows fitted to the county's total
+(<code>cases_source = "county_fit"</code>), <code>county_cases</code> is the fitted count;
+cases spread with <code>no_county = "spread"</code> are added only in
+<code>county_cases_allocated</code>, so the areas can add up to more than the
+county's published total.</p></dd>
 
 <dt>county_cases_spread</dt>
 <dd><p>Cases with no county added to this county

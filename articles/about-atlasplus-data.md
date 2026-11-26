@@ -77,6 +77,41 @@ So a suppressed HIV county in a county under 500,000 usually has 1 to 4
 cases. But complementary suppression and re-release agreements can hide
 larger counts. That is why `cap = 4` is a default, not a hard limit.
 
+### Fitting strata to county totals
+
+By sex or age, a suppressed cell can hide more than 1 to 4 cases: CDC’s
+rules can also withhold larger counts. Capping the state-rate estimates
+can then leave a county’s strata adding up to less than its total, and
+without the cap they can add up to more. CDC usually still publishes the
+county’s unstratified total. With `fit_to = "county_total"`,
+[`impute_suppressed()`](https://vagishhemmige.github.io/CDCAtlas/reference/impute_suppressed.md)
+shares that total, less the county’s published cells, among its
+suppressed cells in proportion to their state-rate estimates. This works
+for HIV diagnoses and HIV prevalence by sex or age.
+
+This is estimation, not recovery. With two or more suppressed cells, the
+total fixes only their sum; the split comes from the state rates. Fitted
+counts add up to the county’s total, but any one of them can be far from
+CDC’s hidden count. CDC’s suppression rule is not used to place them.
+
+A county keeps the state-rate estimate, with the reason in `fit_reason`,
+when:
+
+- only one cell is suppressed, since its count would follow exactly from
+  the others;
+- its own total is suppressed or missing;
+- a stratum is missing, or a count disagrees with its data status;
+- a suppressed cell has no state-rate estimate (no rate or no
+  population);
+- fewer than two of its suppressed cells have a positive estimate; or
+- the total is no larger than its published cells.
+
+Race is not fitted. HIV has no row for unknown race, so a county’s race
+cells needn’t add up to its total. The fit matches each county’s own
+total, not the state’s; a warning says how many state strata then add up
+to more than the state total. The default is `fit_to = "none"`, because
+the fit has not yet been checked against published counts.
+
 ## Provisional data and cautions
 
 For HIV, CDC’s technical notes say data are based on cases reported
