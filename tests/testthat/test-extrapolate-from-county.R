@@ -66,19 +66,26 @@ test_that("tract estimates are county count x tract share of the stratum", {
 })
 
 test_that("unstratified area rates equal the county rate on the ACS denominator", {
-  tracts <- run_extrapolation(NULL)
+  # One tract of 01001 with no residents: its county stratum is still shared
+  # by stratum population, and it gets no cases.
+  acs <- fake_acs()
+  acs$estimate[acs$GEOID == "01001000100"] <- 0
+  tracts <- run_extrapolation(NULL, acs = acs)
   tracts <- tracts[tracts$county_fips == "01001", ]
   for (indicator in unique(tracts$indicator)) {
     one <- tracts[tracts$indicator == indicator, ]
     expect_equal(unique(one$allocation), "stratum population")
+    empty <- one$area_population_acs == 0
+    expect_equal(one$geoid[empty], "01001000100", label = indicator)
+    expect_equal(one$area_cases[empty], 0, label = indicator)
+
+    # Every other area has the county's rate on the sum of its areas' ACS
+    # populations, not CDC's county population (50,000 here).
     county_rate <- unique(one$county_cases_allocated) /
       unique(one$county_population_acs)
-
-    # Every area has the county's rate on the sum of its areas' ACS
-    # populations, not CDC's county population (50,000 here).
     expect_equal(
-      one$area_cases / one$area_population_acs,
-      rep(county_rate, nrow(one)),
+      one$area_cases[!empty] / one$area_population_acs[!empty],
+      rep(county_rate, sum(!empty)),
       label = indicator
     )
     expect_false(isTRUE(all.equal(

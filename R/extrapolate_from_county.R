@@ -8,16 +8,19 @@
 #'
 #' The estimates are modelled, not observed: they assume the same rate in every
 #' area of a county within a stratum. Where a county stratum is shared by its
-#' own population (`allocation = "stratum population"`), each area's rate,
-#' `area_cases / area_population_acs`, is the county's rate on the ACS
-#' denominator, `county_cases_allocated / county_population_acs`, so the
-#' pattern across a county's areas comes only from their populations, not from
-#' any data on where cases are. Where cases cluster in some areas, the
-#' estimates flatten the differences, moving cases from areas with high rates
-#' to areas with low ones. The county's rate on the ACS denominator can differ
-#' from CDC's county rate, whose denominator is CDC's county population. ACS
-#' margins of error are not carried into the output, and no uncertainty is
-#' given for the estimates.
+#' own population (`allocation = "stratum population"`), every area with
+#' population in the stratum has the same rate, `area_cases /
+#' area_population_acs`, equal to `county_cases_allocated /
+#' county_population_acs`, and an area with none gets no cases. So the pattern
+#' across a county's areas comes only from their populations, not from any
+#' data on where cases are. Where cases cluster in some areas, the estimates
+#' flatten the differences, moving cases from areas with high rates to areas
+#' with low ones. For indicators counted per resident (not Knowledge of
+#' Status), this rate can differ from CDC's county rate: CDC's denominator is
+#' its own county population, and `county_cases_allocated` also includes any
+#' cases added by `no_county = "spread"` or by sharing out unknown race or
+#' age. ACS margins of error are not carried into the output, and no
+#' uncertainty is given for the estimates.
 #'
 #' For Knowledge of Status, `county_cases` is the number of people with HIV
 #' who know their status, and it is shared across areas by their residents,
