@@ -1283,21 +1283,26 @@ test_that("unplaced_warning_names() looks for the state in one indicator's entry
 # The fit's live checks log counts only (#179): a county or area named in a
 # download warning or an error must not reach the log.
 
-test_that("live_collect() keeps a replayed download warning's text out of the log", {
+test_that("live_fit() keeps its downloads' warnings, replayed or not, out of the log", {
   local_fresh_live_cache()
-  local_mocked_bindings(get_atlas = function(...) {
-    warning("Sentinel County 987654")
-    data.frame(fips = "01001")
-  })
-  suppressWarnings(live_county(1999))
+  calls <- 0
+  local_mocked_bindings(
+    get_atlas = function(...) {
+      calls <<- calls + 1
+      warning("Sentinel County 987654")
+      data.frame(fips = "01001")
+    },
+    impute_suppressed = function(x, ...) x
+  )
 
-  log <- capture_messages(capture_warnings(
-    run <- live_collect(live_county(1999), "downloading")
-  ))
-  expect_length(log, 0)
-  expect_length(run$warnings, 1)
-  counts <- live_warning_counts(run$warnings)
-  expect_equal(counts, "unclassified: 1")
+  # The first call downloads; the second replays the cached warnings.
+  for (attempt in 1:2) {
+    expect_no_warning(expect_no_message(run <- live_fit(1999, "sex")))
+    # One warning per download: county by sex, unstratified county, state.
+    expect_length(run$warnings, 3)
+    expect_equal(live_warning_counts(run$warnings), "unclassified: 3")
+  }
+  expect_equal(calls, 3)
 })
 
 test_that("live_collect() fails with the stage and class only", {
