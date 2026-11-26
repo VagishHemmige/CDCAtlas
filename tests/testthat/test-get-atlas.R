@@ -83,6 +83,24 @@ test_that("geographies CDC reports for a disease are requested", {
   expect_equal(requested, 4)
 })
 
+test_that("get_atlas() accepts geography = \"region\" for HIV estimates", {
+  local_mocked_bindings(
+    .request_atlas_all = function(payloads) payloads,
+    .warn_missing_indicators = function(...) invisible()
+  )
+  payloads <- get_atlas("estimate", "region", 2022)
+  expect_length(payloads, 1)
+})
+
+test_that("region requests for reported data stop before asking CDC", {
+  # CDC returns no region rows for reported indicators: AtlasPlus asks for
+  # the states and adds them up in the browser.
+  local_mocked_bindings(.request_atlas_all = function(payloads) {
+    stop("CDC was called")
+  })
+  expect_snapshot(get_atlas("hiv", "region", 2022), error = TRUE)
+})
+
 test_that("congenital syphilis can't be stratified", {
   local_mocked_bindings(.request_atlas_all = function(p) stop("CDC was called"))
   expect_snapshot(

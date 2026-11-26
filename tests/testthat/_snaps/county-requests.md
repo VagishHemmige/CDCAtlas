@@ -1,13 +1,3 @@
-# region requests for reported data stop before asking CDC
-
-    Code
-      get_atlas("hiv", "region", 2022)
-    Condition
-      Error in `get_atlas()`:
-      ! `geography = "region"` is only available for `disease = "estimate"`.
-      i CDC doesn't return regions for reported data such as "hiv".
-      i State data are available with `geography = "state"`; adding states up needs care with suppressed counts, and rates must be recomputed from cases and population.
-
 # a failed request passes on CDC's message without the server trace
 
     Code
