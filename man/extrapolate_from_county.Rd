@@ -105,7 +105,9 @@ stratified by race:
 \item \code{"B03002"} (default): Hispanic or Latino origin by race. Its groups
 match AtlasPlus exactly (Hispanic, and non-Hispanic for each race), but
 it has no ages, so for ages 13 and older each area's populations are
-scaled by the area's share of residents aged 13 and older.
+scaled by the area's share of residents aged 13 and older. This
+assumes every race group in an area has the same age structure as the
+area's whole population.
 \item \code{"B01001"}: the sex-by-age tables for each race (B01001B to B01001I),
 which give ages 13 and older directly. Only White (B01001H) and
 Hispanic (B01001I) match AtlasPlus; the other groups include Hispanic
@@ -121,7 +123,11 @@ stratified by race:
 proportion to their counts, within each indicator and year, then
 across areas as usual. A county with no cases of known race keeps its
 unknown cases unallocated.
-}}
+}
+
+AtlasPlus has no "Unknown" race group for HIV or CDC's HIV estimates, so
+\code{\link[=get_atlas]{get_atlas()}} doesn't request one and \code{unknown_race} has nothing to act
+on for them.}
 
 \item{unknown_age}{Cases CDC reports with age "Unknown" (chlamydia,
 gonorrhea and syphilis), when \code{x} is stratified by age:
@@ -239,7 +245,18 @@ the same stratum, from the American Community Survey (ACS) 5-year estimates.
 Run it on county data that has been through \code{\link[=impute_suppressed]{impute_suppressed()}}.
 
 The estimates are modelled, not observed: they assume the same rate in every
-area of a county within a stratum.
+area of a county within a stratum. Where a county stratum is shared by its
+own population (\code{allocation = "stratum population"}), every area with
+population in the stratum has the same rate, \code{area_cases / area_population_acs}, equal to \code{county_cases_allocated / county_population_acs}, and an area with none gets no cases. So the pattern
+across a county's areas comes only from their populations, not from any
+data on where cases are. Where cases cluster in some areas, the estimates
+flatten the differences, moving cases from areas with high rates to areas
+with low ones. For indicators counted per resident (not Knowledge of
+Status), this rate can differ from CDC's county rate: CDC's denominator is
+its own county population, and \code{county_cases_allocated} also includes any
+cases added by \code{no_county = "spread"} or by sharing out unknown race or
+age. ACS margins of error are not carried into the output, and no
+uncertainty is given for the estimates.
 
 For Knowledge of Status, \code{county_cases} is the number of people with HIV
 who know their status, and it is shared across areas by their residents,
