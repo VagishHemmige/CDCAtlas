@@ -1,5 +1,6 @@
 # CDCAtlas (development version)
 
+* A network timeout is recognised for retrying by curl's error class (`curl_error_operation_timedout`, curl 6.0.0 and later) as well as by its message, so retries don't depend on the wording of curl's error (#76).
 * `extrapolate_from_county()` warns once (class `"cdcatlas_duplicated_geoid"`) when an area is split between counties and so has more than one row with the same `geoid`: with ACS 2010 to 2019, one Connecticut tract and its block groups. Its help and the "Extrapolation to tracts" article show how to sum the rows before joining to boundaries (#152).
 * `extrapolate_from_county()` warns once (class `"cdcatlas_state_unplaced_cases"`) when a state has more than 25% of its published state total in no county row of `x`, naming the states and their percentages: county and area estimates there are too low by about that share, or with `no_county = "spread"` any of those cases that reach areas are placed by assumption. No estimate changes (#164).
 * `extrapolate_from_county(no_county = "spread")` doesn't spread a remainder `no_county_cases()` withholds, and the message says how many state strata that applies to (#173).

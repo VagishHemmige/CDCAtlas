@@ -127,16 +127,15 @@
 
 # Runs an httr request, turning a failure to reach CDC (no connection, DNS,
 # time limit) into a message that says so (#13). Running out of time is
-# classed "cdcatlas_timeout", so it can be retried.
+# classed "cdcatlas_timeout", so it can be retried. curl 6.0.0 and later class
+# a timeout "curl_error_operation_timedout"; earlier versions give a plain
+# error whose message starts "Timeout was reached".
 .atlas_call <- function(request) {
   tryCatch(
     request,
     error = function(e) {
-      timed_out <- grepl(
-        "Timeout was reached",
-        conditionMessage(e),
-        fixed = TRUE
-      )
+      timed_out <- inherits(e, "curl_error_operation_timedout") ||
+        grepl("Timeout was reached", conditionMessage(e), fixed = TRUE)
       cli::cli_abort(
         c(
           "Couldn't reach CDC AtlasPlus.",
