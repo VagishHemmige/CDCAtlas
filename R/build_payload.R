@@ -1,5 +1,5 @@
-#' Internal: temporary dummy payload builder
-#' @keywords internal
+#' Internal: builds one AtlasPlus request payload (CDC variable codes)
+#' @noRd
 .build_payload <- function(
   disease,
   geography,
