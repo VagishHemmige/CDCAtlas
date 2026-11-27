@@ -2,6 +2,10 @@
 
 ## CDCAtlas (development version)
 
+- A network timeout is recognised for retrying by curl’s error class
+  (`curl_error_operation_timedout`, curl 6.0.0 and later) as well as by
+  its message, so retries don’t depend on the wording of curl’s error
+  ([\#76](https://github.com/VagishHemmige/CDCAtlas/issues/76)).
 - [`extrapolate_from_county()`](https://vagishhemmige.github.io/CDCAtlas/reference/extrapolate_from_county.md)
   warns once (class `"cdcatlas_duplicated_geoid"`) when an area is split
   between counties and so has more than one row with the same `geoid`:

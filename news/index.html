@@ -41,7 +41,8 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="cdcatlas-development-version">CDCAtlas (development version)<a class="anchor" aria-label="anchor" href="#cdcatlas-development-version"></a></h2>
-<ul><li>
+<ul><li>A network timeout is recognised for retrying by curl’s error class (<code>curl_error_operation_timedout</code>, curl 6.0.0 and later) as well as by its message, so retries don’t depend on the wording of curl’s error (<a href="https://github.com/VagishHemmige/CDCAtlas/issues/76" class="external-link">#76</a>).</li>
+<li>
 <code><a href="../reference/extrapolate_from_county.html">extrapolate_from_county()</a></code> warns once (class <code>"cdcatlas_duplicated_geoid"</code>) when an area is split between counties and so has more than one row with the same <code>geoid</code>: with ACS 2010 to 2019, one Connecticut tract and its block groups. Its help and the “Extrapolation to tracts” article show how to sum the rows before joining to boundaries (<a href="https://github.com/VagishHemmige/CDCAtlas/issues/152" class="external-link">#152</a>).</li>
 <li>
 <code><a href="../reference/extrapolate_from_county.html">extrapolate_from_county()</a></code> warns once (class <code>"cdcatlas_state_unplaced_cases"</code>) when a state has more than 25% of its published state total in no county row of <code>x</code>, naming the states and their percentages: county and area estimates there are too low by about that share, or with <code>no_county = "spread"</code> any of those cases that reach areas are placed by assumption. No estimate changes (<a href="https://github.com/VagishHemmige/CDCAtlas/issues/164" class="external-link">#164</a>).</li>
