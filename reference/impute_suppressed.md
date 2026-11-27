@@ -221,6 +221,18 @@ use `cases` and ignore `cases_uncapped`.
 
 ## Details
 
+Filled-in counts are not rounded, so they can be fractions:
+`"state_rate"` can give 1.6 cases, for example. With `"state_rate"` and
+`fit_to = "none"`, each stratum is filled in, capped and floored on its
+own, from the state rate in that stratum, so a county's filled-in strata
+need not add up to its filled-in unstratified count. With the default
+cap of 4, a county whose unstratified count and both sex counts are
+suppressed can have sex estimates adding up to 8 against an unstratified
+estimate of 4, even when the estimates before the cap agree. Rows fitted
+with `fit_to = "county_total"` instead share what is left of the
+county's published total after its published cells, and the cap doesn't
+apply to them.
+
 `"state_rate"` downloads the state data matching `x` (same diseases,
 years and stratification) from CDC AtlasPlus, and with
 `population = "acs"` the tract populations from the Census.
