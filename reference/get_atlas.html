@@ -182,9 +182,9 @@ compatibility for all years.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The function supports multiple diseases, geographic levels, year ranges,
-and optional stratification. Stratified queries expand results into all
-requested combinations (e.g., age by race). When possible, numeric fields
+    <p>Each call requests one disease at one geographic level, for one or more
+years, with optional stratification. Stratified queries expand results into
+all requested combinations (e.g., age by race). When possible, numeric fields
 are returned as <code>double</code> and identifiers as character.</p>
 <p><code>get_atlas()</code> only downloads. For census tract or block group estimates,
 pass county data to <code><a href="impute_suppressed.html">impute_suppressed()</a></code> and then

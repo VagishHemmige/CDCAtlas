@@ -150,10 +150,10 @@ historical compatibility for all years.
 
 ## Details
 
-The function supports multiple diseases, geographic levels, year ranges,
-and optional stratification. Stratified queries expand results into all
-requested combinations (e.g., age by race). When possible, numeric
-fields are returned as `double` and identifiers as character.
+Each call requests one disease at one geographic level, for one or more
+years, with optional stratification. Stratified queries expand results
+into all requested combinations (e.g., age by race). When possible,
+numeric fields are returned as `double` and identifiers as character.
 
 `get_atlas()` only downloads. For census tract or block group estimates,
 pass county data to
